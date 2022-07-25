@@ -45,7 +45,7 @@ class Run():
         self,
         n=DEFAULT_N,
         fov=DEFAULT_FOV,
-        fov_range=DEFAULT_RANGE,
+        vsn_range=DEFAULT_RANGE,
         turning_rate=DEFAULT_TURNINGRATE,
         speed=DEFAULT_SPEED,
         visible=True,
@@ -53,7 +53,7 @@ class Run():
     ):
         self.n = n
         self.fov = fov
-        self.range = fov_range
+        self.range = vsn_range
         self.turning_rate = turning_rate
         self.speed = speed
         self.visible = visible
