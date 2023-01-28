@@ -6,17 +6,17 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-n', default=10)
-parser.add_argument('--fov', default=150)
-parser.add_argument('--range', default=90)
-parser.add_argument('--turning_rate', default=2.0)
-parser.add_argument('--speed', default=1)
+parser.add_argument('--fov', default=40)
+parser.add_argument('--range', default=200)
+parser.add_argument('--turning_rate', default=7.8)
+parser.add_argument('--speed', default=0.5)
 
 
 DEFAULT_N = 10
-DEFAULT_FOV = 160
-DEFAULT_RANGE = 90
-DEFAULT_TURNINGRATE = 1.8
-DEFAULT_SPEED = 1
+DEFAULT_FOV = 40
+DEFAULT_RANGE = 200
+DEFAULT_TURNINGRATE = 7.8
+DEFAULT_SPEED = 0.5
 
 # uses system time if empty
 random.seed()
@@ -67,7 +67,7 @@ class Run():
         for robot in self.robots:
             robot.penup()
             robot.speed(0)
-            robot.setposition(rif(200), rif(200))
+            robot.setposition(rif(10), rif(10))
             robot.setheading(rf(360))
 
     def global_centroid(self):
