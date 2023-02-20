@@ -63,6 +63,7 @@ class Run():
             turtle.TurtleScreen._RUNNING = True
         self.robots = [Robot(screen, undobuffersize=0) for i in range(n)]
         screen.tracer(0, 0)
+
         # per-turtle setup
         for robot in self.robots:
             robot.penup()
@@ -106,6 +107,7 @@ class Run():
 
 if __name__ == "__main__":
     args = parser.parse_args()
+
 
     batch = Run(
         args.n,

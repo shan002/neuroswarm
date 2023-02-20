@@ -127,7 +127,7 @@ def do_epoch(pop):
     index = fitnesses.index(max_fit)
     gmax = pop.networks[index].network
     if (i % 1 == 0):
-        str1 = f"Best Score: {max_fit:8.3g}"
+        str1 = f"Best Score: {max_fit:12.6g}"
         str2 = "\t   FOV: {:3.0f}\tRange: {:6.3f}\tTurning: {:6.3f}\tSpeed: {:6.3f}\v".format(
             gmax.get_node(0).get("x1"),
             gmax.get_node(0).get("x2"),
@@ -162,12 +162,12 @@ def do_epoch(pop):
         # fig.show()  # Causes ioctl error in WSL
         # print("showed plot")
 
-        # f = open('experiment_eon1.log.txt', 'a')
-        # print("Opened log")
-        # f.write('\n'.join((time.strftime("%Y%m%d %X"), str1, str2, str(fitnesses), '\n')))
-        # print("Wrote to log")
-        # f.close()
-        # print("closed log")
+        f = open('experiment_eon1.log.txt', 'a')
+        print("Opened log")
+        f.write('\n'.join((time.strftime("%Y%m%d %X"), str1, str2, str(fitnesses), '\n')))
+        print("Wrote to log")
+        f.close()
+        print("closed log")
 
     # Create the next population based on the fitnesses of the current population
     return evolver.do_epoch(pop, fitnesses, eons_params)
