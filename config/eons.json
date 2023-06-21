@@ -1,6 +1,6 @@
  {
-    "starting_nodes": 3,
-    "starting_edges": 6,
+    "starting_nodes": 10,
+    "starting_edges": 20,
     "merge_rate": 0,
     "population_size": 100,
     "multi_edges": 0,

@@ -27,10 +27,11 @@ class CustomPool():
 
 
 class TennBots(Application):
-    n_inputs = 1
-    n_outputs = 2
 
     def __init__(self, **kwargs):
+        self.n_inputs = 1  # default. set one later in the code if necessary
+        self.n_outputs = 1  # default. set one later in the code if necessary
+
         self.env_name = kwargs['environment']
         self.label = kwargs['label']
         self.seed = kwargs['seed']
@@ -42,12 +43,13 @@ class TennBots(Application):
         self.one_small = (kwargs['methodology'] == 'one_small')
         self.episodes = kwargs['episodes']
         self.processes = kwargs['processes']
+        self.sim_time = kwargs['sim_time']
 
         # And set parameters specific to usage.  With testing,
         # we'll read the app_params from the network.  Otherwise, we get them from
         # the command line or defaults.
 
-        app_params = []
+        app_params = ['proc_ticks', ]
         self.app_params = dict()
 
         if kwargs['action'] == "test":
@@ -59,8 +61,8 @@ class TennBots(Application):
             self.app_params = self.net.get_data("application").to_python()
 
         elif kwargs['action'] == "train":
-            self.sim_time = kwargs['sim_time']
-            self.input_time = kwargs['input_time']
+            # self.input_time = kwargs['input_time']
+            self.proc_ticks = kwargs['proc_ticks']
             self.training_network = kwargs["training_network"]
             self.eons_params = load_json_string_file(kwargs["eons_params"])
             self.processor_params = load_json_string_file(kwargs['processor_params'])
@@ -73,6 +75,16 @@ class TennBots(Application):
             if not (arg in self.app_params):
                 self.app_params[arg] = kwargs[arg]
         # self.flip_up_stay = self.app_params['flip_up_stay']
+
+        # decoder_params = {
+        #     "dmin": [0, 0, 0, 0],
+        #     "dmax": [self.proc_ticks] * 4,
+        #     "divisor": 10,
+        #     "named_decoders": {"r": {"rate": {"discrete": True}}},
+        #     "use_decoders": ["r", "r", "r", "r"]
+        # }
+        # decoder = neuro.DecoderArray(decoder_params)
+        # self.n_outputs = decoder.get_num_neurons()
 
         # Set up the initial gym, and set up the action space.
 
@@ -93,16 +105,18 @@ class TennBots(Application):
 
     def get_actions(self, processors, observations):
         actions = []
-        for proc, sensed, action in zip(processors, observations, actions):
+        for proc, sensed in zip(processors, observations):
             if sensed:
                 proc.apply_spike(neuro.Spike(id=0, value=1, time=0))
-                proc.run(self.sim_time)
-            action: bool = proc.neuron_vectors()[0][0] >= 1
+            proc.run(self.app_params['proc_ticks'])
+            action: bool = bool(proc.output_vectors()[0])
             actions.append(action)
+        assert len(actions) == len(processors) == len(observations)
+        return actions
 
     def fitness(self, processor, network):
         import tennbots
-        sim = tennbots.Sim(self.agents, random.Random())
+        sim = tennbots.Sim(self.agents, random.Random(), render_mode="human" if self.viz else None)
         pprops = processor.get_configuration()
         # print(pprops)
         processors = [caspian.Processor(pprops)] * self.agents
@@ -110,11 +124,17 @@ class TennBots(Application):
         loss_graph = []
         for proc in processors:
             proc.load_network(network)
-            proc.track_neuron_events(1)
+            neuro.track_all_output_events(proc, network)
+            # proc.track_neuron_events(0)
 
-        for i in range(9999):
+        for i in range(self.sim_time):
+            if self.viz:
+                sim.render()
             observations, reward, *_ = sim.step(actions)
+            # print(f"obsv: {observations}\n\n")
             actions = self.get_actions(processors, observations)
+            # actions = observations  # the correct answer
+            # print(f"act: {actions}\n\n")
             loss_graph.append(reward)
 
         loss = sum(loss_graph[-5000:])
@@ -157,6 +177,21 @@ def train(**kwargs):
     # evolve.graph_fitness()
 
 
+def run(**kwargs):
+    app = TennBots(**kwargs)
+
+    # Set up simulator and network
+
+    if kwargs["action"] == "stdin":
+        proc = None
+        net = None
+    else:
+        proc = caspian.Processor(app.processor_params)
+        net = app.net
+
+    print("Fitness: {:8.4f}".format(app.fitness(proc, net)))
+
+
 def main():
     parser = argparse.ArgumentParser(description='Freeway app for eons, neuro or stdin')
     parser.add_argument('action', choices=['train', 'test', 'stdin'])
@@ -176,15 +211,18 @@ def main():
                         action="store_true")
     parser.add_argument('--show_changes', help="[all] print the observations that change (unset)",
                         action="store_true")
+    parser.add_argument('--sim_time', type=float, default=9999,
+                        help="[train] time steps per simulate() (9999).")
 
     # Parameters that only apply to test or stdin.
     # Don't use defaults here, because we don't want the user to specify them when they don't apply.
 
     parser.add_argument('--viz', help="[test,stdin] use game visualizer", action="store_true")
+    parser.add_argument('--noviz', help="[test,stdin] use game visualizer", action="store_true")
     parser.add_argument('--viz_delay', type=float,
                         help="[test,stdin] change the delay between timesteps in the viz (0.016)")
     parser.add_argument('--prompt', help="[test] wait for a return to continue at each step.", action="store_true")
-    parser.add_argument('--network', help="[test] network file (networks/experiment_tenn1.txt)")
+    parser.add_argument('--network', help="[test] network file (networks/experiment_tenn1.json)")
 
     # Parameters that only apply to training - observations and spike encoders.
     # Don't use defaults here, because we don't want the user to specify them when they don't apply.
@@ -205,10 +243,10 @@ def main():
     # Again, don't use defaults, because we don't want the user to specify
     # them when they don't apply.
 
-    parser.add_argument('--sim_time', type=float,
-                        help="[train] time steps per simulate() (9999).")
-    parser.add_argument('--input_time', type=float,
-                        help="[train] time steps over which to pulse input (50).")
+    parser.add_argument('--proc_ticks', type=float,
+                        help="[train] time steps per processor output (10).")
+    # parser.add_argument('--input_time', type=float,
+    #                     help="[train] time steps over which to pulse input (50).")
     parser.add_argument('--eons_params', help="[train] json for eons parameters (eons/std.json)")
     parser.add_argument('--processor_params',
                         help="[train] json for processor parameters (config/caspian.json)")
@@ -231,10 +269,8 @@ def main():
             if config[s]:
                 print(f"Cannot specify --{s} with action = {args.action}")
                 return
-        if not config['sim_time']:
-            config['sim_time'] = 30
-        if not config['input_time']:
-            config['input_time'] = 30
+        # if not config['input_time']:
+        #     config['input_time'] = 30
         if not config['max_fitness']:
             config['max_fitness'] = 34 if config['methodology'] == "big_run" else 1
         if not config['epochs']:
@@ -246,27 +282,32 @@ def main():
         if not config['processes']:
             config['processes'] = 4
         if not config['training_network']:
-            config["training_network"] = os.path.join(directory, 'networks', 'freeway_train.txt')
+            config["training_network"] = os.path.join(directory, 'networks', 'experiment_tenn1_train.txt')
         if not config['label']:
             config["label"] = ""
-
+        if not config['proc_ticks']:
+            config["proc_ticks"] = 10
     else:
         illegal = [
-            'input_time', 'sim_time', 'eons_params', 'processor_params', 'processes',
+            'eons_params', 'processor_params', 'processes', 'proc_ticks',
             'epochs', 'training_network', 'max_fitness', 'graph',
         ]
         for s in illegal:
             if config[s]:
                 print(f"Cannot specify --{s} with action = {args.action}")
                 return
+        if config['noviz']:
+            config['viz'] = False
+        else:
+            config['viz'] = True
         if not config['viz_delay']:
             config['viz_delay'] = 0.016
         if args.action == "test":
-            if config['car_lanes']:
-                print("Cannot specify --car_lanes with action = test.")
-                return
+            # if config['car_lanes']:
+            #     print("Cannot specify --car_lanes with action = test.")
+            #     return
             if not config['network']:
-                config["network"] = os.path.join(directory, 'networks', 'experiment_tenn1.txt')
+                config["network"] = os.path.join(directory, 'networks', 'experiment_tenn1.json')
 
     config["environment"] = "tennbots-v00"
 

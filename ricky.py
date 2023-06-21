@@ -4,19 +4,19 @@ import random
 import argparse
 # turtle.ht()
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-n', default=10)
-parser.add_argument('--fov', default=40)
-parser.add_argument('--range', default=200)
-parser.add_argument('--turning_rate', default=7.8)
-parser.add_argument('--speed', default=0.5)
-
-
 DEFAULT_N = 10
-DEFAULT_FOV = 40
-DEFAULT_RANGE = 200
-DEFAULT_TURNINGRATE = 7.8
-DEFAULT_SPEED = 0.5
+DEFAULT_FOV = "40"
+DEFAULT_RANGE = "90"
+DEFAULT_TURNINGRATE = "7.8"
+DEFAULT_SPEED = "0.5"
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-n', default=DEFAULT_N)
+parser.add_argument('--fov', default=DEFAULT_FOV)
+parser.add_argument('--range', default=DEFAULT_RANGE)
+parser.add_argument('--turning_rate', default=DEFAULT_TURNINGRATE)
+parser.add_argument('--speed', default=DEFAULT_SPEED)
+
 
 # uses system time if empty
 random.seed()
@@ -32,6 +32,8 @@ def rif(factor=1):
 
 class Robot(turtle.RawTurtle):
     def can_see(self, other, fov):
+        if self == other:
+            return False
         within_range = self.distance(other) < 90
         h1 = self.heading()
         h2 = self.towards(other)
@@ -51,11 +53,11 @@ class Run():
         visible=True,
         screen=None,
     ):
-        self.n = n
-        self.fov = fov
-        self.range = vsn_range
-        self.turning_rate = turning_rate
-        self.speed = speed
+        self.n = int(n)
+        self.fov = eval(fov)
+        self.range = eval(vsn_range)
+        self.turning_rate = eval(turning_rate)
+        self.speed = eval(speed)
         self.visible = visible
 
         if screen is None:
@@ -89,6 +91,15 @@ class Run():
             rout = r if r > rout else rout
         return rin - rout
 
+    def circle_size(self):
+        center = self.global_centroid()
+        rin, rout = float('inf'), 0
+        for robot in self.robots:
+            r = robot.distance(center)
+            rin = r if r < rin else rin
+            rout = r if r > rout else rout
+        return rout
+
     def step(self):
         for robot in self.robots:
             see = False
@@ -99,7 +110,9 @@ class Run():
                 if robot.can_see(other, self.fov):
                     see = True
 
-            robot.left(0 if see else self.turning_rate)
+        observations = [any(robot.can_see(other, self.fov) for other in self.robots) for robot in self.robots]
+        for see, robot in zip(observations, self.robots):
+            robot.left(-self.turning_rate if see else self.turning_rate)
             robot.forward(self.speed)
         if self.visible:
             self.screen.update()
@@ -107,7 +120,6 @@ class Run():
 
 if __name__ == "__main__":
     args = parser.parse_args()
-
 
     batch = Run(
         args.n,
@@ -119,4 +131,5 @@ if __name__ == "__main__":
 
     while(True):
         batch.step()
-        print(batch.circleness())
+        print(f"circlyness: {batch.circleness(): 9.3f}\t r: {batch.circle_size(): 9.3f}")
+        # print(batch.circleness())

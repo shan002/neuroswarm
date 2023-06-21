@@ -1,3 +1,4 @@
+import math
 import turtle
 from turtle import Vec2D
 # import tkinter as TK
@@ -43,7 +44,13 @@ class TurtleShell(turtle.TNavigator):
         if isinstance(self, turtle.RawTurtle):
             super().penup()
 
+    def clear(self):
+        if isinstance(self, turtle.RawTurtle):
+            super().clear()
+
     def can_see(self, other):
+        if self == other:
+            return False
         within_range = self.distance(other) < self.sensor_range
         h1 = self.heading()
         h2 = self.towards(other)
@@ -96,14 +103,18 @@ class Sim(gym.Env):
             self.randomizer.seed(seed)
         if self._renderer == "turtle":
             self.screen.clear()
+            self.screen.clear()
             self.screen.tracer(0, 0)
         self.robots = [self.RobotClass(self.screen, undobuffersize=0) for i in range(self.n)]
         # per-turtle setup
+        if self._renderer == "turtle":
+            self.screen.tracer(0, 0)
         for robot in self.robots:
             robot.speed(0)
+            robot.penup()
+            robot.clear()
             robot.setposition(rif(10, self.randomizer), rif(10, self.randomizer))
             robot.setheading(rf(360, self.randomizer))
-            robot.penup()
 
     def seed(self, new_seed):
         self.seed = new_seed
@@ -127,6 +138,11 @@ class Sim(gym.Env):
         return rin - rout
 
     def step(self, action):
+
+        # wl, wr = action
+        # v = (wl + wr) / 2
+        # dx = v * wl
+
         if action:
             for robot, act in zip(self.robots, action):
                 if act:
@@ -135,8 +151,10 @@ class Sim(gym.Env):
                     robot.right(self.turning_rate)
                 robot.forward(self.speed)  # always move forwards
 
+
+
         # n-length list[bool] of whether each robot sees any other robots
-        observations = [any([robot.can_see(other) for other in self.robots if other is not robot]) for robot in self.robots]
+        observations = [any(robot.can_see(other) for other in self.robots if other is not robot) for robot in self.robots]
 
         return observations, self.circleness(), False, False, None, None, False
         # observation:object, reward:float, terminated:bool, truncated:bool, info:dict, deprecated, done:bool
