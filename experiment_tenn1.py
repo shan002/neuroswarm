@@ -29,8 +29,8 @@ class CustomPool():
 class TennBots(Application):
 
     def __init__(self, **kwargs):
-        self.n_inputs = 1  # default. set one later in the code if necessary
-        self.n_outputs = 1  # default. set one later in the code if necessary
+        self.n_inputs = 2  # default. set one later in the code if necessary
+        self.n_outputs = 2  # default. set one later in the code if necessary
 
         self.env_name = kwargs['environment']
         self.label = kwargs['label']
@@ -76,15 +76,25 @@ class TennBots(Application):
                 self.app_params[arg] = kwargs[arg]
         # self.flip_up_stay = self.app_params['flip_up_stay']
 
-        # decoder_params = {
-        #     "dmin": [0, 0, 0, 0],
-        #     "dmax": [self.proc_ticks] * 4,
-        #     "divisor": 10,
-        #     "named_decoders": {"r": {"rate": {"discrete": True}}},
-        #     "use_decoders": ["r", "r", "r", "r"]
-        # }
-        # decoder = neuro.DecoderArray(decoder_params)
-        # self.n_outputs = decoder.get_num_neurons()
+        encoder_params = {
+            "dmin": [0] * 2,
+            "dmax": [1] * 2,
+            "interval": self.app_params['proc_ticks'],
+            "named_encoders": {"s": "spikes"},
+            "use_encoders": ["s", "s"]
+        }
+        self.encoder = neuro.EncoderArray(encoder_params)
+        self.n_inputs = self.encoder.get_num_neurons()
+
+        decoder_params = {
+            "dmin": [0, 0, 0, 0],
+            "dmax": [self.app_params['proc_ticks']] * 4,
+            "divisor": self.app_params['proc_ticks'],
+            "named_decoders": {"r": {"rate": {"discrete": True}}},
+            "use_decoders": ["r", "r", "r", "r"]
+        }
+        self.decoder = neuro.DecoderArray(decoder_params)
+        self.n_outputs = self.decoder.get_num_neurons()
 
         # Set up the initial gym, and set up the action space.
 
@@ -106,11 +116,20 @@ class TennBots(Application):
     def get_actions(self, processors, observations):
         actions = []
         for proc, sensed in zip(processors, observations):
-            if sensed:
-                proc.apply_spike(neuro.Spike(id=0, value=1, time=0))
+            # spike = neuro.Spike(id=1 if sensed else 0, value=1, time=0)
+            # if sensed:
+            #     proc.apply_spike(spike)
+            spikes = self.encoder.get_spikes((0, 1) if sensed else (1, 0))
+            proc.apply_spikes(spikes)
             proc.run(self.app_params['proc_ticks'])
-            action: bool = bool(proc.output_vectors()[0])
-            actions.append(action)
+            # action: bool = bool(proc.output_vectors())
+            # still need to decode outputs!!!
+            data = self.decoder.get_data_from_processor(proc)
+            wl, wr = data[1] - data[0], data[3] - data[2]
+            # if abs(wl) > 0.01 or abs(wr) > 0.01:
+            #     print(wl, wr)
+            actions.append((wl, wr))
+            # print(f"{'SEE' if sensed else 'not'}: {wl:5.2f}, {wr:5.2f}")
         assert len(actions) == len(processors) == len(observations)
         return actions
 
@@ -120,7 +139,7 @@ class TennBots(Application):
         pprops = processor.get_configuration()
         # print(pprops)
         processors = [caspian.Processor(pprops)] * self.agents
-        actions = [None] * self.agents
+        actions = [(0, 0)] * self.agents
         loss_graph = []
         for proc in processors:
             proc.load_network(network)
@@ -131,9 +150,8 @@ class TennBots(Application):
             if self.viz:
                 sim.render()
             observations, reward, *_ = sim.step(actions)
-            # print(f"obsv: {observations}\n\n")
             actions = self.get_actions(processors, observations)
-            # actions = observations  # the correct answer
+            # print(f"obsv: {observations}\n\n")
             # print(f"act: {actions}\n\n")
             loss_graph.append(reward)
 
@@ -320,3 +338,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# TODO: spike encoders (perhaps bins with rate encoding)

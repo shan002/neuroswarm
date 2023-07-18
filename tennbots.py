@@ -138,20 +138,35 @@ class Sim(gym.Env):
         return rin - rout
 
     def step(self, action):
+        def diffeq(wl, wr, theta):
+            cos, sin = math.cos, math.sin
+            r = 0.020  # meters
+            wb = 0.150  # meters
+            v = r * (wl + wr) / 2
 
-        # wl, wr = action
-        # v = (wl + wr) / 2
-        # dx = v * wl
+            dx = v * cos(theta)
+            dy = v * sin(theta)
+            dtheta = r / 2 / wb * (wl - wr)
 
-        if action:
-            for robot, act in zip(self.robots, action):
-                if act:
-                    robot.left(self.turning_rate)
-                else:
-                    robot.right(self.turning_rate)
-                robot.forward(self.speed)  # always move forwards
+            return dx, dy, dtheta
 
+        # Move robots according to actions
+        for robot, act in zip(self.robots, action):
+            wl, wr = act
+            x, y = robot.position()
+            theta = robot.heading()
+            dx, dy, dtheta = diffeq(wl, wr, theta)
 
+            robot.setposition(x + dx, y + dy)
+            robot.setheading(theta + dtheta)
+
+        # if action:
+        #     for robot, act in zip(self.robots, action):
+        #         if act:
+        #             robot.left(self.turning_rate)
+        #         else:
+        #             robot.right(self.turning_rate)
+        #         robot.forward(self.speed)  # always move forwards
 
         # n-length list[bool] of whether each robot sees any other robots
         observations = [any(robot.can_see(other) for other in self.robots if other is not robot) for robot in self.robots]
@@ -189,7 +204,8 @@ if __name__ == "__main__":
         randomizer=rnd,
         render_mode=args.render_mode
     )
-    actions = [None] * args.n
+    # actions = [None] * args.n
+    actions = [(0, 0)] * args.n
     while(True):
         observations, reward, *_ = sim.step(actions)
         actions = observations
