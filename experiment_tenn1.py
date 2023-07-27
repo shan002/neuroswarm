@@ -1,24 +1,26 @@
-from multiprocessing import Pool, TimeoutError
+# from multiprocessing import Pool, TimeoutError
 from tqdm.contrib.concurrent import process_map
-import sys
 import neuro
 import caspian
 import random
-# import matplotlib.pyplot as plt
 import argparse
 import os
-import time
+# import time
+# import matplotlib.pyplot as plt
 
-# Provided Python utilities from examples/common
+# Provided Python utilities from tennlab framework/examples/common
 from common.evolver import Evolver
 from common.evolver import MPEvolver
-from common.utils import *
+import common.utils as nutils
+from common.utils import json
 from common.application import Application
 
 directory = os.path.dirname(os.path.realpath(__file__))
 
 
 class CustomPool():
+    """pool class for Evolver, so we can use tqdm for those sweet progress bars"""
+
     def __init__(self, **tqdm_kwargs):  # max_workers=args.threads
         self.kwargs = tqdm_kwargs
 
@@ -27,6 +29,10 @@ class CustomPool():
 
 
 class TennBots(Application):
+    """Tennbots application for TennLab neuro framework
+
+
+    """
 
     def __init__(self, **kwargs):
         self.n_inputs = 2  # default. set one later in the code if necessary
@@ -52,6 +58,7 @@ class TennBots(Application):
         app_params = ['proc_ticks', ]
         self.app_params = dict()
 
+        # Copy network from file into memory, including processor & app params
         if kwargs['action'] == "test":
             with open(kwargs['network']) as f:
                 j = json.loads(f.read())
@@ -60,12 +67,13 @@ class TennBots(Application):
             self.processor_params = self.net.get_data("processor")
             self.app_params = self.net.get_data("application").to_python()
 
+        # Get params from defaults/cmd params and default proc/eons cfg
         elif kwargs['action'] == "train":
             # self.input_time = kwargs['input_time']
             self.proc_ticks = kwargs['proc_ticks']
             self.training_network = kwargs["training_network"]
-            self.eons_params = load_json_string_file(kwargs["eons_params"])
-            self.processor_params = load_json_string_file(kwargs['processor_params'])
+            self.eons_params = nutils.load_json_string_file(kwargs["eons_params"])
+            self.processor_params = nutils.load_json_string_file(kwargs['processor_params'])
 
         # If 'test' and an app param hasn't been set, we simply use defaults (we won't be
         # able to read them from the command line).  This is how we can add information to
@@ -76,18 +84,25 @@ class TennBots(Application):
                 self.app_params[arg] = kwargs[arg]
         # self.flip_up_stay = self.app_params['flip_up_stay']
 
+        # Note: encoders/decoders *can* be saved to or read from the network. not implemented yet.
+
+        # Setup encoder
+        # for each binary raw input, we encode it to constant spikes on bins, kinda like traditional one-hot
         encoder_params = {
-            "dmin": [0] * 2,
-            "dmax": [1] * 2,
+            "dmin": [0] * 4,  # two bins for each binary input
+            "dmax": [1] * 4,
             "interval": self.app_params['proc_ticks'],
             "named_encoders": {"s": "spikes"},
-            "use_encoders": ["s", "s"]
+            "use_encoders": ["s"] * 4
         }
         self.encoder = neuro.EncoderArray(encoder_params)
         self.n_inputs = self.encoder.get_num_neurons()
 
+        # Setup decoder
+        # Read spikes to wheelspeeds using rate-based decoding
         decoder_params = {
-            "dmin": [0, 0, 0, 0],
+            # see notes near where decoder is used
+            "dmin": [0] * 4,
             "dmax": [self.app_params['proc_ticks']] * 4,
             "divisor": self.app_params['proc_ticks'],
             "named_decoders": {"r": {"rate": {"discrete": True}}},
@@ -110,53 +125,59 @@ class TennBots(Application):
         if kwargs['action'] == "stdin":
             return
 
-        # Set up the spike encoders.  If "train", you have to build them.
-        # Otherwise, you can read them from the network.
-
-    def get_actions(self, processors, observations):
-        actions = []
-        for proc, sensed in zip(processors, observations):
-            # spike = neuro.Spike(id=1 if sensed else 0, value=1, time=0)
-            # if sensed:
-            #     proc.apply_spike(spike)
-            spikes = self.encoder.get_spikes((0, 1) if sensed else (1, 0))
-            proc.apply_spikes(spikes)
-            proc.run(self.app_params['proc_ticks'])
-            # action: bool = bool(proc.output_vectors())
-            # still need to decode outputs!!!
-            data = self.decoder.get_data_from_processor(proc)
-            wl, wr = data[1] - data[0], data[3] - data[2]
-            # if abs(wl) > 0.01 or abs(wr) > 0.01:
-            #     print(wl, wr)
-            actions.append((wl, wr))
-            # print(f"{'SEE' if sensed else 'not'}: {wl:5.2f}, {wr:5.2f}")
-        assert len(actions) == len(processors) == len(observations)
-        return actions
-
     def fitness(self, processor, network):
         import tennbots
+        # setup sim
         sim = tennbots.Sim(self.agents, random.Random(), render_mode="human" if self.viz else None)
+        # setup processors
         pprops = processor.get_configuration()
         # print(pprops)
         processors = [caspian.Processor(pprops)] * self.agents
-        actions = [(0, 0)] * self.agents
-        loss_graph = []
         for proc in processors:
             proc.load_network(network)
             neuro.track_all_output_events(proc, network)
             # proc.track_neuron_events(0)
+        # setup a spot to save actions to
+        actions = [(0, 0)] * self.agents
+        loss_graph = []
+
+        # save references for loop optimization
+        encoder, decoder = self.encoder, self.decoder
+        proc_ticks = self.app_params['proc_ticks']
+
+        def b2oh(x: bool):
+            return (0, 1) if x else (1, 0)
+
+        def get_action(processor, observation):
+            # unpack observation
+            sensor_triggered, on_goal = observation
+            # convert each binary to one-hot and concatenate
+            input_vector = b2oh(sensor_triggered) + b2oh(on_goal)
+            spikes = encoder.get_spikes(input_vector)
+            processor.apply_spikes(spikes)
+            processor.run(proc_ticks)
+            # action: bool = bool(proc.output_vectors())  # old. don't use.
+            data = decoder.get_data_from_processor(processor)
+            # four bins. Two for each wheel, one for positive, one for negative.
+            wl, wr = 2 * (data[1] - data[0]), 2 * (data[3] - data[2])
+            return (wl, wr)
 
         for i in range(self.sim_time):
-            if self.viz:
-                sim.render()
-            observations, reward, *_ = sim.step(actions)
-            actions = self.get_actions(processors, observations)
+            observations, reward, _, _, info, *_ = sim.step(actions)
+            loss_graph.append(reward)
+            actions = (get_action(p, o) for p, o in zip(processors, observations))
             # print(f"obsv: {observations}\n\n")
             # print(f"act: {actions}\n\n")
-            loss_graph.append(reward)
+            if self.viz:
+                sim.render()
 
-        loss = sum(loss_graph[-5000:])
-        return loss
+        observations, reward, _, _, info, *_ = sim.step(actions)
+        how_many_on_goal = sum([on_goal for sensor_triggered, on_goal in observations])
+
+        reward += (how_many_on_goal ** 2) * 1000
+
+        # loss = sum(loss_graph[-5000:])
+        return reward
 
     def save_network(self, net):
         if self.label != "":
@@ -182,7 +203,7 @@ def train(**kwargs):
             proc_params=app.processor_params,
         )
     else:
-        evolve = MPEvolver(
+        evolve = MPEvolver(  # multi-process for concurrent simulations
             app=app,
             eons_params=app.eons_params,
             proc_name=caspian.Processor,
@@ -207,10 +228,14 @@ def run(**kwargs):
         proc = caspian.Processor(app.processor_params)
         net = app.net
 
+    # Run app and print fitness
+
     print("Fitness: {:8.4f}".format(app.fitness(proc, net)))
 
 
 def main():
+    # parse cmd line args and run either `train(...)` or `run(...)`
+
     parser = argparse.ArgumentParser(description='Freeway app for eons, neuro or stdin')
     parser.add_argument('action', choices=['train', 'test', 'stdin'])
 
@@ -290,9 +315,9 @@ def main():
         # if not config['input_time']:
         #     config['input_time'] = 30
         if not config['max_fitness']:
-            config['max_fitness'] = 34 if config['methodology'] == "big_run" else 1
+            config['max_fitness'] = 999999999 if config['methodology'] == "big_run" else 1
         if not config['epochs']:
-            config['epochs'] = 50
+            config['epochs'] = 1000
         if not config['eons_params']:
             config["eons_params"] = os.path.join(directory, 'eons', 'std.json')
         if not config['processor_params']:

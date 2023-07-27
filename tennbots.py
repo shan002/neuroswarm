@@ -16,8 +16,8 @@ parser.add_argument('--render_mode',
                     help="use `human` to show or `None` to hide. Default `human`.")
 
 DEFAULT_N = 10
-DEFAULT_FOV = 40
-DEFAULT_RANGE = 90
+DEFAULT_FOV = 12
+DEFAULT_RANGE = 4
 DEFAULT_TURNINGRATE = 7.8
 DEFAULT_SPEED = 0.5
 
@@ -98,26 +98,41 @@ class Sim(gym.Env):
 
         self.reset(self.seed)
 
+    class Goal():
+        def __init__(self, pos, r):
+            self.pos = Vec2D(*pos)
+            self.r = r
+
     def reset(self, seed=None):
         if self.seed is not None:
             self.randomizer.seed(seed)
+        self.goal = self.Goal((10, 10), 1)
         if self._renderer == "turtle":
             self.screen.clear()
             self.screen.clear()
             self.screen.tracer(0, 0)
-        self.robots = [self.RobotClass(self.screen, undobuffersize=0) for i in range(self.n)]
         # per-turtle setup
+        self.robots = [self.RobotClass(self.screen, undobuffersize=0) for i in range(self.n)]
+        for robot in self.robots:
+            robot.visited_goal = 0
+            robot.was_on_goal = False
         if self._renderer == "turtle":
             self.screen.tracer(0, 0)
+            self.draw_circle(*self.goal.pos, self.goal.r, fill='green', outline="")
         for robot in self.robots:
             robot.speed(0)
             robot.penup()
             robot.clear()
-            robot.setposition(rif(10, self.randomizer), rif(10, self.randomizer))
+            robot.setposition(rif(2, self.randomizer), rif(2, self.randomizer))
             robot.setheading(rf(360, self.randomizer))
+        self.accumulator = 0
 
     def seed(self, new_seed):
         self.seed = new_seed
+
+    def draw_circle(self, x, y, r, **kwargs):
+        # https://stackoverflow.com/a/17985217/2712730
+        return self.screen.cv.create_oval(x - r, y - r, x + r, y + r, **kwargs)
 
     def global_centroid(self):
         xsum = ysum = 0
@@ -144,8 +159,8 @@ class Sim(gym.Env):
             wb = 0.150  # meters
             v = r * (wl + wr) / 2
 
-            dx = v * cos(theta)
-            dy = v * sin(theta)
+            dx = v * cos(math.radians(theta))
+            dy = v * sin(math.radians(theta))
             dtheta = r / 2 / wb * (wl - wr)
 
             return dx, dy, dtheta
@@ -168,10 +183,45 @@ class Sim(gym.Env):
         #             robot.right(self.turning_rate)
         #         robot.forward(self.speed)  # always move forwards
 
-        # n-length list[bool] of whether each robot sees any other robots
-        observations = [any(robot.can_see(other) for other in self.robots if other is not robot) for robot in self.robots]
+        # n-length list[tuple] of sensor output of each robot
+        def query_sensor(robot):
+            # WARNING: This is not a pure function!
 
-        return observations, self.circleness(), False, False, None, None, False
+            # infrared/proximity sensor detections
+            can_see_other_robot = any(robot.can_see(other) for other in self.robots if other is not robot)
+            can_see_goal = robot.can_see(self.goal.pos)  # assumes infrared detection range is same for goal
+            sensor_triggered = can_see_other_robot or can_see_goal
+
+            on_goal = robot.distance(self.goal.pos) < self.goal.r
+
+            if on_goal:
+                # if the robot has just entered the goal on this tick
+                if not robot.was_on_goal:
+                    robot.visited_goal += 1
+                    self.accumulator -= 0.1
+                    if robot.visited_goal == 1:
+                        # reward for visiting goal for the first time
+                        self.accumulator += 1000
+
+            if self._renderer == "turtle":
+                if sensor_triggered:
+                    robot.fillcolor("red")
+                else:
+                    robot.fillcolor("black")
+                if robot.visited_goal:
+                    robot.fillcolor("green")
+
+            # save state to prior
+            robot.was_on_goal = on_goal
+            return (sensor_triggered, on_goal)
+
+        observations = [query_sensor(robot) for robot in self.robots]
+
+        how_many_visited_goal = sum([bool(robot.visited_goal) for robot in self.robots])
+        # punish the longer we go without more robots visiting goal for first time
+        self.accumulator -= self.n - how_many_visited_goal
+
+        return observations, self.accumulator, False, False, False, None, False
         # observation:object, reward:float, terminated:bool, truncated:bool, info:dict, deprecated, done:bool
 
     def render(self):
