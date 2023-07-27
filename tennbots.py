@@ -31,6 +31,14 @@ def rif(factor=1, randomizer=random):
 
 
 class TurtleShell(turtle.TNavigator):
+    """
+    Turtle class providing compatibility between RawTurtle and TNavigator.
+
+    This class allows me to use TNavigator instead of RawTurtle
+    It patches over some methods in RawTurtle
+    So I can prevent any graphical/ui/TKinter code from running when unneeded
+    """
+
     def __init__(self, *args, **kwargs):
         if isinstance(self, turtle.RawTurtle):
             super().__init__(*args, **kwargs)
@@ -106,11 +114,14 @@ class Sim(gym.Env):
     def reset(self, seed=None):
         if self.seed is not None:
             self.randomizer.seed(seed)
-        self.goal = self.Goal((10, 10), 1)
+
+        # clear turtle.py default environment and stop autostepping
         if self._renderer == "turtle":
             self.screen.clear()
-            self.screen.clear()
+            self.screen.clear()  # grr. buggy?
             self.screen.tracer(0, 0)
+
+        self.goal = self.Goal((10, 10), 1)
         # per-turtle setup
         self.robots = [self.RobotClass(self.screen, undobuffersize=0) for i in range(self.n)]
         for robot in self.robots:
@@ -126,6 +137,7 @@ class Sim(gym.Env):
             robot.setposition(rif(2, self.randomizer), rif(2, self.randomizer))
             robot.setheading(rf(360, self.randomizer))
         self.accumulator = 0
+        self.tick = 0
 
     def seed(self, new_seed):
         self.seed = new_seed
@@ -152,25 +164,27 @@ class Sim(gym.Env):
             rout = r if r > rout else rout
         return rin - rout
 
+    @classmethod
+    def dynamics(cls, x):
+        wl, wr, theta = x
+        cos, sin = math.cos, math.sin
+        r = 0.020  # meters
+        wb = 0.150  # meters
+        v = r * (wl + wr) / 2
+
+        dx = v * cos(math.radians(theta))
+        dy = v * sin(math.radians(theta))
+        dtheta = r / 2 / wb * (wl - wr)
+
+        return dx, dy, dtheta
+
     def step(self, action):
-        def diffeq(wl, wr, theta):
-            cos, sin = math.cos, math.sin
-            r = 0.020  # meters
-            wb = 0.150  # meters
-            v = r * (wl + wr) / 2
-
-            dx = v * cos(math.radians(theta))
-            dy = v * sin(math.radians(theta))
-            dtheta = r / 2 / wb * (wl - wr)
-
-            return dx, dy, dtheta
-
         # Move robots according to actions
         for robot, act in zip(self.robots, action):
             wl, wr = act
             x, y = robot.position()
             theta = robot.heading()
-            dx, dy, dtheta = diffeq(wl, wr, theta)
+            dx, dy, dtheta = Sim.dynamics((wl, wr, theta))
 
             robot.setposition(x + dx, y + dy)
             robot.setheading(theta + dtheta)
@@ -221,6 +235,7 @@ class Sim(gym.Env):
         # punish the longer we go without more robots visiting goal for first time
         self.accumulator -= self.n - how_many_visited_goal
 
+        self.tick += 1
         return observations, self.accumulator, False, False, False, None, False
         # observation:object, reward:float, terminated:bool, truncated:bool, info:dict, deprecated, done:bool
 
