@@ -5,7 +5,8 @@ import caspian
 import random
 import argparse
 import os
-# import time
+import time
+import pathlib
 # import matplotlib.pyplot as plt
 
 # Provided Python utilities from tennlab framework/examples/common
@@ -50,6 +51,7 @@ class TennBots(Application):
         self.episodes = kwargs['episodes']
         self.processes = kwargs['processes']
         self.sim_time = kwargs['sim_time']
+        self.logfile = kwargs['logfile']
 
         # And set parameters specific to usage.  With testing,
         # we'll read the app_params from the network.  Otherwise, we get them from
@@ -125,6 +127,8 @@ class TennBots(Application):
         if kwargs['action'] == "stdin":
             return
 
+        self.log("initialized app")
+
     def fitness(self, processor, network):
         import tennbots
         # setup sim
@@ -179,13 +183,31 @@ class TennBots(Application):
         # loss = sum(loss_graph[-5000:])
         return reward
 
-    def save_network(self, net):
+    def save_network(self, net, safe_overwrite=True):
+        path = pathlib.Path(self.training_network)
         if self.label != "":
             net.set_data("label", self.label)
         net.set_data("processor", self.processor_params)
         net.set_data("application", self.app_params)
-        with open(self.training_network, 'w') as f:
+
+        if safe_overwrite and path.is_file():
+            path.rename(path.with_suffix('.bak'))
+        with open(path, 'w') as f:
             f.write(str(net))
+
+        self.log(f"wrote best network to {str(path)}.")
+
+    def log_status(self, info):
+        print(info)
+        self.log(info)
+
+    def log(self, msg, timestamp="%Y%m%d %H:%M:%S", prompt=' >>> ', end='\n'):
+        if not self.logfile:
+            return
+        if isinstance(timestamp, str) and '%' in timestamp:
+            timestamp: str = time.strftime(timestamp)
+        with open(self.logfile, 'a') as f:
+            f.write(f"{timestamp}{prompt}{msg}{end}")
 
 
 def train(**kwargs):
@@ -210,8 +232,14 @@ def train(**kwargs):
             proc_params=app.processor_params,
             pool=CustomPool(max_workers=processes),
         )
+    evolve.print_callback = app.log_status
 
-    evolve.train(epochs, max_fitness)
+    try:
+        evolve.train(epochs, max_fitness)
+    except KeyboardInterrupt:
+        app.log("training cancelled.")
+        raise
+    app.log("training finished.")
 
     # evolve.graph_fitness()
 
@@ -273,7 +301,9 @@ def main():
     parser.add_argument('--label',
                         help="[train] label to put into network JSON (key = label)")
     parser.add_argument('--training_network',
-                        help="[train] output network file (networks/experiment_tenn1_train.txt)")
+                        help="[train] output network file (networks/experiment_tenn1_train.json)")
+    parser.add_argument('--logfile',
+                        help="[train] running log file (tenn1_train.log)")
 
     parser.add_argument('--bias', help="[train] add a bias neuron (unset)", action="store_true")
     parser.add_argument('--flip_up_stay', help="[train] flip output neurons 0 and 1 (unset)",
@@ -326,6 +356,8 @@ def main():
             config['processes'] = 4
         if not config['training_network']:
             config["training_network"] = os.path.join(directory, 'networks', 'experiment_tenn1_train.txt')
+        if not config['logfile']:
+            config["logfile"] = "tenn1_train.log"
         if not config['label']:
             config["label"] = ""
         if not config['proc_ticks']:

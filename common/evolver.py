@@ -8,6 +8,37 @@ import eons
 from .utils import *
 from .application import *
 
+from dataclasses import dataclass
+
+
+@dataclass
+class EpochInfo:
+    """Class for the results of an epoch"""
+    i: int
+    t_start: float
+    t_fitness: float
+    t_eons: float
+    t_end: float
+    best_network: neuro.Network
+    best_fitness: float
+    validation: float = None
+
+    @property
+    def t_total(self) -> float:
+        return self.t_end - self.t_start
+
+    def __str__(self):
+        # Epoch number and fitness score
+        out = f"Epoch {self.i:3d}: {self.best_fitness:11.4f}"
+        # Validation score if a validation function is present
+        if self.validation is not None:
+            out += " {:11.4f}".format(self.validation)
+        # Network size (nodes / edges)
+        out += f" | Neurons: {self.best_network.num_nodes():3d} Synapses: {self.best_network.num_edges():3d}"
+        # Timing information
+        out += f" | Time: {self.t_fitness:7.4f} {self.t_eons:7.4f} {self.t_total:6.4f}"
+        return out
+
 
 class Evolver:
 
@@ -32,6 +63,9 @@ class Evolver:
         self.initialize_population()
         self.epoch = 0
         self.fitness_by_epoch = list()
+
+        self.print_callback = None
+
 
     def initialize_population(self, rng=1, do_print=False):
 
@@ -91,42 +125,33 @@ class Evolver:
         self.post_epoch()
 
         t_end = time.time()
-        t_total = t_end - t_start
 
-        # Build print status string
-        if do_print:
-            # Epoch number and fitness score
-            ostr = "Epoch {:3d}: {:11.4f}".format(self.epoch, self.best_fitness)
-
-            # Validation score if a validation function is present
-            if validation is not None:
-                ostr += " {:11.4f}".format(validation)
-
-            # Network size (nodes / edges)
-            ostr += " | Neurons: {:3d} Synapses: {:3d}".format(
-                self.best_network.num_nodes(), self.best_network.num_edges())
-
-            # Timing information
-            ostr += " | Time: {:7.4f} {:7.4f} {:6.4f}".format(t_total, t_fitness, t_eons)
-
-            # Any additional user specified information to print
-            if len(add_print) > 0:
-                ostr += " --" + add_print
-
-            # Print our fully built string
-            print(ostr, flush=True)
+        info = EpochInfo(
+            self.epoch,
+            t_start,
+            t_fitness,
+            t_eons,
+            t_end,
+            self.best_network,
+            self.best_fitness,
+            validation
+        )
 
         # Increment our epoch counter
         self.epoch += 1
 
-        return self.best_fitness
+        return info
 
     def train(self, n_epochs, stop_fitness=None):
         # Start with no "best" score
         best = None
 
         for epoch in range(n_epochs):
-            fit = self.do_epoch()
+            info = self.do_epoch()
+            fit = info.best_fitness
+
+            if self.print_callback is not None:
+                self.print_callback(info)
 
             # Check if we have a new best
             if best is None or fit > best:
