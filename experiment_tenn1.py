@@ -9,6 +9,7 @@ import time
 import pathlib
 # import matplotlib.pyplot as plt
 
+
 # Provided Python utilities from tennlab framework/examples/common
 from common.evolver import Evolver
 from common.evolver import MPEvolver
@@ -17,6 +18,11 @@ from common.utils import json
 from common.application import Application
 
 directory = os.path.dirname(os.path.realpath(__file__))
+
+try:
+    import pandas
+except ImportError:
+    pandas = None
 
 
 class CustomPool():
@@ -88,14 +94,16 @@ class TennBots(Application):
 
         # Note: encoders/decoders *can* be saved to or read from the network. not implemented yet.
 
+        # for now they are just being used to calculate n_inputs/outputs
+
         # Setup encoder
         # for each binary raw input, we encode it to constant spikes on bins, kinda like traditional one-hot
         encoder_params = {
-            "dmin": [0] * 4,  # two bins for each binary input
-            "dmax": [1] * 4,
+            "dmin": [0] * 5,  # two bins for each binary input
+            "dmax": [1] * 5,
             "interval": self.app_params['proc_ticks'],
             "named_encoders": {"s": "spikes"},
-            "use_encoders": ["s"] * 4
+            "use_encoders": ["s"] * 5
         }
         self.encoder = neuro.EncoderArray(encoder_params)
         self.n_inputs = self.encoder.get_num_neurons()
@@ -121,18 +129,22 @@ class TennBots(Application):
         # self.action_max = [env.action_space.n-1]
         # self.action_type = env.action_space.dtype.type
 
+        self.log("initialized experiment_tenn1")
+
         # If we're playing from stdin, we can return now -- nothing
         # else is being used
 
         if kwargs['action'] == "stdin":
             return
 
-        self.log("initialized app")
-
     def fitness(self, processor, network):
+        return sum(self.run(processor, network) for i in range(3))
+
+    def run(self, processor, network, prerun_callback=lambda sim: None):
         import tennbots
         # setup sim
-        sim = tennbots.Sim(self.agents, random.Random(), render_mode="human" if self.viz else None)
+        rng = random.Random()
+        sim = tennbots.Sim(self.agents, rng, render_mode="human" if self.viz else None)
         # setup processors
         pprops = processor.get_configuration()
         # print(pprops)
@@ -154,17 +166,20 @@ class TennBots(Application):
 
         def get_action(processor, observation):
             # unpack observation
-            sensor_triggered, on_goal = observation
+            ir_sensed, goal_sensed = observation
             # convert each binary to one-hot and concatenate
-            input_vector = b2oh(sensor_triggered) + b2oh(on_goal)
+            input_vector = b2oh(ir_sensed) + b2oh(goal_sensed) + (rng.randint(0, 1), )
             spikes = encoder.get_spikes(input_vector)
             processor.apply_spikes(spikes)
             processor.run(proc_ticks)
             # action: bool = bool(proc.output_vectors())  # old. don't use.
             data = decoder.get_data_from_processor(processor)
             # four bins. Two for each wheel, one for positive, one for negative.
-            wl, wr = 2 * (data[1] - data[0]), 2 * (data[3] - data[2])
-            return (wl, wr)
+            v = 0.2 * (data[1] - data[0])
+            w = 2.0 * (data[3] - data[2])
+            return (v, w)
+
+        prerun_callback(sim)
 
         for i in range(self.sim_time):
             observations, reward, _, _, info, *_ = sim.step(actions)
@@ -176,9 +191,9 @@ class TennBots(Application):
                 sim.render()
 
         observations, reward, _, _, info, *_ = sim.step(actions)
-        how_many_on_goal = sum([on_goal for sensor_triggered, on_goal in observations])
+        # how_many_goal_sensed = sum([goal_sensed for ir_sensed, goal_sensed in observations])
 
-        reward += (how_many_on_goal ** 2) * 1000
+        # reward += (how_many_on_goal ** 2) * 1000
 
         # loss = sum(loss_graph[-5000:])
         return reward
@@ -257,15 +272,25 @@ def run(**kwargs):
         net = app.net
 
     # Run app and print fitness
+    print("Fitness: {:8.4f}".format(app.run(proc, net)))
 
-    print("Fitness: {:8.4f}".format(app.fitness(proc, net)))
+
+def test(**kwargs):
+    app = TennBots(**kwargs)
+
+    # Set up simulator and network
+    proc = caspian.Processor(app.processor_params)
+    net = app.net
+
+    # Run app and print fitness
+    print("Fitness: {:8.4f}".format(app.run(proc, net)))
 
 
 def main():
     # parse cmd line args and run either `train(...)` or `run(...)`
 
     parser = argparse.ArgumentParser(description='Freeway app for eons, neuro or stdin')
-    parser.add_argument('action', choices=['train', 'test', 'stdin'])
+    parser.add_argument('action', choices=['train', 'test', 'run' 'stdin'])
 
     # Parameters that apply to all situations.  These are the only ones that I give defaults.
 
@@ -282,7 +307,7 @@ def main():
                         action="store_true")
     parser.add_argument('--show_changes', help="[all] print the observations that change (unset)",
                         action="store_true")
-    parser.add_argument('--sim_time', type=float, default=9999,
+    parser.add_argument('--sim_time', type=int, default=9999,
                         help="[train] time steps per simulate() (9999).")
 
     # Parameters that only apply to test or stdin.
@@ -311,6 +336,9 @@ def main():
 
     parser.add_argument('--decoder',
                         help="[train] json for the SpikeDecoder for player's actions (wta-3)")
+
+    parser.add_argument('--testing_data',
+                        help="[test] testing dataset")
 
     # Parameters that only apply to training - all of the other stuff.
     # Again, don't use defaults, because we don't want the user to specify
@@ -355,7 +383,7 @@ def main():
         if not config['processes']:
             config['processes'] = 4
         if not config['training_network']:
-            config["training_network"] = os.path.join(directory, 'networks', 'experiment_tenn1_train.txt')
+            config["training_network"] = os.path.join(directory, 'networks', 'experiment_tenn1_train.json')
         if not config['logfile']:
             config["logfile"] = "tenn1_train.log"
         if not config['label']:
@@ -377,23 +405,26 @@ def main():
             config['viz'] = True
         if not config['viz_delay']:
             config['viz_delay'] = 0.016
-        if args.action == "test":
+        if args.action == "test" or args.action == "run":
             # if config['car_lanes']:
             #     print("Cannot specify --car_lanes with action = test.")
             #     return
             if not config['network']:
                 config["network"] = os.path.join(directory, 'networks', 'experiment_tenn1.json')
+        if args.action == "test":
+            if not config['testing_data']:
+                config["testing_data"] = "validation.csv"
 
     config["environment"] = "tennbots-v00"
 
     # Do the appropriate action
     if args.action == "train":
         train(**config)
+    elif args.action == "test":
+        test(**config)
     else:
         run(**config)
 
 
 if __name__ == "__main__":
     main()
-
-# TODO: spike encoders (perhaps bins with rate encoding)
