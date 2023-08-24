@@ -82,6 +82,7 @@ class TennBots(Application):
             self.training_network = kwargs["training_network"]
             self.eons_params = nutils.load_json_string_file(kwargs["eons_params"])
             self.processor_params = nutils.load_json_string_file(kwargs['processor_params'])
+            self.runs = kwargs['runs']
 
         # If 'test' and an app param hasn't been set, we simply use defaults (we won't be
         # able to read them from the command line).  This is how we can add information to
@@ -138,7 +139,7 @@ class TennBots(Application):
             return
 
     def fitness(self, processor, network):
-        return sum(self.run(processor, network) for i in range(3))
+        return sum(self.run(processor, network) for i in range(self.runs))
 
     def run(self, processor, network, prerun_callback=lambda sim: None):
         import tennbots
@@ -339,6 +340,8 @@ def main():
 
     parser.add_argument('--testing_data',
                         help="[test] testing dataset")
+    parser.add_argument('--runs', required=False, type=int,
+                        help="[train] how many runs are used to calculate fitness for a network")
 
     # Parameters that only apply to training - all of the other stuff.
     # Again, don't use defaults, because we don't want the user to specify
@@ -390,6 +393,8 @@ def main():
             config["label"] = ""
         if not config['proc_ticks']:
             config["proc_ticks"] = 10
+        if not config['runs']:
+            config["runs"] = 1
     else:
         illegal = [
             'eons_params', 'processor_params', 'processes', 'proc_ticks',
