@@ -291,7 +291,7 @@ def main():
     # parse cmd line args and run either `train(...)` or `run(...)`
 
     parser = argparse.ArgumentParser(description='Freeway app for eons, neuro or stdin')
-    parser.add_argument('action', choices=['train', 'test', 'run' 'stdin'])
+    parser.add_argument('action', choices=['train', 'test', 'run', 'stdin'])
 
     # Parameters that apply to all situations.  These are the only ones that I give defaults.
 
