@@ -10,10 +10,11 @@ from dataclasses import dataclass
 # turtle.ht()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-n', default=10)
+parser.add_argument('-n', default=10, type=int)
 parser.add_argument('--net')
 parser.add_argument('--seed', default=None)
 parser.add_argument('--fps', default=None)
+parser.add_argument('--sim_time', type=int, default=9999, help="time steps (9999).")
 parser.add_argument('--render_mode',
                     choices=['None', 'human', 'rgb_array'], default='human',
                     help="use `human` to show or `None` to hide. Default `human`.")
@@ -425,8 +426,9 @@ if __name__ == "__main__":
     )
     # actions = [None] * args.n
     actions = [(0, 0)] * args.n
-    for _ in range(3000):
+    action = [(0.9573899955413868, -0.24592161829306858), (0.917237427329869, 1.463405426779694)]
+    for _ in range(args.sim_time):
         observations, reward, *_ = sim.step(actions)
-        actions = [(0.150, 0.5 if ir_sensed else -0.5) for ir_sensed, cam_sensed in observations]
+        actions = [action[int(ir_sensed)] for ir_sensed, cam_sensed in observations]
         sim.render()
     print(reward)
