@@ -79,6 +79,14 @@ class TennBots(Application):
             self.training_network = kwargs["training_network"]
             self.eons_params = nutils.load_json_string_file(kwargs["eons_params"])
             self.processor_params = nutils.load_json_string_file(kwargs['processor_params'])
+            self.runs = kwargs['runs']
+
+        if kwargs["all_counts_stream"] is not None:
+            self.iostream = neuro.IO_Stream()
+            j = json.loads(kwargs["all_counts_stream"])
+            self.iostream.create_output_from_json(j)
+        else:
+            self.iostream = None
 
         # If 'test' and an app param hasn't been set, we simply use defaults (we won't be
         # able to read them from the command line).  This is how we can add information to
@@ -253,6 +261,7 @@ def main():
     parser.add_argument('--noviz', help="[test,stdin] use game visualizer", action="store_true")
     parser.add_argument('--viz_delay', type=float,
                         help="[test,stdin] change the delay between timesteps in the viz (0.016)")
+    parser.add_argument('--all_counts_stream', help="[run,stdin] use game visualizer")
     parser.add_argument('--prompt', help="[test] wait for a return to continue at each step.", action="store_true")
     parser.add_argument('--network', help="[test] network file (networks/experiment_tenn2.json)")
 
@@ -273,6 +282,9 @@ def main():
     parser.add_argument('--decoder',
                         help="[train] json for the SpikeDecoder for player's actions (wta-3)")
 
+    parser.add_argument('--testing_data',
+                        help="[test] testing dataset")
+
     # Parameters that only apply to training - all of the other stuff.
     # Again, don't use defaults, because we don't want the user to specify
     # them when they don't apply.
@@ -290,6 +302,11 @@ def main():
     parser.add_argument('--epochs', required=False, type=int,
                         help="[train] training epochs (50)")
     parser.add_argument('--graph', help="[train] graph eons results", action="store_true")
+
+    # applies to both train, test
+    parser.add_argument('--runs', required=False, type=int,
+                        help="[train, test] how many runs are used to calculate fitness for a network")
+
     args = parser.parse_args()
 
     config = vars(args)
@@ -338,12 +355,18 @@ def main():
             config['viz'] = True
         if not config['viz_delay']:
             config['viz_delay'] = 0.016
-        if args.action == "test":
-            # if config['car_lanes']:
-            #     print("Cannot specify --car_lanes with action = test.")
-            #     return
+        if args.action == "test" or args.action == "run":
             if not config['network']:
                 config["network"] = os.path.join(directory, 'networks', 'experiment_tenn2.json')
+        if args.action == "test":
+            if not config['testing_data']:
+                config["testing_data"] = "validation.csv"
+        if args.action != "run":
+            if not config['all_counts_stream']:
+                config["all_counts_stream"] = None
+    if args.action in ("train", "test"):
+        if not config['runs']:
+            config["runs"] = 1
 
     config["environment"] = "tennbots-v00"
 
