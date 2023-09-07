@@ -23,8 +23,30 @@ from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber
 # Import the simulation loop
 from novel_swarms.world.simulate import main as simulator
 
+from novel_swarms.gui.agentGUI import DifferentialDriveGUI
 
-def configure_robots(network):
+
+class TennlabGUI(DifferentialDriveGUI):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    # def set_selected(self, agent: MazeAgentCaspian):
+    #     super().set_selected(agent)
+
+    def draw(self, screen):
+        super().draw(screen)
+        if self.selected:
+            a = self.selected
+            try:
+                v, w = a.requested
+            except AttributeError:
+                pass
+            else:
+                self.appendTextToGUI(screen, f"ego v (bodylen): {v}")
+                self.appendTextToGUI(screen, f"ego v   (m/s): {v * 0.151}")
+                self.appendTextToGUI(screen, f"ego ω (rad/s): {w}")
+
+
+def configure_robots(network, track_all=None):
     """
     Select the Robot's Sensors and Embodiment, return the robot configuration
     """
@@ -52,7 +74,8 @@ def configure_robots(network):
         agent_radius=4,  # Body radius, in pixels
         stop_at_goal=False,  # Don't automatically stop this robot when within goal region
         dt=0.13,  # Timestep value
-        body_filled=True  # Color in the body
+        body_filled=True,  # Color in the body
+        neuro_track_all=bool(track_all),
     )
 
     return goal_seeking_robot
@@ -141,7 +164,7 @@ if __name__ == "__main__":
 
     simulator(
         show_gui=False,
-        gui=False,
+        gui=TennlabGUI(),
         world_config=world_config,
         subscribers=[world_subscriber]
     )

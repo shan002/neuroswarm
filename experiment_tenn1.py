@@ -84,6 +84,13 @@ class TennBots(Application):
             self.processor_params = nutils.load_json_string_file(kwargs['processor_params'])
             self.runs = kwargs['runs']
 
+        if kwargs["all_counts_stream"] is not None:
+            self.iostream = neuro.IO_Stream()
+            j = json.loads(kwargs["all_counts_stream"])
+            self.iostream.create_output_from_json(j)
+        else:
+            self.iostream = None
+
         # If 'test' and an app param hasn't been set, we simply use defaults (we won't be
         # able to read them from the command line).  This is how we can add information to
         # networks, and not have old networks be obsolete.
@@ -153,10 +160,15 @@ class TennBots(Application):
         for proc in processors:
             proc.load_network(network)
             neuro.track_all_output_events(proc, network)
-            # proc.track_neuron_events(0)
+            if self.iostream is not None:
+                neuro.track_all_neuron_events(proc, network)
         # setup a spot to save actions to
         actions = [(0, 0)] * self.agents
         loss_graph = []
+
+        if self.iostream is not None:
+            network.make_sorted_node_vector()
+            ids = [x.id for x in network.sorted_node_vector]
 
         # save references for loop optimization
         encoder, decoder = self.encoder, self.decoder
@@ -165,19 +177,24 @@ class TennBots(Application):
         def b2oh(x: bool):
             return (0, 1) if x else (1, 0)
 
-        def get_action(processor, observation):
+        def get_action(processor, observation, i=None):
             # unpack observation
             ir_sensed, goal_sensed = observation
             # convert each binary to one-hot and concatenate
+            # input_vector = b2oh(ir_sensed) + b2oh(goal_sensed) + (1, )
             input_vector = b2oh(ir_sensed) + b2oh(goal_sensed) + (rng.randint(0, 1), )
             spikes = encoder.get_spikes(input_vector)
             processor.apply_spikes(spikes)
             processor.run(proc_ticks)
             # action: bool = bool(proc.output_vectors())  # old. don't use.
+            if self.iostream is not None and i == 0:
+                # print(i, processor.neuron_counts())
+                rv = {"Neuron Alias": ids, "Event Counts": processor.neuron_counts()}
+                self.iostream.write_json(rv)
             data = decoder.get_data_from_processor(processor)
-            # four bins. Two for each wheel, one for positive, one for negative.
-            v = 0.2 * (data[1] - data[0])
-            w = 2.0 * (data[3] - data[2])
+            # four bins. Two for each parameter.
+            v = 0.2 * (data[1] - data[0])  # m/s
+            w = 2.0 * (data[3] - data[2])  # rad/s
             return (v, w)
 
         prerun_callback(sim)
@@ -185,7 +202,7 @@ class TennBots(Application):
         for i in range(self.sim_time):
             observations, reward, _, _, info, *_ = sim.step(actions)
             loss_graph.append(reward)
-            actions = (get_action(p, o) for p, o in zip(processors, observations))
+            actions = (get_action(p, o, i) for i, (p, o) in enumerate(zip(processors, observations)))
             # print(f"obsv: {observations}\n\n")
             # print(f"act: {actions}\n\n")
             if self.viz:
@@ -318,6 +335,7 @@ def main():
     parser.add_argument('--noviz', help="[test,stdin] use game visualizer", action="store_true")
     parser.add_argument('--viz_delay', type=float,
                         help="[test,stdin] change the delay between timesteps in the viz (0.016)")
+    parser.add_argument('--all_counts_stream', help="[run,stdin] use game visualizer")
     parser.add_argument('--prompt', help="[test] wait for a return to continue at each step.", action="store_true")
     parser.add_argument('--network', help="[test] network file (networks/experiment_tenn1.json)")
 
@@ -340,8 +358,6 @@ def main():
 
     parser.add_argument('--testing_data',
                         help="[test] testing dataset")
-    parser.add_argument('--runs', required=False, type=int,
-                        help="[train] how many runs are used to calculate fitness for a network")
 
     # Parameters that only apply to training - all of the other stuff.
     # Again, don't use defaults, because we don't want the user to specify
@@ -360,8 +376,12 @@ def main():
     parser.add_argument('--epochs', required=False, type=int,
                         help="[train] training epochs (50)")
     parser.add_argument('--graph', help="[train] graph eons results", action="store_true")
-    args = parser.parse_args()
 
+    # applies to both train, test
+    parser.add_argument('--runs', required=False, type=int,
+                        help="[train, test] how many runs are used to calculate fitness for a network")
+
+    args = parser.parse_args()
     config = vars(args)
 
     # Go through the pain of error checking the command line, so that users don't think that they
@@ -393,8 +413,6 @@ def main():
             config["label"] = ""
         if not config['proc_ticks']:
             config["proc_ticks"] = 10
-        if not config['runs']:
-            config["runs"] = 1
     else:
         illegal = [
             'eons_params', 'processor_params', 'processes', 'proc_ticks',
@@ -411,14 +429,17 @@ def main():
         if not config['viz_delay']:
             config['viz_delay'] = 0.016
         if args.action == "test" or args.action == "run":
-            # if config['car_lanes']:
-            #     print("Cannot specify --car_lanes with action = test.")
-            #     return
             if not config['network']:
                 config["network"] = os.path.join(directory, 'networks', 'experiment_tenn1.json')
         if args.action == "test":
             if not config['testing_data']:
                 config["testing_data"] = "validation.csv"
+        if args.action != "run":
+            if not config['all_counts_stream']:
+                config["all_counts_stream"] = None
+    if args.action in ("train", "test"):
+        if not config['runs']:
+            config["runs"] = 1
 
     config["environment"] = "tennbots-v00"
 
