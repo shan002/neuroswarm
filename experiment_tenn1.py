@@ -114,7 +114,7 @@ class TennBots(Application):
         decoder_params = {
             # see notes near where decoder is used
             "dmin": [0] * 4,
-            "dmax": [self.app_params['proc_ticks']] * 4,
+            "dmax": [1] * 4,
             "divisor": self.app_params['proc_ticks'],
             "named_decoders": {"r": {"rate": {"discrete": True}}},
             "use_decoders": ["r", "r", "r", "r"]
