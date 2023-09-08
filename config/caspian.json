@@ -1,5 +1,5 @@
 {
-    "Leak_Enable": false,
+    "Leak_Enable": true,
     "Min_Leak": -1,
     "Max_Leak": 4,
     "Min_Axon_Delay": 0,
