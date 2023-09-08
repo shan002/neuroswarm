@@ -8,6 +8,7 @@ The SwarmSimulator allows control of the world and agents at every step within t
 # from novel_swarms.config.AgentConfig import *
 # from novel_swarms.config.HeterogenSwarmConfig import HeterogeneousSwarmConfig
 from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspianConfig
+from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 
 # Import FOV binary sensor
 from novel_swarms.sensors.SensorFactory import SensorFactory
@@ -72,7 +73,8 @@ def configure_robots(network, agent_yaml_path, track_all=None):
     config["network"] = network
     config["neuro_track_all"] = bool(track_all)
 
-    agent_config = MazeAgentCaspianConfig(**config)
+    # agent_config = MazeAgentCaspianConfig(**config)
+    agent_config = MillingAgentCaspianConfig(**config)
     agent_config.controller = Controller('self')
 
     # normal_flockbot.seed = SEED  # I'M NOT SETTING A SEED.
