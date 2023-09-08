@@ -16,7 +16,7 @@ import common.utils as nutils
 from common.utils import json
 from common.application import Application
 
-from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspian
+from zespol.flockbot_caspian import FlockbotCaspian
 
 directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -32,7 +32,7 @@ class CustomPool():
 
 
 class TennBots(Application):
-    """Tennbots application for TennLab neuro framework & Connor RobotSwarmSimulator (RSS)
+    """Tennbots application for TennLab neuro framework & Shay Zespol
 
 
     """
@@ -101,7 +101,7 @@ class TennBots(Application):
 
         # Get the number of neurons from the agent definition
 
-        self.n_inputs, self.n_outputs, _, _ = MazeAgentCaspian.get_default_encoders(10)
+        self.n_inputs, self.n_outputs, _, _ = FlockbotCaspian.get_default_encoders(10)
 
         # Set up the initial gym, and set up the action space.
 
@@ -120,13 +120,12 @@ class TennBots(Application):
             return
 
     def fitness(self, processor, network):
-        import rss2
+        import zespol.zss as zss
         # setup sim
 
         network.set_data("processor", self.processor_params)
 
-        robot_config = rss2.configure_robots(network, track_all=self.viz)
-        world_config = rss2.configure_env(robot_config=robot_config, num_agents=self.agents, stop_at=self.sim_time)
+        agents = zss.make_agents()
 
         reward_history = []
 
@@ -136,15 +135,6 @@ class TennBots(Application):
         def callback(world, screen):
             nonlocal reward_history
             reward_history.append(get_how_many_on_goal(world))
-
-            a = world.selected
-            if a and self.iostream:
-                self.iostream.write_json({
-                    "Neuron Alias": a.neuron_ids,
-                    "Event Counts": a.neuron_counts
-                })
-
-        gui = rss2.TennlabGUI(x=world_config.w, y=0, h=world_config.h, w=200)
 
         world_subscriber = rss2.WorldSubscriber(func=callback)
         world = rss2.simulator(  # noqa run simulator
