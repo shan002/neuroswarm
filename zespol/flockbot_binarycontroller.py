@@ -73,9 +73,9 @@ class FlockbotBinarycontroller(Agent):
         # todo: implement argument validation
         v, omega = self.get_action(world_state)
 
-        self.yaw += omega
         dx = self.max_angular_velocity * math.cos(self.yaw)
         dy = self.max_angular_velocity * math.sin(self.yaw)
+        self.yaw += omega
 
         # omega = (left_wheel_angular_velocity + right_wheel_angular_velocity) /
         # x_scalar: float = self.half_wheel_radius * math.cos(self.yaw)

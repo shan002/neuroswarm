@@ -99,7 +99,7 @@ def main(config: dict) -> None:
     print(f"--> {sname}: initializing agents")
     agents: list[Agent] = []
     for i in range(num_agents):
-        agent = EPuckRobot(
+        agent = FlockbotCaspian(
             x=(world_size[0] / 2) + (random.random() * 5),  # spawn_points[i][0],
             y=(world_size[1] / 2) + (random.random() * 5),  # spawn_points[i][1],
             yaw=math.pi / 8,  # (random.random() * 2 * math.pi),
