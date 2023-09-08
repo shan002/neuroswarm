@@ -53,6 +53,8 @@ class TennBots(Application):
         self.episodes = kwargs['episodes']
         self.processes = kwargs['processes']
         self.sim_time = kwargs['sim_time']
+        self.agent_yaml = kwargs['agent_yaml']
+        self.world_yaml = kwargs['world_yaml']
         self.logfile = kwargs['logfile']
         self.run_info = None
 
@@ -125,8 +127,9 @@ class TennBots(Application):
 
         network.set_data("processor", self.processor_params)
 
-        robot_config = rss2.configure_robots(network, track_all=self.viz)
-        world_config = rss2.configure_env(robot_config=robot_config, num_agents=self.agents, stop_at=self.sim_time)
+        robot_config = rss2.configure_robots(network, agent_yaml_path=self.agent_yaml, track_all=self.viz)
+        world_config = rss2.configure_env(robot_config=robot_config, world_yaml_path=self.world_yaml,
+                                          num_agents=self.agents, stop_at=self.sim_time)
 
         reward_history = []
 
@@ -135,7 +138,7 @@ class TennBots(Application):
 
         def callback(world, screen):
             nonlocal reward_history
-            reward_history.append(get_how_many_on_goal(world))
+            # reward_history.append(get_how_many_on_goal(world))
 
             a = world.selected
             if a and self.iostream:
@@ -147,7 +150,7 @@ class TennBots(Application):
         gui = rss2.TennlabGUI(x=world_config.w, y=0, h=world_config.h, w=200)
 
         world_subscriber = rss2.WorldSubscriber(func=callback)
-        world = rss2.simulator(  # noqa run simulator
+        world_output = rss2.simulator(  # noqa run simulator
             world_config=world_config,
             subscribers=[world_subscriber],
             gui=gui if self.viz else False,
@@ -155,8 +158,10 @@ class TennBots(Application):
         )
 
         # print(f"final count: {get_how_many_on_goal(world)}")
-        self.run_info = reward_history
-        return reward_history[-1]
+        # self.run_info = reward_history
+        # return reward_history[-1]
+        self.run_info = world_output.behavior[0].value_history
+        return world_output.behavior[0].out_current()[1]
 
     def save_network(self, net, safe_overwrite=True):
         path = pathlib.Path(self.training_network)
@@ -252,6 +257,10 @@ def main():
                         help="[all] one big run/10 small runs/1 small run (big_run).")
     parser.add_argument('--episodes', default=1, type=int, help="[all] # of episodes to run (1)")
     parser.add_argument('--agents', default=10, type=int, help="[all] # of agents to run with.")
+    parser.add_argument('--agent_yaml', default="../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/flockbot.yaml",
+                        type=str, help="path to yaml config for agent")
+    parser.add_argument('--world_yaml', default="../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/world.yaml",
+                        type=str, help="path to yaml config for world")
     parser.add_argument('--show_collisions',
                         help="[all] print whether there is a collision (unset)",
                         action="store_true")
