@@ -123,5 +123,5 @@ def configure_env(robot_config, world_yaml_path, num_agents=20, seed=None, stop_
     world.factor_zoom(SCALE)
     world.seed = seed
     world.stop_at = stop_at
-    world.behavior = [Circliness(history=stop_at)]
+    world.behavior = [Circliness(history=stop_at, avg_history_max=450)]
     return world
