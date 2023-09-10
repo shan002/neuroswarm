@@ -1,5 +1,3 @@
-import neuro
-
 class Application:
 
     def __init__(self):

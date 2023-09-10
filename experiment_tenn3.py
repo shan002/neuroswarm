@@ -7,6 +7,7 @@ import argparse
 import os
 import time
 import pathlib
+import inspect
 # import matplotlib.pyplot as plt
 
 # Provided Python utilities from tennlab framework/examples/common
@@ -37,25 +38,18 @@ class TennBots(Application):
 
     """
 
-    def __init__(self, **kwargs):
-        self.n_inputs = 2  # default. set one later in the code if necessary
-        self.n_outputs = 2  # default. set one later in the code if necessary
-
-        self.env_name = kwargs['environment']
-        self.label = kwargs['label']
-        self.seed = kwargs['seed']
-        self.viz = kwargs['viz']
-        self.agents = kwargs['agents']
-        self.prompt = kwargs['prompt']
-        self.viz_delay = kwargs['viz_delay']
-        self.big_fitness = (kwargs['methodology'] == 'big_run')
-        self.one_small = (kwargs['methodology'] == 'one_small')
-        self.episodes = kwargs['episodes']
-        self.processes = kwargs['processes']
-        self.sim_time = kwargs['sim_time']
-        self.logfile = kwargs['logfile']
+    def __init__(self, args):
+        self.env_name = args.environment
+        self.label = args.label
+        self.seed = args.seed
+        self.viz = args.viz
+        self.agents = args.agents
+        self.prompt = args.prompt
+        self.viz_delay = args.viz_delay
+        self.processes = args.processes
+        self.sim_time = args.sim_time
+        self.logfile = args.logfile
         self.run_info = None
-
         # And set parameters specific to usage.  With testing,
         # we'll read the app_params from the network.  Otherwise, we get them from
         # the command line or defaults.
@@ -64,8 +58,8 @@ class TennBots(Application):
         self.app_params = dict()
 
         # Copy network from file into memory, including processor & app params
-        if kwargs['action'] == "test":
-            with open(kwargs['network']) as f:
+        if args.action == "test":
+            with open(args.network) as f:
                 j = json.loads(f.read())
             self.net = neuro.Network()
             self.net.from_json(j)
@@ -73,29 +67,26 @@ class TennBots(Application):
             self.app_params = self.net.get_data("application").to_python()
 
         # Get params from defaults/cmd params and default proc/eons cfg
-        elif kwargs['action'] == "train":
-            # self.input_time = kwargs['input_time']
-            self.proc_ticks = kwargs['proc_ticks']
-            self.training_network = kwargs["training_network"]
-            self.eons_params = nutils.load_json_string_file(kwargs["eons_params"])
-            self.processor_params = nutils.load_json_string_file(kwargs['processor_params'])
-            self.runs = kwargs['runs']
+        elif args.action == "train":
+            # self.input_time = args.input_time
+            self.proc_ticks = args.proc_ticks
+            self.training_network = args.training_network
+            self.eons_params = nutils.load_json_string_file(args.eons_params)
+            self.processor_params = nutils.load_json_string_file(args.processor_params)
+            self.runs = args.runs
 
-        if kwargs["all_counts_stream"] is not None:
+        if args.all_counts_stream is not None:
             self.iostream = neuro.IO_Stream()
-            j = json.loads(kwargs["all_counts_stream"])
+            j = json.loads(args.all_counts_stream)
             self.iostream.create_output_from_json(j)
         else:
             self.iostream = None
 
-        # If 'test' and an app param hasn't been set, we simply use defaults (we won't be
-        # able to read them from the command line).  This is how we can add information to
-        # networks, and not have old networks be obsolete.
-
+        # If an app param hasn't been set on the network, use defaults.
+        # This helps prevent old networks from becoming obsolete.
         for arg in app_params:
             if not (arg in self.app_params):
-                self.app_params[arg] = kwargs[arg]
-        # self.flip_up_stay = self.app_params['flip_up_stay']
+                self.app_params[arg] = vars(args)[arg]
 
         # Note: encoders/decoders *can* be saved to or read from the network. not implemented yet.
 
@@ -115,9 +106,6 @@ class TennBots(Application):
 
         # If we're playing from stdin, we can return now -- nothing
         # else is being used
-
-        if kwargs['action'] == "stdin":
-            return
 
     def fitness(self, processor, network):
         metrics = self.run(processor, network)
@@ -176,12 +164,12 @@ class TennBots(Application):
             f.write(f"{timestamp}{prompt}{msg}{end}")
 
 
-def train(**kwargs):
-    app = TennBots(**kwargs)
+def train(args):
+    app = TennBots(args)
 
-    processes = kwargs["processes"]
-    epochs = kwargs["epochs"]
-    max_fitness = kwargs["max_fitness"]
+    processes = args.processes
+    epochs = args.epochs
+    max_fitness = args.max_fitness
 
     app.log("initialized experiment_tenn3 for training.")
 
@@ -212,12 +200,12 @@ def train(**kwargs):
     # evolve.graph_fitness()
 
 
-def run(**kwargs):
-    app = TennBots(**kwargs)
+def run(args):
+    app = TennBots(args)
 
     # Set up simulator and network
 
-    if kwargs["action"] == "stdin":
+    if args.stdin == "stdin":
         proc = None
         net = None
     else:
@@ -229,154 +217,87 @@ def run(**kwargs):
     print("Fitness: {:8.4f}".format(app.fitness(proc, net)))
 
 
-def main():
+def get_parser():
     # parse cmd line args and run either `train(...)` or `run(...)`
+    HelpDefaults = argparse.ArgumentDefaultsHelpFormatter
+    parser = argparse.ArgumentParser(
+        description='Script for running Zespol sims for milling.',
+        formatter_class=HelpDefaults,
+    )
 
-    parser = argparse.ArgumentParser(description='Freeway app for eons, neuro or stdin')
-    parser.add_argument('action', choices=['train', 'test', 'stdin'])
+    subpar = parser.add_subparsers(required=True, dest='action', metavar='ACTION')
+    sub_train = subpar.add_parser('train', help='Do training using EONS', formatter_class=HelpDefaults)
+    sub_test = subpar.add_parser('test', help='Validate over a testing set and output the score.',
+                                 aliases=['validate'], formatter_class=HelpDefaults)
+    sub_run = subpar.add_parser('run', help='Run a simulation and output the score.', formatter_class=HelpDefaults)
 
-    # Parameters that apply to all situations.  These are the only ones that I give defaults.
-
-    parser.add_argument('--seed', default=0, type=int, help="[all] rng seed for the app (0)")
-    parser.add_argument('--methodology',
-                        choices=['big_run', 'small_runs', 'one_small'], default='big_run',
-                        help="[all] one big run/10 small runs/1 small run (big_run).")
-    parser.add_argument('--episodes', default=1, type=int, help="[all] # of episodes to run (1)")
-    parser.add_argument('--agents', default=10, type=int, help="[all] # of agents to run with.")
-    parser.add_argument('--show_collisions',
-                        help="[all] print whether there is a collision (unset)",
-                        action="store_true")
-    parser.add_argument('--show_observations', help="[all] print all 128 observations (unset)",
-                        action="store_true")
-    parser.add_argument('--show_changes', help="[all] print the observations that change (unset)",
-                        action="store_true")
+    # Parameters that apply to all situations.
+    parser.add_argument('--seed', type=int, help="rng seed for the app", default=0)
+    parser.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=10)
     parser.add_argument('--sim_time', type=int, default=1000,
-                        help="[train] time steps per simulate() (9999).")
+                        help="time steps per simulate.")
 
-    # Parameters that only apply to test or stdin.
-    # Don't use defaults here, because we don't want the user to specify them when they don't apply.
+    for sub in (sub_test, sub_run):  # arguments that apply to test/validation and stdin
+        sub.add_argument('--stdin', help="Use stdin as input.", action="store_true")
+        sub.add_argument('--prompt', help="wait for a return to continue at each step.", action="store_true")
+        sub.add_argument('--network', help="network", default="networks/experiment_tenn3.json")
+        sub.add_argument('--viz', type=str, help="specify a specific visualizer")
+        sub.add_argument('--noviz', help="explicitly disable viz", action="store_true")
+        sub.add_argument('--viz_delay', type=float,  # default: None
+                         help="delay between timesteps for viz.")
+        sub.add_argument('--all_counts_stream', type=str, help="""
+            Takes a json string.
+            If supplied, this will enable sending of network
+            info to iostream for network visualization.
+            e.g. '{"source":"serve","port":8100}'
+        """)
 
-    parser.add_argument('--viz', help="[test,stdin] use game visualizer", action="store_true")
-    parser.add_argument('--noviz', help="[test,stdin] use game visualizer", action="store_true")
-    parser.add_argument('--viz_delay', type=float,
-                        help="[test,stdin] change the delay between timesteps in the viz (0.016)")
-    parser.add_argument('--all_counts_stream', help="[run,stdin] use game visualizer")
-    parser.add_argument('--prompt', help="[test] wait for a return to continue at each step.", action="store_true")
-    parser.add_argument('--network', help="[test] network file (networks/experiment_tenn3.json)")
+    # Training args
+    sub_train.add_argument('--label', help="[train] label to put into network JSON (key = label).")
+    sub_train.add_argument('--network', default="networks/experiment_tenn3_train.json",
+                           help="output network file path.")
+    sub_train.add_argument('--logfile', default="tenn1_train.log",
+                           help="running log file path.")
 
-    # Parameters that only apply to training - observations and spike encoders.
-    # Don't use defaults here, because we don't want the user to specify them when they don't apply.
-
-    parser.add_argument('--label',
-                        help="[train] label to put into network JSON (key = label)")
-    parser.add_argument('--training_network',
-                        help="[train] output network file (networks/experiment_tenn3_train.json)")
-    parser.add_argument('--logfile',
-                        help="[train] running log file (tenn1_train.log)")
-
-    parser.add_argument('--bias', help="[train] add a bias neuron (unset)", action="store_true")
-    parser.add_argument('--flip_up_stay', help="[train] flip output neurons 0 and 1 (unset)",
-                        action="store_true")
-
-    parser.add_argument('--decoder',
-                        help="[train] json for the SpikeDecoder for player's actions (wta-3)")
-
-    parser.add_argument('--testing_data',
-                        help="[test] testing dataset")
-
-    # Parameters that only apply to training - all of the other stuff.
-    # Again, don't use defaults, because we don't want the user to specify
-    # them when they don't apply.
-
-    parser.add_argument('--proc_ticks', type=float,
-                        help="[train] time steps per processor output (10).")
-    # parser.add_argument('--input_time', type=float,
+    sub_train.add_argument('--proc_ticks', type=int, default=10,
+                           help="time steps per processor output.")
+    # sub_train.add_argument('--input_time', type=float,
     #                     help="[train] time steps over which to pulse input (50).")
-    parser.add_argument('--eons_params', help="[train] json for eons parameters (eons/std.json)")
-    parser.add_argument('--processor_params',
-                        help="[train] json for processor parameters (config/caspian.json)")
-    parser.add_argument('--processes', type=int, help="[train] # threads (1)")
-    parser.add_argument('--max_fitness', required=False, type=int,
-                        help="[train] stop eons if this fitness is achieved (34/1)")
-    parser.add_argument('--epochs', required=False, type=int,
-                        help="[train] training epochs (50)")
-    parser.add_argument('--graph', help="[train] graph eons results", action="store_true")
+    sub_train.add_argument('--eons_params', default="eons/std.json",
+                           help="json for eons parameters.")
+    sub_train.add_argument('--processor_params', default="config/caspian.json",
+                           help="json for processor parameters.")
+    sub_train.add_argument('-p', '--processes', type=int, default=1,
+                           help="number of threads for concurrent fitness evaluation.")
+    sub_train.add_argument('--max_fitness', type=float, default=9999999999,
+                           help="stop eons if this fitness is achieved.")
+    sub_train.add_argument('--epochs', type=int, default=999,
+                           help="training epochs")
+    sub_train.add_argument('--graph_distribution', help="Specify a file to output fitness distribution over epochs.")
 
-    # applies to both train, test
-    parser.add_argument('--runs', required=False, type=int,
-                        help="[train, test] how many runs are used to calculate fitness for a network")
+    for sub in (sub_train, sub_test):  # applies to both train, test
+        sub.add_argument('--runs', type=int, default=1,
+                         help="how many runs are used to calculate fitness for a network.")
 
-    args = parser.parse_args()
+    sub_test.add_argument('--testing_data', required=True,
+                          help="testing dataset file path.")
 
-    config = vars(args)
+    return parser
 
-    # Go through the pain of error checking the command line, so that users don't think that they
-    # are setting parameters that they are not.  Also set defaults here.
 
-    if args.action == "train":
-        illegal = ['viz', 'viz_delay', 'network', 'prompt']
-        for s in illegal:
-            if config[s]:
-                print(f"Cannot specify --{s} with action = {args.action}")
-                return
-        # if not config['input_time']:
-        #     config['input_time'] = 30
-        if not config['max_fitness']:
-            config['max_fitness'] = 999999999 if config['methodology'] == "big_run" else 1
-        if not config['epochs']:
-            config['epochs'] = 1000
-        if not config['eons_params']:
-            config["eons_params"] = os.path.join(directory, 'eons', 'std.json')
-        if not config['processor_params']:
-            config["processor_params"] = os.path.join(directory, 'config', 'caspian.json')
-        if not config['processes']:
-            config['processes'] = 4
-        if not config['training_network']:
-            config["training_network"] = os.path.join(directory, 'networks', 'experiment_tenn3_train.json')
-        if not config['logfile']:
-            config["logfile"] = "tenn3_train.log"
-        if not config['label']:
-            config["label"] = ""
-        if not config['proc_ticks']:
-            config["proc_ticks"] = 10
-    else:
-        illegal = [
-            'eons_params', 'processor_params', 'processes', 'proc_ticks',
-            'epochs', 'training_network', 'max_fitness', 'graph',
-        ]
-        for s in illegal:
-            if config[s]:
-                print(f"Cannot specify --{s} with action = {args.action}")
-                return
-        if config['noviz']:
-            config['viz'] = False
-        else:
-            config['viz'] = True
-        if not config['viz_delay']:
-            config['viz_delay'] = 0.016
-        if args.action == "test" or args.action == "run":
-            if not config['network']:
-                config["network"] = os.path.join(directory, 'networks', 'experiment_tenn3.json')
-        if args.action == "test":
-            if not config['testing_data']:
-                config["testing_data"] = "validation.csv"
-        if args.action != "run":
-            if not config['all_counts_stream']:
-                config["all_counts_stream"] = None
-    if args.action in ("train", "test"):
-        if not config['runs']:
-            config["runs"] = 1
-
-    config["environment"] = "tennbots-v00"
+def main(args):
+    args.environment = "tennbots-v00"
 
     # Do the appropriate action
     if args.action == "train":
-        train(**config)
+        train(args)
     else:
-        run(**config)
+        if args.noviz:
+            args.viz = False
+        run(args)
 
 
 if __name__ == "__main__":
-    main()
-
-# TODO: spike encoders (perhaps bins with rate encoding)
+    parser = get_parser()
+    args = parser.parse_args()
+    main(args)
