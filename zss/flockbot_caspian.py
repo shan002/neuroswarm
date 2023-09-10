@@ -45,7 +45,7 @@ class FlockbotCaspian(FlockbotBinarycontroller):
     def get_default_encoders(neuro_tpc):
         encoder_params = {
             "dmin": [0] * 2,  # two bins for each binary input + extra
-            "dmax": [1] * 2,
+            "dmax": [1] * 2,  # binary input
             "interval": neuro_tpc,
             "named_encoders": {"s": "spikes"},
             "use_encoders": ["s"] * 2
@@ -53,7 +53,7 @@ class FlockbotCaspian(FlockbotBinarycontroller):
         decoder_params = {
             # see notes near where decoder is used
             "dmin": [0] * 4,
-            "dmax": [1] * 4,
+            "dmax": [1] * 4,  # outputs normalized to within [0, 1]
             "divisor": neuro_tpc,
             "named_decoders": {"r": {"rate": {"discrete": True}}},
             "use_decoders": ["r"] * 4
@@ -115,11 +115,6 @@ class FlockbotCaspian(FlockbotBinarycontroller):
         if self.neuro_track_all:
             self.neuron_counts = self.processor.neuron_counts()
         data = self.decoder.get_data_from_processor(self.processor)
-        """  old wheelspeed code.
-            # four bins. Two for each wheel, one for positive, one for negative.
-            wl, wr = 2 * (data[1] - data[0]), 2 * (data[3] - data[2])
-            return (wl, wr)
-        """
         # three bins. One for +v, -v, omega.
         v = (data[1] - data[0])
         w = (data[3] - data[2])
@@ -133,7 +128,8 @@ class FlockbotCaspian(FlockbotBinarycontroller):
         ) for sensor in self.sensors]
 
         a, b = self.run_processor(observations)
-        v = a * 0.2
-        omega = b * 2.0
+        # scale normalized decoder output to actual values
+        v = a * 0.2  # m/s
+        omega = b * 2.0  # rad/s
         self.requested = v, omega
         return self.requested

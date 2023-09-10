@@ -79,8 +79,10 @@ class FlockbotBinarycontroller(Agent):
         """
 
         # todo: implement argument validation
-        v, d_yaw = self.get_action(world_state)
+        actions = np.asarray(self.get_action(world_state))
+        v, d_yaw = actions * self.spt  # scale each action by timestep.
 
+        # implement dynamics
         dx = v * math.cos(self.yaw)
         dy = v * math.sin(self.yaw)
         self.yaw += d_yaw
