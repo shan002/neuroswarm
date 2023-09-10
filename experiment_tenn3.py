@@ -16,7 +16,7 @@ import common.utils as nutils
 from common.utils import json
 from common.application import Application
 
-from zespol.flockbot_caspian import FlockbotCaspian
+from zss.flockbot_caspian import FlockbotCaspian
 
 directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -120,33 +120,34 @@ class TennBots(Application):
             return
 
     def fitness(self, processor, network):
-        import zespol.zss as zss
+        metrics = self.run(processor, network)
+        return metrics["Circliness"]
+
+    def run(self, processor, network):
+        import zss
         # setup sim
 
         network.set_data("processor", self.processor_params)
 
-        agents = zss.make_agents()
+        zespol_config = {
+            "num_agents": self.agents,
+            "ticks": self.sim_time,
+            "ticks_per_second": 7.5,
+            "viz": self.viz,
+            "network": network,
+            "neuro_tpc": self.app_params['proc_ticks']
+        }
 
-        reward_history = []
+        world = zss.setup_world(zespol_config)
 
-        def get_how_many_on_goal(world):
-            return sum([int(world.goals[0].agent_achieved_goal(agent)) for agent in world.population])
-
-        def callback(world, screen):
-            nonlocal reward_history
-            reward_history.append(get_how_many_on_goal(world))
-
-        world_subscriber = rss2.WorldSubscriber(func=callback)
-        world = rss2.simulator(  # noqa run simulator
-            world_config=world_config,
-            subscribers=[world_subscriber],
-            gui=gui if self.viz else False,
-            show_gui=self.viz,
-        )
+        for t in range(self.sim_time):
+            world.tick()
+            metrics = world.metric_window[-1]
 
         # print(f"final count: {get_how_many_on_goal(world)}")
-        self.run_info = reward_history
-        return reward_history[-1]
+        # self.run_info = reward_history
+        # return reward_history[-1]
+        return metrics
 
     def save_network(self, net, safe_overwrite=True):
         path = pathlib.Path(self.training_network)
@@ -249,7 +250,7 @@ def main():
                         action="store_true")
     parser.add_argument('--show_changes', help="[all] print the observations that change (unset)",
                         action="store_true")
-    parser.add_argument('--sim_time', type=float, default=2000,
+    parser.add_argument('--sim_time', type=int, default=1000,
                         help="[train] time steps per simulate() (9999).")
 
     # Parameters that only apply to test or stdin.

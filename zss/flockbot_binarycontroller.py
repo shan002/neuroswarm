@@ -20,6 +20,8 @@ except (ImportError, ModuleNotFoundError):
 
 
 class FlockbotBinarycontroller(Agent):
+    agent_radius: float = 0.151
+
     def __init__(
         self,
         name: str,
@@ -28,30 +30,36 @@ class FlockbotBinarycontroller(Agent):
         spt: float,
         sensors: List[BinarySensor],
         controller=[0.1, 0.5, 0.1, -0.5],
-        agent_radius: float = 0.16,
+        agent_radius=agent_radius,
     ) -> None:
         try:
-            x, y, z = *pos
+            x, y, z = pos
         except ValueError:
-            x, y = *pos
+            x, y = pos
             z = 0.0
 
         if isinstance(heading, float):
+            yaw = heading
             roll = pitch = 0.0
         else:
             yaw, pitch, roll = heading
         super().__init__(x=x, y=y, z=z, pitch=pitch, roll=roll, yaw=yaw, name=name, spt=spt)
 
+        self.agent_radius = agent_radius
+        self.controller = controller
+        self.sensors = sensors
+
         self.rng = random.Random()
 
     def get_action(self, world_state) -> Tuple:
         # observations = (sensor.sense() for sensor in self.sensors)
-        observations = [self.sensor.sense(
+        observations = [sensor.sense(
             agent_name=self.name,
             world_state=world_state
-        )]
+        ) for sensor in self.sensors]
+        sensor_triggered, *_ = observations  # unpack first observation
         c = self.controller
-        v, omega = c[0:2] if observations[0] else c[2:4]
+        v, omega = c[0:2] if sensor_triggered else c[2:4]
         self.requested = v, omega
         return self.requested
 
@@ -71,13 +79,13 @@ class FlockbotBinarycontroller(Agent):
         """
 
         # todo: implement argument validation
-        v, omega = self.get_action(world_state)
+        v, d_yaw = self.get_action(world_state)
 
-        dx = self.max_angular_velocity * math.cos(self.yaw)
-        dy = self.max_angular_velocity * math.sin(self.yaw)
-        self.yaw += omega
+        dx = v * math.cos(self.yaw)
+        dy = v * math.sin(self.yaw)
+        self.yaw += d_yaw
 
-        # omega = (left_wheel_angular_velocity + right_wheel_angular_velocity) /
+        # d_yaw = (left_wheel_angular_velocity + right_wheel_angular_velocity) /
         # x_scalar: float = self.half_wheel_radius * math.cos(self.yaw)
         # y_scalar: float = self.half_wheel_radius * math.sin(self.yaw)
 
@@ -110,7 +118,7 @@ class FlockbotBinarycontroller(Agent):
             self.x = x
             self.y = y
             # self.yaw =
-            print(f"{self.tick_count} \t | a: {self.name} \t x: {self.x: 8.5}, y: {self.y: 8.5},")
+            # print(f"{self.tick_count} \t | a: {self.name} \t x: {self.x: 8.5}, y: {self.y: 8.5},")
 
         self.tick_count += 1
         return self

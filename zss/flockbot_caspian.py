@@ -1,7 +1,7 @@
 import neuro
 import caspian
 
-from flockbot_binarycontroller import FlockbotBinarycontroller
+from .flockbot_binarycontroller import FlockbotBinarycontroller
 
 # typing
 from typing import List, Tuple
@@ -22,11 +22,13 @@ class FlockbotCaspian(FlockbotBinarycontroller):
         network: dict,
         agent_radius: float = 0.16,
         neuro_track_all: bool = False,
+        neuro_tpc: int = 10,
     ) -> None:
         super().__init__(pos=pos, heading=heading, sensors=sensors,
                          name=name, controller="Caspian", spt=spt)
 
         self.network = network
+        self.neuro_tpc = neuro_tpc
 
         # for tracking neuron activity
         self.neuron_counts = None
@@ -99,9 +101,11 @@ class FlockbotCaspian(FlockbotBinarycontroller):
     def run_processor(self, observations):
         b2oh = self.bool_to_one_hot
 
+        observation, *_ = observations  # unpack first observation
+
         # translate observation to vector
-        input_vector = b2oh(observations[0])
-        input_vector += (1,)  # add 1 as constant on input to 5th input neuron
+        input_vector = b2oh(observation)
+        # input_vector += (1,)  # add 1 as constant on input to 5th input neuron
         # input_vector += (self.rng.randint(0, 1),)  # add random input to 5th input neuron
 
         spikes = self.encoder.get_spikes(input_vector)
@@ -123,10 +127,10 @@ class FlockbotCaspian(FlockbotBinarycontroller):
 
     def get_action(self, world_state) -> Tuple:
         # observations = (sensor.sense() for sensor in self.sensors)
-        observations = [self.sensor.sense(
+        observations = [sensor.sense(
             agent_name=self.name,
             world_state=world_state
-        )]
+        ) for sensor in self.sensors]
 
         a, b = self.run_processor(observations)
         v = a * 0.2
