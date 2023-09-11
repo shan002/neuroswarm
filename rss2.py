@@ -56,7 +56,7 @@ class TennlabGUI(DifferentialDriveGUI):
                 self.appendTextToGUI(screen, f"ego ω (rad/s): {w}")
 
 
-def configure_robots(network, agent_yaml_path, track_all=None):
+def configure_robots(network, agent_yaml_path, seed=None, track_all=None):
     """
     Select the Robot's Sensors and Embodiment, return the robot configuration
     """
@@ -77,7 +77,8 @@ def configure_robots(network, agent_yaml_path, track_all=None):
     agent_config = MillingAgentCaspianConfig(**config)
     agent_config.controller = Controller('self')
 
-    # normal_flockbot.seed = SEED  # I'M NOT SETTING A SEED.
+    if seed is not None:
+        normal_flockbot.seed = seed
 
     # Uncomment to remove FN/FP from agents (Testing)
     # normal_flockbot.sensors.sensors[0].fn = 0.0
@@ -121,7 +122,8 @@ def configure_env(robot_config, world_yaml_path, num_agents=20, seed=None, stop_
         )
     '''
     world.factor_zoom(SCALE)
-    world.seed = seed
+    if seed is not None:
+        world.seed = seed
     world.stop_at = stop_at
     world.behavior = [Circliness(history=stop_at, avg_history_max=450)]
     return world
