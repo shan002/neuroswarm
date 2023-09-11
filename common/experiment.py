@@ -32,7 +32,7 @@ class TennExperiment(Application):
     def __init__(self, args):
         self.env_name = args.environment
         self.label = args.label
-        self.seed = args.seed
+        # self.eons_seed = args.eons_seed
         self.viz = args.viz
         self.agents = args.agents
         self.prompt = args.prompt
@@ -40,7 +40,8 @@ class TennExperiment(Application):
         self.processes = args.processes
         self.sim_time = args.sim_time
         self.logfile = args.logfile
-        self.run_info = None
+        self.graph_distribution = args.graph_distribution
+
         # And set parameters specific to usage.  With testing,
         # we'll read the app_params from the network.  Otherwise, we get them from
         # the command line or defaults.
@@ -86,6 +87,11 @@ class TennExperiment(Application):
 
         self.n_inputs, self.n_outputs, = None, None
 
+        if self.graph_distribution:
+            self.log(str(args), logpath=self.graph_distribution)
+            with open(self.graph_distribution, 'a') as f:
+                f.write(f"{time.time()}\t{0}\t[]\n")
+
     def fitness(self, processor, network):
         return None
 
@@ -94,10 +100,27 @@ class TennExperiment(Application):
 
     def check_output_path(self):
         path = pathlib.Path(self.training_network)
-        if not os.access(path, os.W_OK):
-            raise PermissionError(f"{path} could not be accessed. Check that the parent directory exists and that you have permissions to write to it.")  # noqa
+
+        def check_if_writable(path):
+            if not os.access(path, os.W_OK):
+                raise PermissionError(
+                    f"{path} could not be accessed. Check that you have permissions to write to it."
+                )
         if path.is_file():
+            check_if_writable(path)
             print(f"WARNING: The output network file\n    {path}\nexists and will be overwritten!")
+        elif path.is_dir():
+            raise OSError(1, f"{path} is a directory. Please specify a valid path for the output network file.")
+        else:  # parent dir probably doesn't exist.
+            if path.parent.is_dir():
+                try:
+                    f = open(path, 'ab')
+                except BaseException as err:
+                    raise err
+                finally:
+                    f.close()
+            else:
+                raise OSError(2, f"One or more parent directories are missing. Cannot write to {path}.")
 
     def save_network(self, net, safe_overwrite=True):
         path = pathlib.Path(self.training_network)
@@ -117,12 +140,18 @@ class TennExperiment(Application):
         print(info)
         self.log(info)
 
-    def log(self, msg, timestamp="%Y%m%d %H:%M:%S", prompt=' >>> ', end='\n'):
-        if not self.logfile:
+        if self.graph_distribution:
+            with open(self.graph_distribution, 'a') as f:
+                f.write(f"{time.time()}\t{info.i}\t{repr(info.fitnesses)}\n")
+
+    def log(self, msg, timestamp="%Y%m%d %H:%M:%S", prompt=' >>> ', end='\n', logpath=None):
+        if logpath is None:
+            logpath = self.logfile
+        if logpath is None:
             return
         if isinstance(timestamp, str) and '%' in timestamp:
             timestamp: str = time.strftime(timestamp)
-        with open(self.logfile, 'a') as f:
+        with open(logpath, 'a') as f:
             f.write(f"{timestamp}{prompt}{msg}{end}")
 
 
@@ -177,22 +206,25 @@ def run(app, args):
     print("Fitness: {:8.4f}".format(app.fitness(proc, net)))
 
 
-def get_parser():
+def get_parsers(conflict_handler='resolve'):
     # parse cmd line args and run either `train(...)` or `run(...)`
     HelpDefaults = util.argparse.ArgumentDefaultsHelpFormatter
+    ch = conflict_handler
     parser = util.argparse.ArgumentParser(
         description='Script for running an experiment or training an SNN with EONS.',
         formatter_class=HelpDefaults,
+        conflict_handler=ch,
     )
 
     subpar = parser.add_subparsers(required=True, dest='action', metavar='ACTION', add_all=True)
-    sub_train = subpar.add_parser('train', help='Do training using EONS', formatter_class=HelpDefaults)
+    sub_train = subpar.add_parser('train', help='Do training using EONS', formatter_class=HelpDefaults, conflict_handler=ch,)
     sub_test = subpar.add_parser('test', help='Validate over a testing set and output the score.',
-                                 aliases=['validate'], formatter_class=HelpDefaults)
-    sub_run = subpar.add_parser('run', help='Run a simulation and output the score.', formatter_class=HelpDefaults)
+                                 aliases=['validate'], formatter_class=HelpDefaults, conflict_handler=ch,)
+    sub_run = subpar.add_parser('run', help='Run a simulation and output the score.',
+                                formatter_class=HelpDefaults, conflict_handler=ch,)
 
-    for sub in subpar.parsers:  # applies to everything
-        sub.add_argument('--seed', type=int, help="rng seed for the app", default=0)
+    for sub in subpar.parsers.values():  # applies to everything
+        # sub.add_argument('--seed', type=int, help="rng seed for the app", default=None)
         sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=10)
         sub.add_argument('--sim_time', type=int, default=1000,
                          help="time steps per simulate.")
@@ -200,7 +232,7 @@ def get_parser():
     for sub in (sub_test, sub_run):  # arguments that apply to test/validation and stdin
         sub.add_argument('--stdin', help="Use stdin as input.", action="store_true")
         sub.add_argument('--prompt', help="wait for a return to continue at each step.", action="store_true")
-        sub.add_argument('--network', help="network", default="networks/experiment_tenn3.json")
+        sub.add_argument('--network', help="network", default="networks/experiment_tenn.json")
         sub.add_argument('--viz', type=str, help="specify a specific visualizer")
         sub.add_argument('--noviz', help="explicitly disable viz", action="store_true")
         sub.add_argument('--viz_delay', type=float,  # default: None
@@ -214,9 +246,9 @@ def get_parser():
 
     # Training args
     sub_train.add_argument('--label', help="[train] label to put into network JSON (key = label).")
-    sub_train.add_argument('--network', default="networks/experiment_tenn3_train.json",
+    sub_train.add_argument('--network', default="networks/experiment_tenn_train.json",
                            help="output network file path.")
-    sub_train.add_argument('--logfile', default="tenn1_train.log",
+    sub_train.add_argument('--logfile', default="tenn_train.log",
                            help="running log file path.")
 
     sub_train.add_argument('--proc_ticks', type=int, default=10,
@@ -242,7 +274,7 @@ def get_parser():
     sub_test.add_argument('--testing_data', required=True,
                           help="testing dataset file path.")
 
-    return parser
+    return parser, subpar
 
 
 def main(app, args):
@@ -258,6 +290,6 @@ def main(app, args):
 
 
 if __name__ == "__main__":
-    parser = get_parser()
+    parser, subpar = get_parsers()
     args = parser.parse_args()
     main(TennExperiment(args), args)

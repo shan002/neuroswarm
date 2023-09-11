@@ -1187,10 +1187,10 @@ class _SubParsersAction(Action):
 
     @property
     def parsers(self):
-        parsers = []
-        for parser in self._name_parser_map.values():
-            if parser not in parsers:
-                parsers.append(parser)
+        parsers = {}
+        for name, parser in self._name_parser_map.items():
+            if parser not in parsers.values():
+                parsers.update({name: parser})
         return parsers
 
     def add_parser(self, name, **kwargs):

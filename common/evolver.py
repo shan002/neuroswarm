@@ -25,7 +25,7 @@ class EpochInfo:
     best_network: neuro.Network
     best_fitness: float
     validation: float = None
-    fitness: Tuple[float] = ()
+    fitnesses: Tuple[float] = ()
 
     @property
     def t_total(self) -> float:
@@ -139,7 +139,7 @@ class Evolver:
             self.best_network,
             self.best_fitness,
             validation,
-            self.fitness,
+            self.fitness,  # every score in the population
         )
 
         # Increment our epoch counter
