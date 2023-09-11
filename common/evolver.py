@@ -10,6 +10,9 @@ from .application import *
 
 from dataclasses import dataclass
 
+# typing
+from typing import Tuple
+
 
 @dataclass
 class EpochInfo:
@@ -22,6 +25,7 @@ class EpochInfo:
     best_network: neuro.Network
     best_fitness: float
     validation: float = None
+    fitness: Tuple[float] = ()
 
     @property
     def t_total(self) -> float:
@@ -64,8 +68,8 @@ class Evolver:
         self.epoch = 0
         self.fitness_by_epoch = list()
 
+        self.net_callback = lambda net: net
         self.print_callback = None
-
 
     def initialize_population(self, rng=1, do_print=False):
 
@@ -90,7 +94,7 @@ class Evolver:
         pass
 
     def evaluate_population(self, networks):
-        return [self.app.fitness(self.sim, network) for network in networks]
+        return [self.app.fitness(self.sim, network) for network in self.net_callback(networks)]
 
     def evaluate_validation(self, network):
         return self.app.validation(self.sim, network)
@@ -134,7 +138,8 @@ class Evolver:
             t_end,
             self.best_network,
             self.best_fitness,
-            validation
+            validation,
+            self.fitness,
         )
 
         # Increment our epoch counter
