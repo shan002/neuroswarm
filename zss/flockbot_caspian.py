@@ -42,7 +42,7 @@ class FlockbotCaspian(FlockbotBinarycontroller):
             self.setup_processor(self.processor_params)
 
     @staticmethod  # to get encoder structure/#neurons for external network generation (EONS)
-    def get_default_encoders(neuro_tpc):
+    def get_default_encoders(neuro_tpc=10):
         encoder_params = {
             "dmin": [0] * 2,  # two bins for each binary input + extra
             "dmax": [1] * 2,
