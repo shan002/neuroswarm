@@ -3,12 +3,13 @@ from tqdm.contrib.concurrent import process_map
 import neuro
 import caspian
 import random
-import argparse
 import os
 import time
 import pathlib
-import inspect
 # import matplotlib.pyplot as plt
+
+# import custom cmd parser
+import util.argparse
 
 # Provided Python utilities from tennlab framework/examples/common
 from common.evolver import Evolver
@@ -58,7 +59,7 @@ class TennBots(Application):
         self.app_params = dict()
 
         # Copy network from file into memory, including processor & app params
-        if args.action == "test":
+        if args.action in ["test", "run", "validate"]:
             with open(args.network) as f:
                 j = json.loads(f.read())
             self.net = neuro.Network()
@@ -70,10 +71,11 @@ class TennBots(Application):
         elif args.action == "train":
             # self.input_time = args.input_time
             self.proc_ticks = args.proc_ticks
-            self.training_network = args.training_network
+            self.training_network = args.network
             self.eons_params = nutils.load_json_string_file(args.eons_params)
             self.processor_params = nutils.load_json_string_file(args.processor_params)
             self.runs = args.runs
+            self.check_output_path()
 
         if args.all_counts_stream is not None:
             self.iostream = neuro.IO_Stream()
@@ -136,6 +138,13 @@ class TennBots(Application):
         # self.run_info = reward_history
         # return reward_history[-1]
         return metrics
+
+    def check_output_path(self):
+        path = pathlib.Path(self.training_network)
+        if not os.access(path, os.W_OK):
+            raise PermissionError(f"{path} could not be accessed. Check that the parent directory exists and that you have permissions to write to it.")  # noqa
+        if path.is_file():
+            print(f"WARNING: The output network file\n    {path}\nexists and will be overwritten!")
 
     def save_network(self, net, safe_overwrite=True):
         path = pathlib.Path(self.training_network)
@@ -219,23 +228,23 @@ def run(args):
 
 def get_parser():
     # parse cmd line args and run either `train(...)` or `run(...)`
-    HelpDefaults = argparse.ArgumentDefaultsHelpFormatter
-    parser = argparse.ArgumentParser(
+    HelpDefaults = util.argparse.ArgumentDefaultsHelpFormatter
+    parser = util.argparse.ArgumentParser(
         description='Script for running Zespol sims for milling.',
         formatter_class=HelpDefaults,
     )
 
-    subpar = parser.add_subparsers(required=True, dest='action', metavar='ACTION')
+    subpar = parser.add_subparsers(required=True, dest='action', metavar='ACTION', add_all=True)
     sub_train = subpar.add_parser('train', help='Do training using EONS', formatter_class=HelpDefaults)
     sub_test = subpar.add_parser('test', help='Validate over a testing set and output the score.',
                                  aliases=['validate'], formatter_class=HelpDefaults)
     sub_run = subpar.add_parser('run', help='Run a simulation and output the score.', formatter_class=HelpDefaults)
 
-    # Parameters that apply to all situations.
-    parser.add_argument('--seed', type=int, help="rng seed for the app", default=0)
-    parser.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=10)
-    parser.add_argument('--sim_time', type=int, default=1000,
-                        help="time steps per simulate.")
+    for sub in subpar.parsers:  # applies to everything
+        sub.add_argument('--seed', type=int, help="rng seed for the app", default=0)
+        sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=10)
+        sub.add_argument('--sim_time', type=int, default=1000,
+                         help="time steps per simulate.")
 
     for sub in (sub_test, sub_run):  # arguments that apply to test/validation and stdin
         sub.add_argument('--stdin', help="Use stdin as input.", action="store_true")
