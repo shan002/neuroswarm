@@ -161,6 +161,11 @@ def train(app, args):
     epochs = args.epochs
     max_fitness = args.max_fitness
 
+    if args.population_size is not None:  # if specified, override eons_params file
+        app.eons_params["population_size"] = args.population_size
+    if args.eons_seed is not None:  # if specified, force EONS seed
+        app.eons_params["seed_eo"] = args.eons_seed
+
     app.log(f"initialized {args.environment} for training.")
 
     if processes == 1:
@@ -265,6 +270,10 @@ def get_parsers(conflict_handler='resolve'):
                            help="stop eons if this fitness is achieved.")
     sub_train.add_argument('--epochs', type=int, default=999,
                            help="training epochs")
+    sub_train.add_argument('--population_size', type=int,
+                           help="override population size")
+    sub_train.add_argument('--eons_seed', type=int,
+                           help="Seed for EONS. Leave blank for random (time)")
     sub_train.add_argument('--graph_distribution', help="Specify a file to output fitness distribution over epochs.")
 
     for sub in (sub_train, sub_test):  # applies to both train, test
