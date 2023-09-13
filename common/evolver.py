@@ -125,6 +125,9 @@ class Evolver:
         self.pop = self.eo.do_epoch(self.pop, self.fitness, update_params)
         t_eons = time.time() - t_es
 
+        # Increment our epoch counter
+        self.epoch += 1
+
         # Do any post-epoch operations
         self.post_epoch()
 
@@ -141,9 +144,6 @@ class Evolver:
             validation,
             self.fitness,  # every score in the population
         )
-
-        # Increment our epoch counter
-        self.epoch += 1
 
         return info
 

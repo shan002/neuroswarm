@@ -68,19 +68,16 @@ class ConnorMillingExperiment(TennExperiment):
                     "Event Counts": a.neuron_counts
                 })
 
-        if self.viz is None:
-            gui = rss2.TennlabGUI(x=world_config.w, y=0, h=world_config.h, w=200)
-        elif self.viz is False:
+        gui = rss2.TennlabGUI(x=world_config.w, y=0, h=world_config.h, w=200)
+        if not self.viz:
             gui = False
-        else:
-            raise NotImplementedError
 
         world_subscriber = rss2.WorldSubscriber(func=callback)
         world_output = rss2.simulator(  # noqa run simulator
             world_config=world_config,
             subscribers=[world_subscriber],
             gui=gui,
-            show_gui=bool(gui),
+            show_gui=bool(self.viz),
         )
 
         # print(f"final count: {get_how_many_on_goal(world)}")

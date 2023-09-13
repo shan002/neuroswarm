@@ -7,7 +7,7 @@
     "Min_Threshold": 0,
     "Max_Threshold": 127,
     "Min_Synapse_Delay": 0,
-    "Max_Synapse_Delay": 1200,
+    "Max_Synapse_Delay": 1000,
     "Min_Weight": -127,
     "Max_Weight": 127
 }
