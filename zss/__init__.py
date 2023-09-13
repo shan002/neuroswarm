@@ -111,7 +111,7 @@ def setup_world(config: dict) -> None:
     ticks_max: int = config['ticks']
     spt: float = 1 / config['ticks_per_second']
 
-    world_size = np.array([15, 15])
+    world_size = np.array([8, 8])
     network = config['network']
     viz = config["viz"]
 
@@ -135,7 +135,12 @@ def setup_world(config: dict) -> None:
         rng = random.Random(world_seed)
     else:
         rng = world_seed
-    gen = generate_initial_SE2_packed(rng, 1.9, 1.9, 3.1, 3.1, FlockbotCaspian.agent_radius)
+
+    W = 1.2  # square spawn area width, in meters
+    Wr = W / 2
+    center: np.array = world_size / 2  # world center point
+    p1, p2 = center - Wr, center + Wr
+    gen = generate_initial_SE2_packed(rng, *p1, *p2, FlockbotCaspian.agent_radius)
     initial_states = [gen.__next__() for i in range(num_agents)]
 
     agents: list[Agent] = []
