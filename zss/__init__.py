@@ -13,9 +13,6 @@ from swarms.lib.sensors.binary import BinarySensor
 
 from .metrics import Circliness
 
-from .flockbot_caspian import FlockbotCaspian
-# from .flockbot_binarycontroller import FlockbotBinarycontroller
-
 # typing
 from typing import List
 from .metrics import Metric
@@ -112,8 +109,28 @@ def setup_world(config: dict) -> None:
     spt: float = 1 / config['ticks_per_second']
 
     world_size = np.array([8, 8])
-    network = config['network']
+
     viz = config["viz"]
+
+    # Try to get controller and network from the config.
+    controller = config.get('controller', None)
+    network = config.get('network', None)
+
+    if network:
+        from .flockbot_caspian import FlockbotCaspian
+        robot_class = FlockbotCaspian
+        cname = "caspian"
+        agent_kwargs = {
+            "network": network,
+            "neuro_tpc": config['neuro_tpc'],
+        }
+    else:
+        from .flockbot_binarycontroller import FlockbotBinarycontroller
+        robot_class = FlockbotBinarycontroller
+        cname = "fours"
+        agent_kwargs = {
+            "controller": controller,
+        }
 
     viz_config: dict = {
         "experiment_name": name,
@@ -121,7 +138,7 @@ def setup_world(config: dict) -> None:
         "log_dir": "./logs/",
         "enabled": bool(viz)
     }
-    viz_config['experiment_name'] = f"flockbots_milling_{num_agents}n_caspian"
+    viz_config['experiment_name'] = f"flockbots_milling_{num_agents}n_{cname}"
 
     sensor_config = {
         "view_dist": 3.6,  # meters
@@ -147,22 +164,14 @@ def setup_world(config: dict) -> None:
     for i, state in enumerate(initial_states):
         x, y, theta = state
         sensor = BinarySensor(**sensor_config)
-        agent = FlockbotCaspian(
+        agent = robot_class(
             name=f'agent{i}',
             pos=(x, y),
             heading=theta,
             spt=spt,
             sensors=[sensor],
-            network=network,
-            neuro_tpc=config['neuro_tpc']
+            **agent_kwargs
         )
-        # agent = FlockbotBinarycontroller(
-        #     name=f'agent{i}',
-        #     pos=(x, y),
-        #     heading=theta,
-        #     spt=spt,
-        #     sensors=[sensor],
-        # )
         agents.append(agent)
 
     # setup metrics
