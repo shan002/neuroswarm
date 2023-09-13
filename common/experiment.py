@@ -1,4 +1,5 @@
 # from multiprocessing import Pool, TimeoutError
+import tqdm
 from tqdm.contrib.concurrent import process_map
 import neuro
 import caspian
@@ -175,6 +176,7 @@ def train(app, args):
             proc_name=caspian.Processor,
             proc_params=app.processor_params,
         )
+        evolve.net_callback = lambda x: tqdm(x,)
     else:
         evolve = MPEvolver(  # multi-process for concurrent simulations
             app=app,
