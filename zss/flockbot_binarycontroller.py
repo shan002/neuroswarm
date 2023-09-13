@@ -113,7 +113,11 @@ class FlockbotBinarycontroller(Agent):
         field_polygon: Polygon = world_state.field_polygon
         new_location = Point([x, y])
 
-        if field_polygon.contains(new_location):
+        disable_walls = True
+
+        newstate_is_valid = field_polygon.contains(new_location) or disable_walls
+
+        if newstate_is_valid:
             self.dx = dx
             self.dy = dy
             self.d_yaw = d_yaw

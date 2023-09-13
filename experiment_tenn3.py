@@ -9,7 +9,8 @@
 # import matplotlib.pyplot as plt
 
 # Provided Python utilities from tennlab framework/examples/common
-from common.experiment import TennExperiment, get_parser, train, run
+from common.experiment import TennExperiment
+import common.experiment
 
 from zss.flockbot_caspian import FlockbotCaspian
 
@@ -41,7 +42,8 @@ class ZespolExperiment(TennExperiment):
             "ticks_per_second": 7.5,
             "viz": self.viz,
             "network": network,
-            "neuro_tpc": self.app_params['proc_ticks']
+            "neuro_tpc": self.app_params['proc_ticks'],
+            "world_seed": 2023,
         }
 
         world = zss.setup_world(zespol_config)
@@ -50,27 +52,47 @@ class ZespolExperiment(TennExperiment):
             world.tick()
             metrics = world.metric_window[-1]
 
+        if self.viz:
+            world.visualizer.compile_videos()
+
         # print(f"final count: {get_how_many_on_goal(world)}")
         # self.run_info = reward_history
         # return reward_history[-1]
         return metrics
 
 
-def main(args):
+def main():
+    parser, subpar = common.experiment.get_parsers()
+    sp = subpar.parsers
+
+    # for sub in sp.values():  # applies to everything
+    #     sub.add_argument('--agent_yaml', default="../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/flockbot.yaml",
+    #                      type=str, help="path to yaml config for agent")
+
+    for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
+        sp[key].add_argument('--network', help="network", default="networks/experiment_tenn3.json")
+
+    # Training args
+    sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
+    sp['train'].add_argument('--network', default="networks/experiment_tenn3_train.json",
+                             help="output network file path.")
+    sp['train'].add_argument('--logfile', default="tenn3_train.log",
+                             help="running log file path.")
+
+    args = parser.parse_args()
+
     args.environment = "zespol_snn_eons-v01"
 
     app = ZespolExperiment(args)
 
     # Do the appropriate action
     if args.action == "train":
-        train(app, args)
+        common.experiment.train(app, args)
     else:
         if args.noviz:
             args.viz = False
-        run(app, args)
+        common.experiment.run(app, args)
 
 
 if __name__ == "__main__":
-    parser = get_parser()
-    args = parser.parse_args()
-    main(args)
+    main()

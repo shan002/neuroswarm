@@ -110,6 +110,7 @@ def setup_world(config: dict) -> None:
     num_agents: int = config['num_agents']
     ticks_max: int = config['ticks']
     spt: float = 1 / config['ticks_per_second']
+
     world_size = np.array([15, 15])
     network = config['network']
     viz = config["viz"]
@@ -126,7 +127,15 @@ def setup_world(config: dict) -> None:
         "view_dist": 3.6,  # meters
         "fov": 0.4,
     }
-    gen = generate_initial_SE2_packed(random.Random(), 1.9, 1.9, 3.1, 3.1, FlockbotCaspian.agent_radius)
+
+    world_seed = config['world_seed']
+    if world_seed is None:
+        rng = random.Random()
+    elif isinstance(world_seed, [int, float]):
+        rng = random.Random(world_seed)
+    else:
+        rng = world_seed
+    gen = generate_initial_SE2_packed(rng, 1.9, 1.9, 3.1, 3.1, FlockbotCaspian.agent_radius)
     initial_states = [gen.__next__() for i in range(num_agents)]
 
     agents: list[Agent] = []
@@ -168,7 +177,6 @@ def setup_world(config: dict) -> None:
     )
 
     return world
-    # world.visualizer.compile_videos()
 
 
 if __name__ == "__main__":
