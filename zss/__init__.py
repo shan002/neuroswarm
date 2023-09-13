@@ -131,7 +131,7 @@ def setup_world(config: dict) -> None:
     world_seed = config['world_seed']
     if world_seed is None:
         rng = random.Random()
-    elif isinstance(world_seed, [int, float]):
+    elif isinstance(world_seed, (int, float)):
         rng = random.Random(world_seed)
     else:
         rng = world_seed

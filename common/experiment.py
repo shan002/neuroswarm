@@ -1,5 +1,5 @@
 # from multiprocessing import Pool, TimeoutError
-import tqdm
+from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 import neuro
 import caspian
