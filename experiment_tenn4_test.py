@@ -14,70 +14,17 @@ import common.experiment
 
 from distributed import Client
 
+import numpy as np
+
 from zss.flockbot_caspian import FlockbotCaspian
 
 from leap_ec.simple import ea_solve
 
-
-class ZespolExperiment(TennExperiment):
-    """Tennbots application for TennLab neuro framework & Shay Zespol
-
-
-    """
-
-    def __init__(self, args):
-        super().__init__(args)
-        self.n_inputs, self.n_outputs, _, _ = FlockbotCaspian.get_default_encoders(self.app_params['proc_ticks'])
-        self.log("initialized experiment_tenn3")
-
-    def fitness(self, processor, network):
-        metrics = self.run(processor, network)
-        return metrics["Circliness"]
-
-    def run(self, processor, network):
-        import zss
-        # setup sim
-
-        network.set_data("processor", self.processor_params)
-
-
-
-        # print(f"final count: {get_how_many_on_goal(world)}")
-        # self.run_info = reward_history
-        # return reward_history[-1]
-        return metrics
     
 def evaluate_zespol(controller) -> float:
-    import zss
+    #print(controller)
 
-    num_agents = 10
-    sim_time = 1000
-    viz: bool = False
-
-    zespol_config = {
-        "num_agents": num_agents,
-        "ticks": sim_time,
-        "ticks_per_second": 7.5,
-        "viz": viz,
-        "controller": controller,
-        "world_seed": 2023,
-    }
-
-    print(0)
-
-    # Kevin - it seems to die here for some reason.
-    world = zss.setup_world(zespol_config)
-
-    print(1)
-
-    for t in range(sim_time):
-        world.tick()
-        metrics = world.metric_window[-1]
-
-    if viz:
-        world.visualizer.compile_videos()
-
-    return metrics
+    return np.random.random()
 
 
 def main():
