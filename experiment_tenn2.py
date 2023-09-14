@@ -14,7 +14,7 @@ from common.experiment import TennExperiment
 import common.experiment
 
 # from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspian
-from novel_swarms.agent.MazeAgentCaspian import MillingAgentCaspian
+from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
 
 
 class CustomPool():
