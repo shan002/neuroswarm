@@ -1,8 +1,8 @@
 {
-    "starting_nodes": 5,
-    "starting_edges": 10,
+    "starting_nodes": 0,
+    "starting_edges": 4,
     "merge_rate": 0,
-    "population_size": 50,
+    "population_size": 100,
     "multi_edges": 0,
     "crossover_rate": 0.5,
     "mutation_rate": 0.9,

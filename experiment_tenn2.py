@@ -13,7 +13,8 @@ import pathlib
 from common.experiment import TennExperiment
 import common.experiment
 
-from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspian
+# from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspian
+from novel_swarms.agent.MazeAgentCaspian import MillingAgentCaspian
 
 
 class CustomPool():
@@ -38,7 +39,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = MazeAgentCaspian.get_default_encoders(self.app_params['proc_ticks'])
+        self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders(self.app_params['proc_ticks'])
 
         self.log("initialized experiment_tenn2")
 
