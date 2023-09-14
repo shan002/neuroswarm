@@ -69,7 +69,7 @@ class ConnorMillingExperiment(TennExperiment):
                 })
 
         gui = rss2.TennlabGUI(x=world_config.w, y=0, h=world_config.h, w=200)
-        if not self.viz:
+        if self.viz is False:
             gui = False
 
         world_subscriber = rss2.WorldSubscriber(func=callback)
@@ -117,8 +117,6 @@ def main():
     if args.action == "train":
         common.experiment.train(app, args)
     else:
-        if args.noviz:
-            args.viz = False
         common.experiment.run(app, args)
 
 

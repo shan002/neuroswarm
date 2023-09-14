@@ -240,7 +240,7 @@ def get_parsers(conflict_handler='resolve'):
         sub.add_argument('--stdin', help="Use stdin as input.", action="store_true")
         sub.add_argument('--prompt', help="wait for a return to continue at each step.", action="store_true")
         sub.add_argument('--network', help="network", default="networks/experiment_tenn.json")
-        sub.add_argument('--viz', type=str, help="specify a specific visualizer")
+        sub.add_argument('--viz', help="specify a specific visualizer", default=True)
         sub.add_argument('--noviz', help="explicitly disable viz", action="store_true")
         sub.add_argument('--viz_delay', type=float,  # default: None
                          help="delay between timesteps for viz.")
@@ -277,6 +277,7 @@ def get_parsers(conflict_handler='resolve'):
     sub_train.add_argument('--eons_seed', type=int,
                            help="Seed for EONS. Leave blank for random (time)")
     sub_train.add_argument('--graph_distribution', help="Specify a file to output fitness distribution over epochs.")
+    sub_train.add_argument('--viz', help="specify a specific visualizer", default=False)
 
     for sub in (sub_train, sub_test):  # applies to both train, test
         sub.add_argument('--runs', type=int, default=1,
