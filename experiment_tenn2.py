@@ -70,7 +70,7 @@ class ConnorMillingExperiment(TennExperiment):
                 })
 
         gui = rss2.TennlabGUI(x=world_config.w, y=0, h=world_config.h, w=200)
-        if self.viz is False:
+        if self.viz is False or self.noviz:
             gui = False
 
         world_subscriber = rss2.WorldSubscriber(func=callback)
@@ -78,7 +78,7 @@ class ConnorMillingExperiment(TennExperiment):
             world_config=world_config,
             subscribers=[world_subscriber],
             gui=gui,
-            show_gui=bool(self.viz),
+            show_gui=bool(gui),
         )
 
         # print(f"final count: {get_how_many_on_goal(world)}")

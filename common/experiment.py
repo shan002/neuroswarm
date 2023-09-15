@@ -35,6 +35,7 @@ class TennExperiment(Application):
         self.label = args.label
         # self.eons_seed = args.eons_seed
         self.viz = args.viz
+        self.noviz = args.noviz
         self.agents = args.agents
         self.prompt = args.prompt
         self.viz_delay = args.viz_delay
