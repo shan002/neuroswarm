@@ -161,7 +161,9 @@ class Evolver:
             # Check if we have a new best
             if best is None or fit > best:
                 best = fit
-                self.app.save_network(self.best_network)
+                self.app.save_network(info, newchamp=True)
+            else:
+                self.app.save_network(info, newchamp=False)
 
             # Check for early stopping condition
             if stop_fitness is not None and best > stop_fitness:

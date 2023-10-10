@@ -65,6 +65,7 @@ class TennExperiment(Application):
             # self.input_time = args.input_time
             self.proc_ticks = args.proc_ticks
             self.training_network = args.network
+            self.save_multiple = args.save_best_nets
             self.eons_params = load_json_string_file(args.eons_params)
             self.processor_params = load_json_string_file(args.processor_params)
             self.runs = args.runs
@@ -108,28 +109,44 @@ class TennExperiment(Application):
                 raise PermissionError(
                     f"{path} could not be accessed. Check that you have permissions to write to it."
                 )
-        if path.is_file():
-            check_if_writable(path)
-            print(f"WARNING: The output network file\n    {path}\nexists and will be overwritten!")
-        elif path.is_dir():
-            raise OSError(1, f"{path} is a directory. Please specify a valid path for the output network file.")
-        else:  # parent dir probably doesn't exist.
-            if path.parent.is_dir():
-                try:
-                    f = open(path, 'ab')
-                except BaseException as err:
-                    raise err
-                finally:
-                    f.close()
+        if self.save_multiple:
+            if not path.is_dir():
+                # raise OSError(1, f"{path} is a directory. Please specify a valid path for the output network file.")
+                input(f"Destination directory not found.\nCTRL+C to cancel or Press enter to create:\n\t{str(path)}")
+                path.mkdir(parents=True, exist_ok=True)
             else:
-                raise OSError(2, f"One or more parent directories are missing. Cannot write to {path}.")
+                input(f"Files in destination directory may be overwritten:\n\t{str(path)}")
+        else:
+            if path.is_file():
+                check_if_writable(path)
+                print(f"WARNING: The output network file\n    {path}\nexists and will be overwritten!")
+            elif path.is_dir():
+                raise OSError(1, f"{path} is a directory. Please specify a valid path for the output network file.")
+            else:  # parent dir probably doesn't exist.
+                if path.parent.is_dir():
+                    try:
+                        f = open(path, 'ab')
+                    except BaseException as err:
+                        raise err
+                    finally:
+                        f.close()
+                else:
+                    raise OSError(2, f"One or more parent directories are missing. Cannot write to {path}.")
 
-    def save_network(self, net, safe_overwrite=True):
+    def save_network(self, info, newchamp=True, safe_overwrite=True):
+        if not self.save_multiple and not newchamp:
+            return
+
+        net = info.best_network
         path = pathlib.Path(self.training_network)
         if self.label != "":
             net.set_data("label", self.label)
         net.set_data("processor", self.processor_params)
         net.set_data("application", self.app_params)
+
+        if self.save_multiple:
+            path /= f"{info.i}.json"
+            safe_overwrite = False
 
         if safe_overwrite and path.is_file():
             path.rename(path.with_suffix('.bak'))
@@ -256,6 +273,7 @@ def get_parsers(conflict_handler='resolve'):
     sub_train.add_argument('--label', help="[train] label to put into network JSON (key = label).")
     sub_train.add_argument('--network', default="networks/experiment_tenn_train.json",
                            help="output network file path.")
+    sub_train.add_argument('--save_best_nets', action='store_true')
     sub_train.add_argument('--logfile', default="tenn_train.log",
                            help="running log file path.")
 
