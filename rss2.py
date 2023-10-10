@@ -31,7 +31,7 @@ from novel_swarms.agent.control.Controller import Controller
 # Import the simulation loop
 from novel_swarms.world.simulate import main as simulator
 
-from novel_swarms.gui.agentGUI import DifferentialDriveGUI
+from novel_swarms.gui.agentGUI import DifferentialDriveGUI, pygame, np
 
 SCALE = 10  # Set the conversion factor for Body Lengths to pixels (all metrics will be scaled appropriately by this value)
 
@@ -43,17 +43,57 @@ class TennlabGUI(DifferentialDriveGUI):
     #     super().set_selected(agent)
 
     def draw(self, screen):
-        super().draw(screen)
-        if self.selected:
-            a = self.selected
-            try:
-                v, w = a.requested
-            except AttributeError:
-                pass
+        # super().draw(screen)
+        self.text_baseline = 10
+        if pygame.font:
+            if self.title:
+                self.appendTextToGUI(screen, self.title, size=20)
+            if self.subtitle:
+                self.appendTextToGUI(screen, self.subtitle, size=18)
+
+            self.appendTextToGUI(screen, f"Timesteps: {self.time}")
+            if self.selected:
+                a = self.selected
+                self.appendTextToGUI(screen, f"Current Agent: {a.name}")
+                self.appendTextToGUI(screen, f"")
+                self.appendTextToGUI(screen, f"x: {a.get_x_pos()}")
+                self.appendTextToGUI(screen, f"y: {a.get_y_pos()}")
+                self.appendTextToGUI(screen, f"dx: {a.dx}")
+                self.appendTextToGUI(screen, f"dy: {a.dy}")
+                self.appendTextToGUI(screen, f"sense-state: {a.get_sensors().getState()}")
+                if hasattr(a, "i_1") and hasattr(a, "i_2"):
+                    self.appendTextToGUI(screen, f"Idio_1: {a.i_1}")
+                    self.appendTextToGUI(screen, f"Idio_2: {a.i_2}")
+                self.appendTextToGUI(screen, f"")
+                if hasattr(a, "controller"):
+                    self.appendTextToGUI(screen, f"controller: {a.controller}")
+                    self.appendTextToGUI(screen, f"")
+                self.appendTextToGUI(screen, f"θ: {a.angle % (2 * np.pi)}")
+                if hasattr(a, "agent_in_sight") and a.agent_in_sight is not None:
+                    self.appendTextToGUI(screen, f"sees: {a.agent_in_sight.name}")
+                try:
+                    v, w = a.requested
+                except AttributeError:
+                    pass
+                else:
+                    self.appendTextToGUI(screen, f"ego v (bodylen): {v}")
+                    self.appendTextToGUI(screen, f"ego v   (m/s): {v * 0.151}")
+                    self.appendTextToGUI(screen, f"ego ω (rad/s): {w}")
             else:
-                self.appendTextToGUI(screen, f"ego v (bodylen): {v}")
-                self.appendTextToGUI(screen, f"ego v   (m/s): {v * 0.151}")
-                self.appendTextToGUI(screen, f"ego ω (rad/s): {w}")
+                self.appendTextToGUI(screen, "Current Agent: None")
+                self.appendTextToGUI(screen, "")
+                self.appendTextToGUI(screen, "Behavior", size=18)
+                for b in self.world.behavior:
+                    out = b.out_current()
+                    b.draw(screen)
+                    try:
+                        self.appendTextToGUI(screen, "{} : {:0.3f}".format(out[0], out[1]))
+                    except ValueError:
+                        pass
+                    except Exception:
+                        self.appendTextToGUI(screen, "{} : {}".format(out[0], out[1]))
+        else:
+            print("NO FONT")
 
 
 def configure_robots(network, agent_yaml_path, seed=None, track_all=None):
