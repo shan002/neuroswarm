@@ -18,5 +18,6 @@
     "node_mutations": { "Threshold": 1.0 },
     "net_mutations": { },
     "edge_mutations": { "Weight": 0.65, "Delay": 0.35 },
+    "penalty": [1e-7, 1e-7],
     "num_best": 4
 }

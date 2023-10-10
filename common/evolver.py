@@ -24,6 +24,7 @@ class EpochInfo:
     t_end: float
     best_network: neuro.Network
     best_fitness: float
+    best_score: float = None
     validation: float = None
     fitnesses: Tuple[float] = ()
 
@@ -34,6 +35,7 @@ class EpochInfo:
     def __str__(self):
         # Epoch number and fitness score
         out = f"Epoch {self.i:3d}: {self.best_fitness:11.4f}"
+        out += '' if self.best_score is None else f":{self.best_score:11.4f}"
         # Validation score if a validation function is present
         if self.validation is not None:
             out += " {:11.4f}".format(self.validation)
@@ -62,6 +64,9 @@ class Evolver:
 
         if not isinstance(self.sim, neuro.Processor):
             raise TypeError("The processor must derive from neuro.Processor")
+
+        # pop our custom eons params so EONS doesn't complain (with defaults)
+        self.penalty = eons_params.pop('penalty', None)
 
         self.eo = eons.EONS(eons_params)
         self.initialize_population()
@@ -122,8 +127,22 @@ class Evolver:
 
         # Evolve the next population with EONS
         t_es = time.time()
-        self.pop = self.eo.do_epoch(self.pop, self.fitness, update_params)
+        if self.penalty is None:
+            scores = self.fitness
+        elif callable(self.penalty):
+            scores = self.penalty(networks, self.fitness)
+        else:
+            c1, c2 = self.penalty
+            scores = [
+                (fitness - (net.num_nodes() * c1 + net.num_edges() * c2))
+                for fitness, net in zip(self.fitness, networks)
+            ]
+        self.pop = self.eo.do_epoch(self.pop, scores, update_params)
         t_eons = time.time() - t_es
+
+        bundles = zip(networks, self.fitness, scores)
+        best = max(bundles, key=lambda b: b[2])
+        topscoring_net, topscoring_fitness, topscore = best
 
         # Increment our epoch counter
         self.epoch += 1
@@ -139,8 +158,9 @@ class Evolver:
             t_fitness,
             t_eons,
             t_end,
-            self.best_network,
-            self.best_fitness,
+            topscoring_net,
+            topscoring_fitness,
+            topscore,
             validation,
             self.fitness,  # every score in the population
         )
