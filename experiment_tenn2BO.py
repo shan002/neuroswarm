@@ -33,6 +33,10 @@ import experiment_tenn2 as experiment
 # typing
 from common.evolver import EpochInfo
 
+# monkey patch for scikit-optmimize skopt.space.transformers
+# https://github.com/scikit-optimize/scikit-optimize/issues/1138
+np.int = int
+
 
 class ConnorMillingExperiment(experiment.ConnorMillingExperiment):
     """Tennbots application for TennLab neuro framework & Connor RobotSwarmSimulator (RSS)
@@ -74,7 +78,7 @@ def train(app, args):
             eons_params=app.eons_params,
             proc_name=caspian.Processor,
             proc_params=app.processor_params,
-            pool=Pool(max_workers=processes),
+            pool=Pool(processes=processes),
             # pool=CustomPool(max_workers=processes),
         )
     evolve.print_callback = app.log_status
