@@ -169,7 +169,8 @@ class Evolver:
 
     def train(self, n_epochs, stop_fitness=None):
         # Start with no "best" score
-        best = None
+        best: float = None
+        pocket: EpochInfo = None
 
         for epoch in range(n_epochs):
             info = self.do_epoch()
@@ -181,6 +182,7 @@ class Evolver:
             # Check if we have a new best
             if best is None or fit > best:
                 best = fit
+                pocket = info
                 self.app.save_network(info, newchamp=True)
             else:
                 self.app.save_network(info, newchamp=False)
@@ -188,6 +190,8 @@ class Evolver:
             # Check for early stopping condition
             if stop_fitness is not None and best > stop_fitness:
                 break
+
+        return pocket
 
     def graph_fitness(self):
         import matplotlib.pyplot as plt

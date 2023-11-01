@@ -14,7 +14,7 @@ import util.argparse
 # Provided Python utilities from tennlab framework/examples/common
 from .evolver import Evolver
 from .evolver import MPEvolver
-from .utils import json, load_json_string_file
+from . import jsontools as jst
 from .application import Application
 
 
@@ -53,8 +53,7 @@ class TennExperiment(Application):
 
         # Copy network from file into memory, including processor & app params
         if args.action in ["test", "run", "validate"]:
-            with open(args.network) as f:
-                j = json.loads(f.read())
+            j = jst.smartload(args.network)
             self.net = neuro.Network()
             self.net.from_json(j)
             self.processor_params = self.net.get_data("processor")
@@ -66,14 +65,14 @@ class TennExperiment(Application):
             self.proc_ticks = args.proc_ticks
             self.training_network = args.network
             self.save_multiple = args.save_best_nets
-            self.eons_params = load_json_string_file(args.eons_params)
-            self.processor_params = load_json_string_file(args.processor_params)
+            self.eons_params = jst.smartload(args.eons_params)
+            self.processor_params = jst.smartload(args.processor_params)
             self.runs = args.runs
             self.check_output_path()
 
         if args.all_counts_stream is not None:
             self.iostream = neuro.IO_Stream()
-            j = json.loads(args.all_counts_stream)
+            j = jst.smartload(args.all_counts_stream)
             self.iostream.create_output_from_json(j)
         else:
             self.iostream = None
@@ -206,7 +205,7 @@ def train(app, args):
     evolve.print_callback = app.log_status
 
     try:
-        evolve.train(epochs, max_fitness)
+        return evolve.train(epochs, max_fitness)
     except KeyboardInterrupt:
         app.log("training cancelled.")
         raise

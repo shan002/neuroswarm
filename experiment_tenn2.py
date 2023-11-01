@@ -17,16 +17,6 @@ import common.experiment
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
 
 
-class CustomPool():
-    """pool class for Evolver, so we can use tqdm for those sweet progress bars"""
-
-    def __init__(self, **tqdm_kwargs):  # max_workers=args.threads
-        self.kwargs = tqdm_kwargs
-
-    def map(self, fn, *iterables):
-        return process_map(fn, *iterables, **self.kwargs)
-
-
 class ConnorMillingExperiment(TennExperiment):
     """Tennbots application for TennLab neuro framework & Connor RobotSwarmSimulator (RSS)
 
@@ -88,8 +78,8 @@ class ConnorMillingExperiment(TennExperiment):
         return world_output.behavior[0].out_current()[1]
 
 
-def main():
-    parser, subpar = common.experiment.get_parsers()
+def get_parsers(parser, subpar):
+    # this is a separate function so we can inherit options from this module
     sp = subpar.parsers
 
     for sub in sp.values():  # applies to everything
@@ -107,6 +97,13 @@ def main():
                              help="output network file path.")
     sp['train'].add_argument('--logfile', default="tenn2_train.log",
                              help="running log file path.")
+
+    return parser, subpar
+
+
+def main():
+    parser, subpar = common.experiment.get_parsers()
+    parser, subpar = get_parsers(parser, subpar)  # modify parser
 
     args = parser.parse_args()
 
