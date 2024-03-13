@@ -35,7 +35,7 @@ class ConnorMillingExperiment(TennExperiment):
         # number of ticks to run the processor every control (sensor->actuator) cycle
         self.neuro_tpc = 10
 
-        self.n_inputs, self.n_outputs = (2, 1)
+        self.n_inputs, self.n_outputs = (2, 2)
         encoder_params = {
             "dmin": [0] * self.n_inputs,  # two bins for each binary input + random
             "dmax": [1] * self.n_inputs,
