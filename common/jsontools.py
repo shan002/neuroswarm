@@ -37,7 +37,10 @@ def smartload(x) -> dict:
         except BaseException as e:
             file_parse_error = e
     finally:
-        f.close()
+        try:
+            f.close()
+        except BaseException:
+            pass
 
     # if we're here, either file read or file JSON parsing failed.
 
@@ -47,7 +50,7 @@ def smartload(x) -> dict:
         parse_error = e
 
     # if we're here, parsing x:str as JSON failed and x is not a valid JSON file.
-    errors = filter([parse_error, file_error, file_parse_error])
+    errors = list(filter(bool, [parse_error, file_error, file_parse_error]))
     try:
         ExceptionGroup
     except NameError:  # this python doesn't have ExceptionGroup

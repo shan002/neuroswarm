@@ -79,6 +79,8 @@ class TennlabGUI(DifferentialDriveGUI):
                     self.appendTextToGUI(screen, f"ego v (bodylen): {v}")
                     self.appendTextToGUI(screen, f"ego v   (m/s): {v * 0.151}")
                     self.appendTextToGUI(screen, f"ego ω (rad/s): {w}")
+                if a.neuron_counts is not None:
+                    self.appendTextToGUI(screen, f"outs: {a.neuron_counts}")
             else:
                 self.appendTextToGUI(screen, "Current Agent: None")
                 self.appendTextToGUI(screen, "")
