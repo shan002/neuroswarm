@@ -1,10 +1,10 @@
 class Application:
 
-    def __init__(self):
+    def __init__(self):  # type:ignore[reportMissingSuperCall]
         pass
 
-    def fitness(self, processor, network):
-        pass
+    def fitness(self, processor, network) -> float:
+        raise NotImplementedError
 
     def validation(self, processor, network):
         return None

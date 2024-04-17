@@ -3,12 +3,14 @@ Example Script
 The SwarmSimulator allows control of the world and agents at every step within the main loop
 """
 # import random
+import pygame
+import numpy as np
 
 # Import Agent embodiments
 # from novel_swarms.config.AgentConfig import *
 # from novel_swarms.config.HeterogenSwarmConfig import HeterogeneousSwarmConfig
-from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspianConfig
-from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
+# from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspianConfig
+# from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 
 # Import FOV binary sensor
 from novel_swarms.sensors.SensorFactory import SensorFactory
@@ -20,10 +22,12 @@ from novel_swarms.config.WorldConfig import WorldYAMLFactory
 # from novel_swarms.world.initialization.RandomInit import RectRandomInitialization
 
 # Import a world subscriber, that can read/write to the world data at runtime
-from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber
+from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
 
 # Import the Behavior Measurements (Metrics) that can measure the agents over time
-from novel_swarms.behavior import RadialVarianceBehavior, AgentsAtGoal, Circliness
+from novel_swarms.behavior import RadialVarianceBehavior
+from novel_swarms.behavior import AgentsAtGoal
+# from novel_swarms.behavior import Circliness
 
 # Import the custom Controller Class
 from novel_swarms.agent.control.Controller import Controller
@@ -31,7 +35,12 @@ from novel_swarms.agent.control.Controller import Controller
 # Import the simulation loop
 from novel_swarms.world.simulate import main as simulator
 
-from novel_swarms.gui.agentGUI import DifferentialDriveGUI, pygame, np
+from novel_swarms.gui.agentGUI import DifferentialDriveGUI
+
+# typing
+from typing import override
+
+simulator = simulator  # explicit export
 
 SCALE = 10  # Set the conversion factor for Body Lengths to pixels (all metrics will be scaled appropriately by this value)
 
@@ -42,6 +51,7 @@ class TennlabGUI(DifferentialDriveGUI):
     # def set_selected(self, agent: MazeAgentCaspian):
     #     super().set_selected(agent)
 
+    @override
     def draw(self, screen):
         # super().draw(screen)
         self.text_baseline = 10
@@ -77,7 +87,7 @@ class TennlabGUI(DifferentialDriveGUI):
                     pass
                 else:
                     self.appendTextToGUI(screen, f"ego v (bodylen): {v}")
-                    self.appendTextToGUI(screen, f"ego v   (m/s): {v * 0.151}")
+                    self.appendTextToGUI(screen, f"ego v   (m/s): {v * 0.0151}")
                     self.appendTextToGUI(screen, f"ego ω (rad/s): {w}")
                 if a.neuron_counts is not None:
                     self.appendTextToGUI(screen, f"outs: {a.neuron_counts}")
@@ -98,7 +108,7 @@ class TennlabGUI(DifferentialDriveGUI):
             print("NO FONT")
 
 
-def configure_robots(network, agent_yaml_path, seed=None, track_all=None):
+def configure_robots(network, agent_config_class, agent_yaml_path, seed=None, track_all=None,):
     """
     Select the Robot's Sensors and Embodiment, return the robot configuration
     """
@@ -115,12 +125,11 @@ def configure_robots(network, agent_yaml_path, seed=None, track_all=None):
     config["network"] = network
     config["neuro_track_all"] = bool(track_all)
 
-    # agent_config = MazeAgentCaspianConfig(**config)
-    agent_config = MillingAgentCaspianConfig(**config)
+    agent_config = agent_config_class(**config)
     agent_config.controller = Controller('self')
 
-    if seed is not None:
-        normal_flockbot.seed = seed
+    # if seed is not None:
+    #     normal_flockbot.seed = seed
 
     # Uncomment to remove FN/FP from agents (Testing)
     # normal_flockbot.sensors.sensors[0].fn = 0.0
@@ -147,25 +156,23 @@ def establish_milling_metrics():
     return [circliness]
 
 
-def configure_env(robot_config, world_yaml_path, num_agents=20, seed=None, stop_at=9999):
+def create_environment(robot_config, world_yaml_path, num_agents=20, seed=None, stop_at=9999, scale=SCALE):
     # search_and_rendezvous_world = WorldYAMLFactory.from_yaml("demo/configs/flockbots-icra/world.yaml")
 
     # Import the world data from YAML
     world = WorldYAMLFactory.from_yaml(world_yaml_path)
     world.addAgentConfig(robot_config)
     world.population_size = num_agents
-    '''
-        # Create a Goal for the Agents to find
-        goal_region = CylinderGoal(
-            x=400,  # Center X, in pixels
-            y=100,  # Center y, in pixels
-            r=8.5,  # Radius of physical cylinder object
-            range=40.0  # Range, in pixels, at which agents are "counted" as being at the goal
-        )
-    '''
-    world.factor_zoom(SCALE)
+    world.stop_at = stop_at
+    world.factor_zoom(scale)
     if seed is not None:
         world.seed = seed
-    world.stop_at = stop_at
-    world.behavior = [Circliness(history=stop_at, avg_history_max=450)]
     return world
+
+    # Create a Goal for the Agents to find
+    # goal_region = CylinderGoal(
+    #     x=400,  # Center X, in pixels
+    #     y=100,  # Center y, in pixels
+    #     r=8.5,  # Radius of physical cylinder object
+    #     range=40.0  # Range, in pixels, at which agents are "counted" as being at the goal
+    # )

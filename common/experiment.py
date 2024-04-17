@@ -1,4 +1,3 @@
-# from multiprocessing import Pool, TimeoutError
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 import neuro
@@ -21,7 +20,7 @@ from .application import Application
 class CustomPool():
     """pool class for Evolver, so we can use tqdm for those sweet progress bars"""
 
-    def __init__(self, **tqdm_kwargs):  # max_workers=args.threads
+    def __init__(self, **tqdm_kwargs):  # type:ignore[reportMissingSuperCall] # max_workers=args.threads
         self.kwargs = tqdm_kwargs
 
     def map(self, fn, *iterables):
@@ -31,6 +30,7 @@ class CustomPool():
 class TennExperiment(Application):
 
     def __init__(self, args):
+        super().__init__()
         self.env_name = args.environment
         self.label = args.label
         # self.eons_seed = args.eons_seed
@@ -80,7 +80,7 @@ class TennExperiment(Application):
         # If an app param hasn't been set on the network, use defaults.
         # This helps prevent old networks from becoming obsolete.
         for arg in app_params:
-            if not (arg in self.app_params):
+            if arg not in self.app_params:
                 self.app_params[arg] = vars(args)[arg]
 
         # Note: encoders/decoders *can* be saved to or read from the network. not implemented yet.
@@ -93,9 +93,6 @@ class TennExperiment(Application):
             self.log(str(args), logpath=self.graph_distribution)
             with open(self.graph_distribution, 'a') as f:
                 f.write(f"{time.time()}\t{0}\t[]\n")
-
-    def fitness(self, processor, network):
-        return None
 
     def run(self, processor, network):
         return None
@@ -209,7 +206,8 @@ def train(app, args):
     except KeyboardInterrupt:
         app.log("training cancelled.")
         raise
-    app.log("training finished.")
+    finally:
+        app.log("training finished.")
 
     # evolve.graph_fitness()
 
@@ -226,8 +224,9 @@ def run(app, args):
         net = app.net
 
     # Run app and print fitness
-
-    print("Fitness: {:8.4f}".format(app.fitness(proc, net)))
+    fitness = app.fitness(proc, net)
+    print(f"Fitness: {fitness:8.4f}")
+    return fitness
 
 
 def get_parsers(conflict_handler='resolve'):

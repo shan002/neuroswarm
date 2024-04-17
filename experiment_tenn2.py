@@ -1,20 +1,13 @@
-# from multiprocessing import Pool, TimeoutError
-from tqdm.contrib.concurrent import process_map
-import neuro
-import caspian
-import random
-import argparse
-import os
-import time
-import pathlib
+from typing import override
 # import matplotlib.pyplot as plt
 
 # Provided Python utilities from tennlab framework/examples/common
 from common.experiment import TennExperiment
 import common.experiment
 
-# from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspian
+from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
+from novel_swarms.behavior import Circliness
 
 
 class ConnorMillingExperiment(TennExperiment):
@@ -33,20 +26,19 @@ class ConnorMillingExperiment(TennExperiment):
 
         self.log("initialized experiment_tenn2")
 
+    @override
     def fitness(self, processor, network):
         import rss2
         # setup sim
 
         network.set_data("processor", self.processor_params)
 
-        robot_config = rss2.configure_robots(network, agent_yaml_path=self.agent_yaml, track_all=self.viz)
-        world_config = rss2.configure_env(robot_config=robot_config, world_yaml_path=self.world_yaml,
-                                          num_agents=self.agents, stop_at=self.sim_time)
+        robot_config = rss2.configure_robots(network, MillingAgentCaspianConfig, agent_yaml_path=self.agent_yaml, track_all=self.viz)
+        world = rss2.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
+                                        num_agents=self.agents, stop_at=self.sim_time)
+        world.behavior = [Circliness(history=self.sim_time, avg_history_max=450)]
 
         reward_history = []
-
-        def get_how_many_on_goal(world):
-            return sum([int(world.goals[0].agent_achieved_goal(agent)) for agent in world.population])
 
         def callback(world, screen):
             nonlocal reward_history
@@ -59,13 +51,13 @@ class ConnorMillingExperiment(TennExperiment):
                     "Event Counts": a.neuron_counts
                 })
 
-        gui = rss2.TennlabGUI(x=world_config.w, y=0, h=world_config.h, w=200)
+        gui = rss2.TennlabGUI(x=world.w, y=0, h=world.h, w=200)
         if self.viz is False or self.noviz:
             gui = False
 
         world_subscriber = rss2.WorldSubscriber(func=callback)
-        world_output = rss2.simulator(  # noqa run simulator
-            world_config=world_config,
+        world_output = rss2.simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
+            world_config=world,
             subscribers=[world_subscriber],
             gui=gui,
             show_gui=bool(gui),
