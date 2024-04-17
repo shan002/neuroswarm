@@ -24,7 +24,7 @@ def make_template(dev, n_inputs, n_outputs, moa = None):
 
     if moa is None:
         moa = neuro.MOA()
-        moa.seed(random.randint(0, (2**32)-1))
+        moa.seed(random.randint(0, (2**32)-1), "")
 
     # Add inputs
     for i in range(n_inputs):
@@ -51,7 +51,7 @@ def make_random_net(net, moa = None):
     # Get an RNG if one isn't given
     if moa is None:
         moa = neuro.MOA()
-        moa.seed(random.randint(0, (2**32)-1))
+        moa.seed(random.randint(0, (2**32)-1), "")
 
     # Determine how many hidden nodes
     num_hidden = min(100, max(net.num_inputs(), net.num_outputs()))
