@@ -300,8 +300,8 @@ def get_parsers(conflict_handler='resolve'):
         sub.add_argument('--runs', type=int, default=1,
                          help="how many runs are used to calculate fitness for a network.")
 
-    sub_test.add_argument('--testing_data', required=True,
-                          help="testing dataset file path.")
+    # sub_test.add_argument('--testing_data', required=True,
+    #                       help="testing dataset file path.")
 
     return parser, subpar
 

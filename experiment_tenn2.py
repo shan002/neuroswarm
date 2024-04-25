@@ -1,5 +1,9 @@
-from typing import override
+from io import BytesIO
 # import matplotlib.pyplot as plt
+
+import caspian
+
+from tqdm.contrib.concurrent import process_map
 
 # Provided Python utilities from tennlab framework/examples/common
 from common.experiment import TennExperiment
@@ -8,6 +12,11 @@ import common.experiment
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
 from novel_swarms.behavior import Circliness
+
+# typing:
+from typing import override
+
+from util.argparse import ArgumentError
 
 
 class ConnorMillingExperiment(TennExperiment):
@@ -27,7 +36,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.log("initialized experiment_tenn2")
 
     @override
-    def fitness(self, processor, network):
+    def fitness(self, processor, network, init_callback=lambda x: x):
         import rss2
         # setup sim
 
@@ -56,6 +65,9 @@ class ConnorMillingExperiment(TennExperiment):
             gui = False
 
         world_subscriber = rss2.WorldSubscriber(func=callback)
+
+        world = init_callback(world)
+
         world_output = rss2.simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
             world_config=world,
             subscribers=[world_subscriber],
@@ -68,6 +80,46 @@ class ConnorMillingExperiment(TennExperiment):
         # return reward_history[-1]
         self.run_info = world_output.behavior[0].value_history
         return world_output.behavior[0].out_current()[1]
+
+
+def test(app, args):
+
+    # Set up simulator and network
+    proc = caspian.Processor(app.processor_params)
+    net = app.net
+
+    if args.positions:
+        from rss2 import PredefinedInitialization, SCALE
+        import pandas as pd
+        fpath = args.positions
+
+        with open(fpath, 'rb') as f:
+            xlsx = f.read()
+        xlsx = pd.ExcelFile(BytesIO(xlsx))
+        sheets = xlsx.sheet_names
+
+        n_runs = len(sheets)
+
+        pinit = PredefinedInitialization()  # num_agents isn't used yet here
+
+        def setup_i(i):
+            pinit.set_states_from_xlsx(args.positions, sheet_number=i)
+            pinit.rescale(SCALE)
+
+            def setup(world):
+                world.init_type = pinit
+                return world
+
+            return setup
+
+        # Run app and print fitness
+        fitnesses = [app.fitness(proc, net, setup_i(i)) for i in range(n_runs)]
+
+        # print(f"Fitness: {fitness:8.8f}")
+        print(fitnesses)
+        return fitnesses
+    else:
+        raise ArgumentError(args.positions, "Positions not specified")
 
 
 def get_parsers(parser, subpar):
@@ -90,6 +142,12 @@ def get_parsers(parser, subpar):
     sp['train'].add_argument('--logfile', default="tenn2_train.log",
                              help="running log file path.")
 
+    # Testing args
+    sp['test'].add_argument('--positions', default=None,
+                             help="file containing agent positions")
+    sp['test'].add_argument('-p', '--processes', type=int, default=1,
+                           help="number of threads for concurrent fitness evaluation.")
+
     return parser, subpar
 
 
@@ -106,8 +164,12 @@ def main():
     # Do the appropriate action
     if args.action == "train":
         common.experiment.train(app, args)
-    else:
+    elif args.action == "test":
+        test(app, args)
+    elif args.action == "run":
         common.experiment.run(app, args)
+    else:
+        raise RuntimeError("No action selected")
 
 
 if __name__ == "__main__":

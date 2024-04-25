@@ -20,6 +20,7 @@ from novel_swarms.config.WorldConfig import WorldYAMLFactory
 # from novel_swarms.config.WorldConfig import RectangularWorldConfig
 # from novel_swarms.world.goals.Goal import CylinderGoal
 # from novel_swarms.world.initialization.RandomInit import RectRandomInitialization
+from novel_swarms.world.initialization.PredefInit import PredefinedInitialization as PredefinedInitialization
 
 # Import a world subscriber, that can read/write to the world data at runtime
 from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
@@ -160,14 +161,14 @@ def create_environment(robot_config, world_yaml_path, num_agents=20, seed=None, 
     # search_and_rendezvous_world = WorldYAMLFactory.from_yaml("demo/configs/flockbots-icra/world.yaml")
 
     # Import the world data from YAML
-    world = WorldYAMLFactory.from_yaml(world_yaml_path)
-    world.addAgentConfig(robot_config)
-    world.population_size = num_agents
-    world.stop_at = stop_at
-    world.factor_zoom(scale)
+    world_cfg = WorldYAMLFactory.from_yaml(world_yaml_path)
+    world_cfg.addAgentConfig(robot_config)
+    world_cfg.population_size = num_agents
+    world_cfg.stop_at = stop_at
+    world_cfg.factor_zoom(scale)
     if seed is not None:
-        world.seed = seed
-    return world
+        world_cfg.seed = seed
+    return world_cfg
 
     # Create a Goal for the Agents to find
     # goal_region = CylinderGoal(
@@ -176,3 +177,30 @@ def create_environment(robot_config, world_yaml_path, num_agents=20, seed=None, 
     #     r=8.5,  # Radius of physical cylinder object
     #     range=40.0  # Range, in pixels, at which agents are "counted" as being at the goal
     # )
+
+
+def generate_positions(world_yaml_path, num_agents=20, seed=None, scale=SCALE):
+    world_cfg = WorldYAMLFactory.from_yaml(world_yaml_path)
+    world_cfg.population_size = num_agents
+    if seed is not None:
+        world_cfg.init_type.seed = seed  # override seed
+    world_cfg.factor_zoom(scale)
+    return world_cfg.init_type.positions
+
+
+def generate_position_sets(world_yaml_path, num_agents=20, seeds=None, scale=SCALE):
+    if seeds is None:
+        seeds = []
+    return [
+        (seed,
+        generate_positions(world_yaml_path=world_yaml_path, num_agents=num_agents, seed=seed, scale=scale))
+        for seed in seeds
+    ]
+
+
+def save_position_sets_to_xlsx(position_sets, output_file: str):
+    import pandas as pd
+    with pd.ExcelWriter(output_file) as writer:
+        for name, positions in position_sets:
+            df = pd.DataFrame(positions, columns=['x', 'y', 'angle (rads from east)'])
+            df.to_excel(writer, sheet_name=f'{name}')
