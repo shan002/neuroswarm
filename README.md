@@ -23,3 +23,5 @@ rem
 python experiment_tenn2.py train -N 10 --sim_t 1000 -p 24 --pop 100 --epochs 1000 --eons_seed 20 --net results/experiment_tenn2_mill20240417_1000t_n10_p100_e1000_s20.json --graph results/20240417_1000t_n10_p100_e1000_s20.tsv
 
 python experiment_tenn2.py test -N 10 --sim_t 1000 --pos test_data.xlsx --net networks/experiment_tenn2_mill20240422_1000t_n10_p100_e1000_s23.json
+
+python experiment_tenn5.py train -p 24 --sim_t 1000 -N 10 --pop 100 --epochs 1000 --eons_seed 20 --net networks/experiment_tenn5_gs20240529_1000t_n10_p100_e1000_s20.json --graph networks/20240529_1000t_n10_p100_e1000_s20.tsv

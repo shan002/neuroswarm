@@ -70,8 +70,11 @@ class ConnorMillingExperiment(TennExperiment):
         # print(f"final count: {get_how_many_on_goal(world)}")
         self.run_info = reward_history
         n = len(reward_history)
-        t_firstgoal, _ = next((i, r) for i, r in enumerate(reward_history) if r > 0)
-        earlybird_reward = t_firstgoal / n * 10000
+        t_firstgoal, _ = next(
+            ((i, r) for i, r in enumerate(reward_history) if r > 0),
+            (None, 0)  # default
+        )
+        earlybird_reward = t_firstgoal / n * 10000 if t_firstgoal is not None else 0
         # weights = [x / n for x in range(n, 0, -1)]
         # weighted_rewards = [r * w for r, w in zip(reward_history, weights)]
         return earlybird_reward + sum(reward_history) / 1000 + reward_history[-1] * 1000
