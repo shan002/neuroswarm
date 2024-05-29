@@ -18,3 +18,8 @@ love . -n ../../turtwig/networks/experiment_tenn1_gs34w23_3000t_n20.json --show_
 love . -n ../../turtwig/results/p100/experiment_tenn2_mill2023w38_1000t_n10_p100_s20_e200.json --show_input_id --show_output_id --remove_unnecessary_neuron -i '{"source":"request","port":"8100", "host": "localhost"}'
 
 python experiment_tenn2.py run --sim_time 1000 --agents 10 --network results/p100/experiment_tenn2_mill2023w38_1000t_n10_p100_s20_e200.json --all_counts_stream '{"source":"serve","port":8100}'
+
+rem
+python experiment_tenn2.py train -N 10 --sim_t 1000 -p 24 --pop 100 --epochs 1000 --eons_seed 20 --net results/experiment_tenn2_mill20240417_1000t_n10_p100_e1000_s20.json --graph results/20240417_1000t_n10_p100_e1000_s20.tsv
+
+python experiment_tenn2.py test -N 10 --sim_t 1000 --pos test_data.xlsx --net networks/experiment_tenn2_mill20240422_1000t_n10_p100_e1000_s23.json

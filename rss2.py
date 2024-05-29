@@ -179,6 +179,7 @@ def create_environment(robot_config, world_yaml_path, num_agents=20, seed=None, 
     # )
 
 
+# it is recommended to use scale=1
 def generate_positions(world_yaml_path, num_agents=20, seed=None, scale=SCALE):
     world_cfg = WorldYAMLFactory.from_yaml(world_yaml_path)
     world_cfg.population_size = num_agents

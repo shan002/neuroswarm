@@ -56,4 +56,4 @@ def smartload(x) -> dict:
     except NameError:  # this python doesn't have ExceptionGroup
         raise Exception(errors)
     else:
-        raise ExceptionGroup(errors)  # new in python 3.11
+        raise ExceptionGroup("Tried resolving as JSON string or as path to file but errors ocurred.", errors)  # new in python 3.11

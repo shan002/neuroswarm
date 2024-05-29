@@ -4,6 +4,7 @@ from io import BytesIO
 import caspian
 
 from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
 
 # Provided Python utilities from tennlab framework/examples/common
 from common.experiment import TennExperiment
@@ -47,12 +48,7 @@ class ConnorMillingExperiment(TennExperiment):
                                         num_agents=self.agents, stop_at=self.sim_time)
         world.behavior = [Circliness(history=self.sim_time, avg_history_max=450)]
 
-        reward_history = []
-
         def callback(world, screen):
-            nonlocal reward_history
-            # reward_history.append(get_how_many_on_goal(world))
-
             a = world.selected
             if a and self.iostream:
                 self.iostream.write_json({
@@ -75,9 +71,6 @@ class ConnorMillingExperiment(TennExperiment):
             show_gui=bool(gui),
         )
 
-        # print(f"final count: {get_how_many_on_goal(world)}")
-        # self.run_info = reward_history
-        # return reward_history[-1]
         self.run_info = world_output.behavior[0].value_history
         return world_output.behavior[0].out_current()[1]
 
@@ -113,7 +106,7 @@ def test(app, args):
             return setup
 
         # Run app and print fitness
-        fitnesses = [app.fitness(proc, net, setup_i(i)) for i in range(n_runs)]
+        fitnesses = [app.fitness(proc, net, setup_i(i)) for i in tqdm(range(n_runs))]
 
         # print(f"Fitness: {fitness:8.8f}")
         print(fitnesses)
