@@ -34,6 +34,8 @@ class ConnorMillingExperiment(TennExperiment):
 
         self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders(self.app_params['proc_ticks'])
 
+        self.track_history = args.track_history
+
         self.log("initialized experiment_tenn2")
 
     @override
@@ -43,7 +45,8 @@ class ConnorMillingExperiment(TennExperiment):
 
         network.set_data("processor", self.processor_params)
 
-        robot_config = rss2.configure_robots(network, MillingAgentCaspianConfig, agent_yaml_path=self.agent_yaml, track_all=self.viz)
+        robot_config = rss2.configure_robots(network, MillingAgentCaspianConfig, agent_yaml_path=self.agent_yaml,
+                                             track_all=self.viz, track_io=self.track_history)
         world = rss2.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
                                         num_agents=self.agents, stop_at=self.sim_time)
         world.behavior = [Circliness(history=self.sim_time, avg_history_max=450)]
@@ -134,6 +137,9 @@ def get_parsers(parser, subpar):
                              help="output network file path.")
     sp['train'].add_argument('--logfile', default="tenn2_train.log",
                              help="running log file path.")
+
+    sp['run'].add_argument('--track_history', action='store_true',
+                           help="pass this to enable sensor vs. output plotting.")
 
     # Testing args
     sp['test'].add_argument('--positions', default=None,
