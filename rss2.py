@@ -172,7 +172,7 @@ class TennlabGUI(DifferentialDriveGUI):
         plt.pause(0.001)
 
 
-def configure_robots(network, agent_config_class, agent_yaml_path, seed=None, track_all=None, track_io=False):
+def configure_robots(network, agent_config_class, agent_yaml_path, seed=None, track_all=None, track_io=False, scale=SCALE):
     """
     Select the Robot's Sensors and Embodiment, return the robot configuration
     """
@@ -200,7 +200,7 @@ def configure_robots(network, agent_config_class, agent_yaml_path, seed=None, tr
     # normal_flockbot.sensors.sensors[0].fn = 0.0
     # normal_flockbot.sensors.sensors[0].fp = 0.0
 
-    agent_config.rescale(SCALE)  # Convert all the BodyLength measurements to pixels in config
+    agent_config.rescale(scale)  # Convert all the BodyLength measurements to pixels in config
     return agent_config
 
 
