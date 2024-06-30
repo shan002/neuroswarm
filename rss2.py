@@ -191,7 +191,6 @@ def configure_robots(network, agent_config_class, agent_yaml_path, seed=None, tr
     config["track_io"] = track_io
 
     agent_config = agent_config_class(**config)
-    agent_config.controller = Controller('self')
 
     # if seed is not None:
     #     normal_flockbot.seed = seed
