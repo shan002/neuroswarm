@@ -40,14 +40,14 @@ class ConnorMillingExperiment(TennExperiment):
 
     @override
     def fitness(self, processor, network, init_callback=lambda x: x):
-        import rss2
+        import rss
         # setup sim
 
         network.set_data("processor", self.processor_params)
 
-        robot_config = rss2.configure_robots(network, MillingAgentCaspianConfig, agent_yaml_path=self.agent_yaml,
+        robot_config = rss.configure_robots(network, MillingAgentCaspianConfig, agent_yaml_path=self.agent_yaml,
                                              track_all=self.viz, track_io=self.track_history)
-        world = rss2.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
+        world = rss.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
                                         num_agents=self.agents, stop_at=self.sim_time)
         world.behavior = [Circliness(history=self.sim_time, avg_history_max=450)]
 
@@ -59,15 +59,15 @@ class ConnorMillingExperiment(TennExperiment):
                     "Event Counts": a.neuron_counts
                 })
 
-        gui = rss2.TennlabGUI(x=world.w, y=0, h=world.h, w=200)
+        gui = rss.TennlabGUI(x=world.w, y=0, h=world.h, w=200)
         if self.viz is False or self.noviz:
             gui = False
 
-        world_subscriber = rss2.WorldSubscriber(func=callback)
+        world_subscriber = rss.WorldSubscriber(func=callback)
 
         world = init_callback(world)
 
-        world_output = rss2.simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
+        world_output = rss.simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
             world_config=world,
             subscribers=[world_subscriber],
             gui=gui,
@@ -85,7 +85,7 @@ def test(app, args):
     net = app.net
 
     if args.positions:
-        from rss2 import PredefinedInitialization, SCALE
+        from rss import PredefinedInitialization, SCALE
         import pandas as pd
         fpath = args.positions
 
@@ -123,9 +123,9 @@ def get_parsers(parser, subpar):
     sp = subpar.parsers
 
     for sub in sp.values():  # applies to everything
-        sub.add_argument('--agent_yaml', default="../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/flockbot.yaml",
+        sub.add_argument('--agent_yaml', default="rss/flockbots-icra-milling/flockbot.yaml",
                          type=str, help="path to yaml config for agent")
-        sub.add_argument('--world_yaml', default="../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/world.yaml",
+        sub.add_argument('--world_yaml', default="rss/flockbots-icra-milling/world.yaml",
                          type=str, help="path to yaml config for world")
 
     for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
