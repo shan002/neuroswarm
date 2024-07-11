@@ -57,7 +57,7 @@ class TennExperiment(Application):
             self.net = neuro.Network()
             self.net.from_json(j)
             self.processor_params = self.net.get_data("processor")
-            self.app_params = self.net.get_data("application").to_python()
+            self.app_params = self.net.get_data("application")
 
         # Get params from defaults/cmd params and default proc/eons cfg
         elif args.action == "train":
