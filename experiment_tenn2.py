@@ -123,9 +123,9 @@ def get_parsers(parser, subpar):
     sp = subpar.parsers
 
     for sub in sp.values():  # applies to everything
-        sub.add_argument('--agent_yaml', default="rss/flockbots-icra-milling/flockbot.yaml",
+        sub.add_argument('--agent_yaml', default="rss/turbopi-milling/turbopi.yaml",
                          type=str, help="path to yaml config for agent")
-        sub.add_argument('--world_yaml', default="rss/flockbots-icra-milling/world.yaml",
+        sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for world")
 
     for key in ('test', 'run'):  # arguments that apply to test/validation and stdin

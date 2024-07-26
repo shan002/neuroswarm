@@ -21,7 +21,7 @@ agent_radius: 0.1
 stop_at_goal: false
 dt: 0.025
 scale_forward_speed: 0.2  # m/s
-scale_turning_rates: 2.0  # m/s
+scale_turning_rates: 2.0  # rad/s
 body_color:
   - 255
   - 0
