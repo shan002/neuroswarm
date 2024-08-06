@@ -2,4 +2,5 @@
 *.log
 /networks/*
 /results/*
+!/results/scatterplots.py
 /logs/*

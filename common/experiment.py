@@ -102,9 +102,8 @@ class TennExperiment(Application):
 
         def check_if_writable(path):
             if not os.access(path, os.W_OK):
-                raise PermissionError(
-                    f"{path} could not be accessed. Check that you have permissions to write to it."
-                )
+                msg = f"{path} could not be accessed. Check that you have permissions to write to it."
+                raise PermissionError(msg)
         if self.save_multiple:
             if not path.is_dir():
                 # raise OSError(1, f"{path} is a directory. Please specify a valid path for the output network file.")
@@ -125,7 +124,7 @@ class TennExperiment(Application):
                     except BaseException as err:
                         raise err
                     finally:
-                        f.close()
+                        f.close()  # type: ignore
                 else:
                     raise OSError(2, f"One or more parent directories are missing. Cannot write to {path}.")
 
@@ -190,14 +189,14 @@ def train(app, args):
             proc_name=caspian.Processor,
             proc_params=app.processor_params,
         )
-        evolve.net_callback = lambda x: tqdm(x,)
+        evolve.net_callback = lambda x: tqdm(x,)  # type: ignore[reportAttributeAccessIssue]
     else:
         evolve = MPEvolver(  # multi-process for concurrent simulations
             app=app,
             eons_params=app.eons_params,
             proc_name=caspian.Processor,
             proc_params=app.processor_params,
-            pool=CustomPool(max_workers=processes),
+            pool=CustomPool(max_workers=processes),  # type: ignore[reportArgumentType]
         )
     evolve.print_callback = app.log_status
 

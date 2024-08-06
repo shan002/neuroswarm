@@ -156,16 +156,16 @@ def main():
 
     args = parser.parse_args()
 
-    args.environment = "connorsim_snn_eons-v01"
+    args.environment = "connorsim_snn_eons-v01"  # type: ignore[reportAttributeAccessIssue]
 
     app = ConnorMillingExperiment(args)
 
     # Do the appropriate action
-    if args.action == "train":
+    if args.action == "train":  # type: ignore[reportAttributeAccessIssue]
         common.experiment.train(app, args)
-    elif args.action == "test":
+    elif args.action == "test":  # type: ignore[reportAttributeAccessIssue]
         test(app, args)
-    elif args.action == "run":
+    elif args.action == "run":  # type: ignore[reportAttributeAccessIssue]
         common.experiment.run(app, args)
     else:
         raise RuntimeError("No action selected")

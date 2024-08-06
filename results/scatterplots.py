@@ -1,3 +1,5 @@
+# pyright: reportUnusedVariable=false, reportPossiblyUnboundVariable=false
+# ruff: noqa: E501
 import matplotlib
 import pandas as pd
 import numpy as np
@@ -47,11 +49,11 @@ def load_txt(
     with open(path, 'r') as f:
         for _ in range(start):
             next(f)  # skip `start` lines
-        return f.readlines(end)
+        return f.readlines(end)  # type: ignore
 
 
 def extract_tenn2_data(lines: list[str]):
-    RE_EPOCH = re.compile(r'[1-2]\d{7}\s?[\d:]{0,8}\s?>>>\s?Epoch\s*(?P<epoch>\d+):\s*(?P<score>[\d.]+):\s*(?P<fit>[\d.]+)\s\|\sNeurons:\s*(?P<neur>\d+)\sSynapses:\s*(?P<syn>\d+)\s\|\sTime:\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)')  # noqa: E501
+    RE_EPOCH = re.compile(r'[1-2]\d{7}\s?[\d:]{0,8}\s?>>>\s?Epoch\s*(?P<epoch>\d+):\s*(?P<score>[\d.]+):\s*(?P<fit>[\d.]+)\s\|\sNeurons:\s*(?P<neur>\d+)\sSynapses:\s*(?P<syn>\d+)\s\|\sTime:\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)')
     matches = [RE_EPOCH.search(line) for line in lines]
     data = [match.groups() for match in matches if match]
     # {'epoch', 'score', 'fit', 'neur', 'syn', 6, 7, 8}
