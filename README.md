@@ -47,6 +47,7 @@ Run has several options:
 * `--prompt`: Wait for a return to continue at each step. Legacy.
 * `--viz_delay 0`: Delay between timesteps for viz. `default=None`
 * `--viz`: Specify a specific visualizer. `default=True`
+* `--track_history`: enable sensor vs. output plotting by clicking on an agent in RobotSwarmSimulator.  
 
 ### common options for `train`
 To start a training session, use
@@ -93,7 +94,6 @@ These override any of the defaults shown above.
     New default is `networks/experiment_tenn2_train.json`  
 * **Override default**: `--logfile path/to/logfile.log`: running log file path. Will be *appended to* if it already exists.  
     New default is `tenn2_train.log`  
-* `--track_history`: enable sensor vs. output plotting by clicking on an agent in RobotSwarmSimulator.  
 
 ### tenn2 options for `test`:
 `--positions path/to/positions.xlsx`: file containing agent positions. `default=None`  
