@@ -36,7 +36,7 @@ class ConnorMillingExperiment(TennExperiment):
 
         robot_config = rss2.configure_robots(network, MazeAgentCaspianConfig, agent_yaml_path=self.agent_yaml, track_all=self.viz)
         world = rss2.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
-                                          num_agents=self.agents, stop_at=self.sim_time)
+                                          num_agents=self.agents, stop_at=self.cycles)
         world.behavior = [AgentsAtGoal()]
 
         reward_history = []

@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 from multiprocessing import Pool
@@ -5,13 +6,13 @@ from multiprocessing import Pool
 import neuro
 import eons
 
-from .utils import *
-from .application import *
+from .utils import make_template
+from .application import Application
 
 from dataclasses import dataclass
 
 # typing
-from typing import Tuple
+from typing import Tuple, override
 
 
 @dataclass
@@ -25,14 +26,14 @@ class EpochInfo:
     best_network: neuro.Network
     best_fitness: float
     best_score: float = None
-    validation: float = None
-    fitnesses: Tuple[float] = ()
+    validation: float | None = None
+    fitnesses: Tuple[float, ...] = ()
 
     @property
     def t_total(self) -> float:
         return self.t_end - self.t_start
 
-    def __str__(self):
+    def __str__(self):  # type: ignore[reportImplicitOverride]
         # Epoch number and fitness score
         out = f"Epoch {self.i:3d}: {self.best_fitness:11.4f}"
         out += '' if self.best_score is None else f":{self.best_score:11.4f}"
@@ -48,13 +49,25 @@ class EpochInfo:
 
 class Evolver:
 
-    def __init__(self, *, app, eons_params, proc_name, proc_params):
+    def __init__(
+        self,
+        *,
+        app,
+        eons_params,
+        proc_name,
+        proc_params,
+        stop_fitness=None,
+        do_print=True
+    ):
 
         if not isinstance(eons_params, dict) or not isinstance(proc_params, dict):
             raise TypeError("Passed EONS/Processor parameters must be dictionaries")
 
         if not isinstance(app, Application):
             raise TypeError("The application must derive from Application")
+
+        # if environment variable $EONS_DISABLE_PRINT is set, override `do_print` to be False
+        self.do_print = do_print and not os.environ.get("EONS_DISABLE_PRINT", "").strip()
 
         self.app = app
         self.eons_params = eons_params
@@ -68,35 +81,41 @@ class Evolver:
         # pop our custom eons params so EONS doesn't complain (with defaults)
         self.penalty = eons_params.pop('penalty', None)
 
+        self.stop_fitness = float('inf') if stop_fitness is None else stop_fitness
+
         self.eo = eons.EONS(eons_params)
         self.initialize_population()
         self.epoch = 0
+        self.best: float = float('-inf')
+        self.pocket: EpochInfo | None = None
         self.fitness_by_epoch = list()
 
         self.net_callback = lambda net: net
-        self.print_callback = None
 
-    def initialize_population(self, rng=1, do_print=False):
-
-        if do_print:
+    def initialize_population(self, moa_state=1):
+        if self.do_print:
             t0 = time.time()
 
         # Create a template network with the right number of inputs & outputs
-        template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs)
+        template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs)  # type: ignore[reportAttributeAccessIssue]
         self.eo.set_template_network(template_net)
 
         # Generate a new initial population for this EONS instance
-        self.pop = self.eo.generate_population(self.eons_params, rng)
+        self.pop = self.eo.generate_population(self.eons_params, moa_state)
 
-        if do_print:
+        if self.do_print:
             print("Initialized population of {} networks in {:8.5f} seconds".format(
                 len(self.pop.networks), time.time() - t0))
 
     def pre_epoch(self):
-        pass
+        f = getattr(self.app, 'pre_epoch', None)
+        if callable(f):
+            f(self)
 
-    def post_epoch(self):
-        pass
+    def post_epoch(self, epoch_info, new_best):
+        f = getattr(self.app, 'post_epoch', None)
+        if callable(f):
+            f(self, epoch_info, new_best)
 
     def evaluate_population(self, networks):
         return [self.app.fitness(self.sim, network) for network in self.net_callback(networks)]
@@ -104,7 +123,7 @@ class Evolver:
     def evaluate_validation(self, network):
         return self.app.validation(self.sim, network)
 
-    def do_epoch(self, do_print=True, add_print='', update_params={}):
+    def do_epoch(self, update_params={}, **kwargs):  # noqa: B006
         t_start = time.time()
 
         # Do any pre-epoch operations
@@ -132,23 +151,22 @@ class Evolver:
         elif callable(self.penalty):
             scores = self.penalty(networks, self.fitness)
         else:
-            c1, c2 = self.penalty
+            # penalize networks by the number of nodes and edges.
+            c1, c2 = self.penalty  # this is retrieved from eons_params in __init__
             scores = [
                 (fitness - (net.num_nodes() * c1 + net.num_edges() * c2))
                 for fitness, net in zip(self.fitness, networks)
-            ]
+            ]  # see 4.5 Multi-Objective Optimization
+            # "Evolutionary Optimization for Neuromorphic Systems", Schuman et al. 2020
         self.pop = self.eo.do_epoch(self.pop, scores, update_params)
         t_eons = time.time() - t_es
 
         bundles = zip(networks, self.fitness, scores)
-        best = max(bundles, key=lambda b: b[2])
+        best = max(bundles, key=lambda b: b[-1])  # get best net by score
         topscoring_net, topscoring_fitness, topscore = best
 
         # Increment our epoch counter
         self.epoch += 1
-
-        # Do any post-epoch operations
-        self.post_epoch()
 
         t_end = time.time()
 
@@ -162,36 +180,30 @@ class Evolver:
             topscoring_fitness,
             topscore,
             validation,
-            self.fitness,  # every score in the population
+            tuple(self.fitness),  # every score in the population
         )
+
+        new_best = False
+        # save new incumbent solution if it's better
+        if topscoring_fitness > self.best:
+            new_best = True
+            self.best = topscoring_fitness
+            self.pocket = info
+
+        if self.do_print:
+            print(info)
+
+        # Do any post-epoch operations
+        self.post_epoch(info, new_best)
 
         return info
 
-    def train(self, n_epochs, stop_fitness=None):
-        # Start with no "best" score
-        best: float = None
-        pocket: EpochInfo = None
-
-        for epoch in range(n_epochs):
-            info = self.do_epoch()
-            fit = info.best_fitness
-
-            if self.print_callback is not None:
-                self.print_callback(info)
-
-            # Check if we have a new best
-            if best is None or fit > best:
-                best = fit
-                pocket = info
-                self.app.save_network(info, newchamp=True)
-            else:
-                self.app.save_network(info, newchamp=False)
-
-            # Check for early stopping condition
-            if stop_fitness is not None and best > stop_fitness:
-                break
-
-        return pocket
+    def train(self, n_epochs):
+        for _epoch in range(n_epochs):
+            self.do_epoch()
+            if self.stop_fitness is not None and self.best > self.stop_fitness:
+                break  # stop early if stopping condition is met
+        return self.pocket
 
     def graph_fitness(self):
         import matplotlib.pyplot as plt
@@ -211,11 +223,11 @@ def mp_fitness(bundle):
 
 
 class MPEvolver(Evolver):
-
-    def __init__(self, *, pool=Pool(), **kwargs):
+    def __init__(self, *, pool=None, **kwargs):
         super().__init__(**kwargs)
-        self.pool = pool
+        self.pool = Pool() if pool is None else pool
 
+    @override
     def evaluate_population(self, networks):
         bundles = ((self.app, net, self.proc_name, self.proc_params) for net in networks)
         return self.pool.map(mp_fitness, bundles)

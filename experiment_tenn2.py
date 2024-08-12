@@ -17,7 +17,7 @@ from novel_swarms.behavior import Circliness
 # typing:
 from typing import override
 
-from util.argparse import ArgumentError
+from common.argparse import ArgumentError
 
 
 class ConnorMillingExperiment(TennExperiment):
@@ -32,7 +32,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders(self.app_params['proc_ticks'])
+        self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders(self.app_params['encoder_ticks'])
 
         self.track_history = args.track_history
 
@@ -48,8 +48,8 @@ class ConnorMillingExperiment(TennExperiment):
         robot_config = rss.configure_robots(network, MillingAgentCaspianConfig, agent_yaml_path=self.agent_yaml,
                                              track_all=self.viz, track_io=self.track_history)
         world = rss.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
-                                        num_agents=self.agents, stop_at=self.sim_time)
-        world.behavior = [Circliness(history=self.sim_time, avg_history_max=450)]
+                                        num_agents=self.agents, stop_at=self.cycles)
+        world.behavior = [Circliness(history=self.cycles, avg_history_max=450)]
 
         def callback(world, screen):
             a = world.selected
@@ -129,14 +129,14 @@ def get_parsers(parser, subpar):
                          type=str, help="path to yaml config for world")
 
     for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
-        sp[key].add_argument('--network', help="network", default="networks/experiment_tenn2.json")
+        pass # sp[key].add_argument('--network', help="network", default="networks/experiment_tenn2.json")
 
     # Training args
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
-    sp['train'].add_argument('--network', default="networks/experiment_tenn2_train.json",
-                             help="output network file path.")
-    sp['train'].add_argument('--logfile', default="tenn2_train.log",
-                             help="running log file path.")
+    # sp['train'].add_argument('--network', default="networks/experiment_tenn2_train.json",
+    #                          help="output network file path.")
+    # sp['train'].add_argument('--logfile', default="tenn2_train.log",
+    #                          help="running log file path.")
 
     sp['run'].add_argument('--track_history', action='store_true',
                            help="pass this to enable sensor vs. output plotting.")

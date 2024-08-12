@@ -38,7 +38,7 @@ class ZespolExperiment(TennExperiment):
 
         zespol_config = {
             "num_agents": self.agents,
-            "ticks": self.sim_time,
+            "ticks": self.cycles,
             "ticks_per_second": 7.5,
             "viz": self.viz,
             "network": network,
@@ -48,7 +48,7 @@ class ZespolExperiment(TennExperiment):
 
         world = zss.setup_world(zespol_config)
 
-        for t in range(self.sim_time):
+        for t in range(self.cycles):
             world.tick()
             metrics = world.metric_window[-1]
 
