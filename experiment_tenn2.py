@@ -41,6 +41,8 @@ class ConnorMillingExperiment(TennExperiment):
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
 
+        self.start_paused = getattr(args, 'start_paused', False)
+
         self.log("initialized experiment_tenn2")
 
     def simulate(self, processor, network, init_callback=lambda x: x):
@@ -53,7 +55,7 @@ class ConnorMillingExperiment(TennExperiment):
                                              track_all=self.viz, track_io=self.track_history)
         world = rss.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
                                         num_agents=self.agents, stop_at=self.cycles)
-        world.behavior = [Circliness(history=self.cycles, avg_history_max=450)]
+        world.behavior = [Circliness(history=max(self.cycles, 1), avg_history_max=450)]
 
         def callback(world, screen):
             a = world.selected
@@ -63,7 +65,7 @@ class ConnorMillingExperiment(TennExperiment):
                     "Event Counts": a.neuron_counts
                 })
 
-        gui = TennlabGUI(x=0, y=0, h=0, w=240)
+        gui = TennlabGUI(x=0, y=0, h=0, w=300)
         gui.position = "sidebar_right"
         if self.viz is False or self.noviz:
             gui = False
@@ -77,6 +79,7 @@ class ConnorMillingExperiment(TennExperiment):
             subscribers=[world_subscriber],
             gui=gui,
             show_gui=bool(gui),
+            start_paused=self.start_paused,
         )
         return world_output
 
@@ -176,6 +179,8 @@ def get_parsers(parser, subpar):
                            help="pass this to enable sensor vs. output plotting.")
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")
+    sp['run'].add_argument('--start_paused', action='store_true',
+                           help="pass this to pause the simulation at startup. Press Space to unpause.")
 
     # Testing args
     sp['test'].add_argument('--positions', default=None,
