@@ -1,4 +1,5 @@
 from io import BytesIO
+import os
 # import matplotlib.pyplot as plt
 
 import caspian
@@ -13,6 +14,9 @@ import common.experiment
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
 from novel_swarms.behavior import Circliness
+
+from rss.gui import TennlabGUI
+import rss.graphing as graphing
 
 # typing:
 from typing import override
@@ -34,13 +38,13 @@ class ConnorMillingExperiment(TennExperiment):
 
         self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders(self.app_params['encoder_ticks'])
 
-        self.track_history = args.track_history
+        self.track_history = args.track_history or args.log_trajectories
+        self.log_trajectories = args.log_trajectories
 
         self.log("initialized experiment_tenn2")
 
-    @override
-    def fitness(self, processor, network, init_callback=lambda x: x):
-        import rss
+    def simulate(self, processor, network, init_callback=lambda x: x):
+        import rss.rss2 as rss
         # setup sim
 
         network.set_data("processor", self.processor_params)
@@ -59,7 +63,8 @@ class ConnorMillingExperiment(TennExperiment):
                     "Event Counts": a.neuron_counts
                 })
 
-        gui = rss.TennlabGUI(x=world.w, y=0, h=world.h, w=200)
+        gui = TennlabGUI(x=0, y=0, h=0, w=240)
+        gui.position = "sidebar_right"
         if self.viz is False or self.noviz:
             gui = False
 
@@ -73,9 +78,40 @@ class ConnorMillingExperiment(TennExperiment):
             gui=gui,
             show_gui=bool(gui),
         )
+        return world_output
 
+    def extract_fitness(self, world_output):
         self.run_info = world_output.behavior[0].value_history
         return world_output.behavior[0].out_current()[1]
+
+    @override
+    def fitness(self, processor, network, init_callback=lambda x: x):
+        world_output = self.simulate(processor, network, init_callback)
+        return self.extract_fitness(world_output)
+
+
+def run(app, args):
+
+    # Set up simulator and network
+
+    if args.stdin == "stdin":
+        proc = None
+        net = None
+    else:
+        proc = caspian.Processor(app.processor_params)
+        net = app.net
+
+    # Run app and print fitness
+    world = app.simulate(proc, net)
+    fitness = app.extract_fitness(world)
+    print(f"Fitness: {fitness:8.4f}")
+
+    if args.log_trajectories:
+        graphing.plot_multiple(world)
+        os.makedirs("/tmp", exist_ok=True)
+        graphing.export(world, output_file="/tmp/agent_trajectories.xlsx")
+
+    return fitness
 
 
 def test(app, args):
@@ -85,7 +121,7 @@ def test(app, args):
     net = app.net
 
     if args.positions:
-        from rss import PredefinedInitialization, SCALE
+        from rss.rss2 import PredefinedInitialization, SCALE
         import pandas as pd
         fpath = args.positions
 
@@ -128,18 +164,18 @@ def get_parsers(parser, subpar):
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for world")
 
-    for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
-        pass # sp[key].add_argument('--network', help="network", default="networks/experiment_tenn2.json")
+    # for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
+    #     pass  # sp[key].add_argument()
 
     # Training args
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
-    # sp['train'].add_argument('--network', default="networks/experiment_tenn2_train.json",
-    #                          help="output network file path.")
-    # sp['train'].add_argument('--logfile', default="tenn2_train.log",
-    #                          help="running log file path.")
+    sp['train'].add_argument('--logfile', default=None,
+                             help="running log file path. By default, this is saved to the projectdir/training.log or tenn2_train.log for non-project mode.")  # noqa: E501
 
     sp['run'].add_argument('--track_history', action='store_true',
                            help="pass this to enable sensor vs. output plotting.")
+    sp['run'].add_argument('--log_trajectories', action='store_true',
+                           help="pass this to log sensor vs. output to file.")
 
     # Testing args
     sp['test'].add_argument('--positions', default=None,
@@ -157,6 +193,8 @@ def main():
     args = parser.parse_args()
 
     args.environment = "connorsim_snn_eons-v01"  # type: ignore[reportAttributeAccessIssue]
+    if args.project is None and args.logfile is None:
+        args.logfile = "tenn2_train.log"
 
     app = ConnorMillingExperiment(args)
 
@@ -166,7 +204,7 @@ def main():
     elif args.action == "test":  # type: ignore[reportAttributeAccessIssue]
         test(app, args)
     elif args.action == "run":  # type: ignore[reportAttributeAccessIssue]
-        common.experiment.run(app, args)
+        run(app, args)
     else:
         raise RuntimeError("No action selected")
 

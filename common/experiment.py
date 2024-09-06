@@ -16,14 +16,7 @@ from .evolver import Evolver
 from .evolver import MPEvolver
 from . import jsontools as jst
 from .application import Application
-
-
-DEFAULT_PROJECT_BASEPATH = pathlib.Path("results")
-DEFAULT_LOGFILE_NAME = "training.log"
-DEFAULT_BESTNET_NAME = "best.json"
-BACKUPNET_NAME = "previous.json"
-DEFAULT_POPULATION_FITNESS_NAME = "population_fitnesses.log"
-NETWORKS_DIR_NAME = "networks"
+from . import project
 
 
 class CustomPool():
@@ -58,34 +51,27 @@ class TennExperiment(Application):
             self.save_strategy = "one_best"
 
         # set project mode.
-        if args.noproj:
+        self.p: project.Project | project.FolderlessProject
+        if args.project is None and args.network:
             # don't create a project folder. Some features will be unavailable.
-            self.project_path = None
-            self.logfile = args.logfile
-            self.best_network_path = args.network
+            self.p = project.FolderlessProject(args.network, args.logfile)
+            self.log_fitnesses = lambda x: None
         else:
             # Okay, we're doing a project folder.
             # first set the project name
-            if args.project is None:
+            if args.project is None and args.action == "train":
                 # no project name specified, so use the experiment name and timestamp
-                self.project_name = f"{args.environment}-{time.strftime('%Y%m%d-%H%M%S')}"
-                self.project_path = DEFAULT_PROJECT_BASEPATH / pathlib.Path(self.project_name)
-            else:
-                self.project_name = args.project
-                self.project_path = pathlib.Path(self.project_name)
-            # now set paths for particular files (and apply cmdline overrides)
-            self.logfile = (self.project_path / DEFAULT_LOGFILE_NAME) if args.logfile is None else args.logfile
-            self.best_network_path = (self.project_path / DEFAULT_BESTNET_NAME) if args.network is None else args.network
-            self.popfit_path = None if args.dont_log_population_fitnesses else (
-                self.project_path / "population_fitnesses.log")
+                project_name = f"{time.strftime('%Y%m%d-%H%M%S')}-{args.environment}"
+                self.p = project.Project(name=project_name)
+            self.log_fitnesses: function = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
 
         app_params = ['encoder_ticks', ]
         self.app_params = dict()
 
         if args.action in ["test", "run", "validate"]:
-            j = jst.smartload(args.network)
             self.net = neuro.Network()
-            self.net.from_json(j)
+            self.p.load_bestnet()
+            self.net.from_json(self.p.bestnet)
             self.processor_params = self.net.get_data("processor")
             self.app_params = self.net.get_data("application")
             # TODO: inquirer.py network chooser if no network specified
@@ -96,23 +82,8 @@ class TennExperiment(Application):
             self.eons_params = jst.smartload(args.eons_params)
             self.processor_params = jst.smartload(args.snn_params)
             self.runs = args.runs
-
-            if self.project_path:
-                # check if the project folder exists
-                if self.project_path.is_dir():
-                    s = input(f"Project folder already exists:\n\t{str(self.project_path)}\n'y' to continue, 'rm' to delete the contents of the folder, anything else to exit.")  # noqa: E501
-                    if s.lower() != 'y':
-                        sys.exit(1)
-                    if s.lower() == 'rm':
-                        shutil.rmtree(self.project_path)
-                # if not, create it
-                else:
-                    self.project_path.mkdir(parents=True, exist_ok=True)
-            if self.popfit_path:
-                self.log(str(args), logpath=self.popfit_path)
-                with open(self.popfit_path, 'a') as f:
-                    f.write(f"{time.time()}\t{0}\t[]\n")
-            self.check_output_path()
+            self.p.make_root_interactive()
+            self.p.check_bestnet_writable()
             self.max_epochs: int
 
         if args.all_counts_stream is not None:
@@ -137,51 +108,16 @@ class TennExperiment(Application):
     def run(self, processor, network):
         return None
 
-    def check_output_path(self):
-        # check that the best network path is writable
-        path = pathlib.Path(self.best_network_path)
-
-        def check_if_writable(path):
-            if not os.access(path, os.W_OK):
-                msg = f"{path} could not be accessed. Check that you have permissions to write to it."
-                raise PermissionError(msg)
-
-        if path.is_file():
-            check_if_writable(path)
-            print(f"WARNING: The output network file\n    {path}\nexists and will be overwritten!")
-        elif path.is_dir():
-            raise OSError(1, f"{path} is a directory. Please specify a valid path for the output network file.")
-        else:  # parent dir probably doesn't exist.
-            if path.parent.is_dir():
-                try:
-                    f = open(path, 'ab')
-                except BaseException as err:
-                    raise err
-                finally:
-                    f.close()  # type: ignore
-            else:
-                raise OSError(2, f"One or more parent directories are missing. Cannot write to {path}.")
-
     def pre_epoch(self, eons):
         if self.save_strategy == "all":
-            max_epochs_digits = len(str(self.max_epochs))
-            population_digits = len(str(len(eons.pop.networks)))
-            (self.project_path / NETWORKS_DIR_NAME).mkdir(parents=False, exist_ok=True)
             for nid, net in enumerate(eons.pop.networks):
-                path = self.project_path / NETWORKS_DIR_NAME / f"e{info.i:0{max_epochs_digits}}-{nid:0{population_digits}}.json"
-                self.save_network(net.network, path)
-        # elif self.save_strategy == "one_best":
+                self.save_network(net.network, self.p.networks.get_file(eons.i, nid))  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
 
     def post_epoch(self, eons, info, new_best):  # eons calls this after each epoch
         if self.save_strategy == "best_per_epoch":
-            ndigits = len(str(self.max_epochs))
-            path = self.project_path / NETWORKS_DIR_NAME / f"e{info.i:0{ndigits}}.json"
-            (self.project_path / NETWORKS_DIR_NAME).mkdir(parents=False, exist_ok=True)
-            self.save_network(info.best_network, path)
-        # do this regardless of save_strategy
-        if new_best:
+            self.save_network(info.best_network, self.p.networks.get_file(info.i, info.best_net_id)) # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+        if new_best:  # save best network to its own file regardless of save_strategy
             self.save_best_network(info, safe_overwrite=True)
-
         self.log_status(info)  # print and log epoch info
         self.log_fitnesses(info)  # write population fitnesses to file
 
@@ -190,38 +126,21 @@ class TennExperiment(Application):
             net.set_data("label", self.label)
         net.set_data("processor", self.processor_params)
         net.set_data("application", self.app_params)
-        with open(path, 'w') as f:
-            f.write(str(net))
+        path.write(str(net))
 
     def save_best_network(self, info, safe_overwrite=True):
-        net = info.best_network
-        path = self.best_network_path
-
-        if safe_overwrite and path.is_file():
-            path.rename(path.with_name(BACKUPNET_NAME))
-
-        self.save_network(net, path)
-
-        self.log(f"wrote best network to {str(path)}.")
-
-    def log_fitnesses(self, info):
-        if self.popfit_path:
-            with open(self.popfit_path, 'a') as f:
-                f.write(f"{time.time()}\t{info.i}\t{repr(info.fitnesses)}\n")
+        self.p.backup_bestnet()
+        self.save_network(info.best_network, self.p.bestnet_file)
+        self.log(f"wrote best network to {str(self.p.bestnet_file)}.")
 
     def log_status(self, info):
         print(info)
         self.log(info)
 
-    def log(self, msg, timestamp="%Y%m%d %H:%M:%S", prompt=' >>> ', end='\n', logpath=None):
-        if logpath is None:
-            logpath = self.logfile  # try using self.logfile (likely set in init)
-        if logpath is None:
-            return
+    def log(self, msg, timestamp="%Y%m%d %H:%M:%S", prompt=' >>> ', end='\n'):
         if isinstance(timestamp, str) and '%' in timestamp:
             timestamp: str = time.strftime(timestamp)
-        with open(logpath, 'a') as f:
-            f.write(f"{timestamp}{prompt}{msg}{end}")
+        self.p.logfile += (f"{timestamp}{prompt}{msg}{end}")
 
 
 def train(app, args):
@@ -303,6 +222,11 @@ def get_parsers(conflict_handler='resolve'):
                                 formatter_class=HelpDefaults, conflict_handler=ch,)
 
     for sub in subpar.parsers.values():  # applies to everything
+        sub.add_argument('project', nargs='?', help="""
+            Specify a project name or path.
+            If a path is specified (i.e. contains '/'), it will be used as the project path.
+            If a name is specified, the project path will be results/{project_name}.
+        """)
         # sub.add_argument('--seed', type=int, help="rng seed for the app", default=None)
         sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=10)
         sub.add_argument('--cycles', type=int, default=1000,
@@ -326,13 +250,6 @@ def get_parsers(conflict_handler='resolve'):
     savestrat = sub_train.add_mutually_exclusive_group(required=False)
     savestrat.add_argument('--save_best_nets', action='store_true')
     savestrat.add_argument('--save_all_nets', action='store_true')
-    proj_mode = sub_train.add_mutually_exclusive_group(required=False)
-    proj_mode.add_argument('--project', default=None, help="""
-        Specify a project name or path.
-        If a path is specified (i.e. contains '/'), it will be used as the project path.
-        If a name is specified, the project path will be results/{project_name}.
-    """)
-    proj_mode.add_argument('--noproj', action='store_true', help="don't create a project folder")
     sub_train.add_argument('--network', default=None,
                            help="Force best network file path. By default, this is saved to the projectdir/best.json")
     sub_train.add_argument('--logfile', default=None,
@@ -356,8 +273,6 @@ def get_parsers(conflict_handler='resolve'):
                            help="override population size")
     sub_train.add_argument('--eons_seed', type=int,
                            help="Seed for EONS. Leave blank for random (time)")
-    sub_train.add_argument('--dont_log_population_fitnesses', action="store_true",
-                           help="disable logging of population fitnesses")
     sub_train.add_argument('--viz', help="specify a specific visualizer", default=False)
 
     for sub in (sub_train, sub_test):  # applies to both train, test

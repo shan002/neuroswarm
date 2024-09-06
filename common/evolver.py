@@ -23,6 +23,7 @@ class EpochInfo:
     t_fitness: float
     t_eons: float
     t_end: float
+    best_net_id: int
     best_network: neuro.Network
     best_fitness: float
     best_score: float = None
@@ -88,7 +89,7 @@ class Evolver:
         self.epoch = 0
         self.best: float = float('-inf')
         self.pocket: EpochInfo | None = None
-        self.fitness_by_epoch = list()
+        self.scores_by_epoch = list()
 
         self.net_callback = lambda net: net
 
@@ -123,6 +124,23 @@ class Evolver:
     def evaluate_validation(self, network):
         return self.app.validation(self.sim, network)
 
+    def fitness_with_penalty(self, fitnesses, networks):
+        # get scores from zipped bundles
+        # bundle should be list(zip(networks, fitnesses))
+        if self.penalty is None:
+            scores = fitnesses
+        elif callable(self.penalty):
+            scores = self.penalty(fitnesses, networks)
+        else:
+            # penalize networks by the number of nodes and edges.
+            c1, c2 = self.penalty  # this is retrieved from eons_params in __init__
+            scores = [
+                (fitness - (net.num_nodes() * c1 + net.num_edges() * c2))
+                for fitness, net in zip(fitnesses, networks)
+            ]  # see 4.5 Multi-Objective Optimization
+            # "Evolutionary Optimization for Neuromorphic Systems", Schuman et al. 2020
+        return scores
+
     def do_epoch(self, update_params={}, **kwargs):  # noqa: B006
         t_start = time.time()
 
@@ -135,35 +153,23 @@ class Evolver:
         self.fitness = self.evaluate_population(networks)
         t_fitness = time.time() - t_fs
 
-        # Track our best network / fitness score
-        self.best_network = self.pop.networks[np.argmax(self.fitness)].network
-        self.best_fitness = max(self.fitness)
-        self.fitness_by_epoch.append(self.best_fitness)
+        # apply penalty function
+        scores = self.fitness_with_penalty(self.fitness, networks)
+
+        # bundle
+        bundles = enumerate(zip(networks, self.fitness, scores))
+        best = max(bundles, key=lambda b: b[-1])  # get best net by score
+        topscoring_net_id, topscoring_net, topscoring_fitness, topscore = best
+        self.scores_by_epoch.append(topscore)
 
         # Validation score for the best network
         # If an app does not specify a validation score, it should return `None`
-        validation = self.evaluate_validation(self.best_network)
+        validation = self.evaluate_validation(topscoring_net)
 
         # Evolve the next population with EONS
         t_es = time.time()
-        if self.penalty is None:
-            scores = self.fitness
-        elif callable(self.penalty):
-            scores = self.penalty(networks, self.fitness)
-        else:
-            # penalize networks by the number of nodes and edges.
-            c1, c2 = self.penalty  # this is retrieved from eons_params in __init__
-            scores = [
-                (fitness - (net.num_nodes() * c1 + net.num_edges() * c2))
-                for fitness, net in zip(self.fitness, networks)
-            ]  # see 4.5 Multi-Objective Optimization
-            # "Evolutionary Optimization for Neuromorphic Systems", Schuman et al. 2020
         self.pop = self.eo.do_epoch(self.pop, scores, update_params)
         t_eons = time.time() - t_es
-
-        bundles = zip(networks, self.fitness, scores)
-        best = max(bundles, key=lambda b: b[-1])  # get best net by score
-        topscoring_net, topscoring_fitness, topscore = best
 
         # Increment our epoch counter
         self.epoch += 1
@@ -176,6 +182,7 @@ class Evolver:
             t_fitness,
             t_eons,
             t_end,
+            topscoring_net_id,
             topscoring_net,
             topscoring_fitness,
             topscore,
@@ -211,7 +218,7 @@ class Evolver:
         ax = fig.add_subplot(111)
         ax.set_xlabel('Epochs')
         ax.set_ylabel('Fitness')
-        ax.plot(self.fitness_by_epoch)
+        ax.plot(self.scores_by_epoch)
         plt.show()
 
 

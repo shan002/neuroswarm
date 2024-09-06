@@ -3,10 +3,6 @@ Example Script
 The SwarmSimulator allows control of the world and agents at every step within the main loop
 """
 # import random
-import pygame
-import numpy as np
-import colorsys
-import itertools
 
 # Import Agent embodiments
 # from novel_swarms.config.AgentConfig import *
@@ -38,138 +34,9 @@ from novel_swarms.agent.control.Controller import Controller
 # Import the simulation loop
 from novel_swarms.world.simulate import main as simulator
 
-from novel_swarms.gui.agentGUI import DifferentialDriveGUI
-
-# typing
-from typing import override
-
-matplotlib = None
-
 simulator = simulator  # explicit export
 
-SCALE = 10  # Set the conversion factor for Body Lengths to pixels (all metrics will be scaled appropriately by this value)
-
-
-def hr(h, s, l):  # noqa: E741
-    return colorsys.hls_to_rgb(h, l, s)
-
-
-class TennlabGUI(DifferentialDriveGUI):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fig, self.ax = None, None
-
-    # def set_selected(self, agent: MazeAgentCaspian):
-    #     super().set_selected(agent)
-
-    @override
-    def draw(self, screen):
-        # super().draw(screen)
-        self.text_baseline = 10
-        if pygame.font:
-            if self.title:
-                self.appendTextToGUI(screen, self.title, size=20)
-            if self.subtitle:
-                self.appendTextToGUI(screen, self.subtitle, size=18)
-
-            self.appendTextToGUI(screen, f"Timesteps: {self.time}")
-            if self.selected:
-                a = self.selected
-                self.appendTextToGUI(screen, f"Current Agent: {a.name}")
-                self.appendTextToGUI(screen, f"")
-                self.appendTextToGUI(screen, f"x: {a.get_x_pos()}")
-                self.appendTextToGUI(screen, f"y: {a.get_y_pos()}")
-                self.appendTextToGUI(screen, f"dx: {a.dx}")
-                self.appendTextToGUI(screen, f"dy: {a.dy}")
-                self.appendTextToGUI(screen, f"sense-state: {a.get_sensors().getState()}")
-                if hasattr(a, "i_1") and hasattr(a, "i_2"):
-                    self.appendTextToGUI(screen, f"Idio_1: {a.i_1}")
-                    self.appendTextToGUI(screen, f"Idio_2: {a.i_2}")
-                self.appendTextToGUI(screen, f"")
-                if hasattr(a, "controller"):
-                    self.appendTextToGUI(screen, f"controller: {a.controller}")
-                    self.appendTextToGUI(screen, f"")
-                self.appendTextToGUI(screen, f"θ: {a.angle % (2 * np.pi)}")
-                if hasattr(a, "agent_in_sight") and a.agent_in_sight is not None:
-                    self.appendTextToGUI(screen, f"sees: {a.agent_in_sight.name}")
-                try:
-                    v, w = a.requested
-                except AttributeError:
-                    pass
-                else:
-                    self.appendTextToGUI(screen, f"ego v (bodylen): {v}")
-                    self.appendTextToGUI(screen, f"ego v   (m/s): {v * 0.0151}")
-                    self.appendTextToGUI(screen, f"ego ω (rad/s): {w}")
-                if a.neuron_counts is not None:
-                    self.appendTextToGUI(screen, f"outs: {a.neuron_counts}")
-                self.graph_selected()
-            else:
-                self.appendTextToGUI(screen, "Current Agent: None")
-                self.appendTextToGUI(screen, "")
-                self.appendTextToGUI(screen, "Behavior", size=18)
-                for b in self.world.behavior:
-                    out = b.out_current()
-                    b.draw(screen)
-                    try:
-                        self.appendTextToGUI(screen, "{} : {:0.3f}".format(out[0], out[1]))
-                    except ValueError:
-                        pass
-                    except Exception:
-                        self.appendTextToGUI(screen, "{} : {}".format(out[0], out[1]))
-        else:
-            print("NO FONT")
-
-    @staticmethod
-    def check_matplotlib():
-        global matplotlib, plt
-        if matplotlib is None:
-            try:
-                import matplotlib
-                import matplotlib.pyplot as plt
-                plt.ion()
-            except ImportError:
-                matplotlib = False
-        return matplotlib
-
-    def graph_selected(self):
-        self.graph_single(self.selected)
-
-    def graph_single(self, a):
-
-        if not self.check_matplotlib():
-            return
-        if not getattr(a, 'history', False):
-            return False
-        if not self.fig:
-            self.fig, self.ax = plt.subplots()
-
-        cr = hr(0.0, 0.9, 0.4)
-        cb = hr(0.6, 0.9, 0.4)
-        cg = hr(0.3, 0.9, 0.4)
-        x = list(range(len(a.history)))
-        sense, out = list(zip(*a.history))
-        v, w = list(zip(*out))
-        xsen = [1] if sense and sense[0] else []
-        xnot = []
-        for (xi, si), (xn, sn) in itertools.pairwise(zip(x, sense)):
-            if sn > si:
-                xsen.append(xn)
-            if si > sn:
-                xnot.append(xi)
-        if sense and sense[-1]:
-            xnot.append(len(sense) - 1)
-
-        # breakpoint()
-        self.ax.cla()
-        self.ax.plot(x, sense, c=cg, label="heck", alpha=0.1)
-        for xa, xb in zip(xsen, xnot):
-            self.ax.axvspan(xa, xb, ymin=0.0, ymax=1.0, alpha=0.15, color='green')
-        self.ax.plot(x, v, c=cb, label="v", alpha=0.5)
-        self.ax.plot(x, w, c=cr, label=r"\omega", alpha=0.5)
-        plt.draw()
-        plt.show()
-        plt.pause(0.001)
+SCALE = 1  # Set the conversion factor for Body Lengths to pixels (all metrics will be scaled appropriately by this value)
 
 
 def configure_robots(network, agent_config_class, agent_yaml_path, seed=None, track_all=None, track_io=False, scale=SCALE):
