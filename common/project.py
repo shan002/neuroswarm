@@ -20,6 +20,9 @@ RUNINFO_NAME = "runinfo.yaml"
 BACKUPNET_NAME = "previous.json"
 NETWORKS_DIR_NAME = "networks"
 
+def _NONE1(x):
+    pass
+
 
 def is_project_dir(path):
     return path.is_dir() and (path / RUNINFO_NAME).is_file()
@@ -64,12 +67,15 @@ class File:
         self.append(s)
         return self
 
+    def __str__(self):
+        return str(self.path)
+
 
 class Logger(File):
     def __init__(self, path, firstcall=None):
         super().__init__(path)
         self._initialized = False
-        self.firstcall = lambda self: None if firstcall is None else firstcall
+        self.firstcall = _NONE1 if firstcall is None else firstcall
 
     @override
     def append(self, s):
@@ -156,10 +162,10 @@ class Project(FolderlessProject):
         self.networks = Networks(self, NETWORKS_DIR_NAME)
         self.logfile = Logger(self.root / LOGFILE_NAME)
         self.popfit_file = Logger(self.root / POPULATION_FITNESS_NAME)
-        self.popfit_file.firstcall = lambda f: f.write(f"{time.time()}\t{0}\t[]\n")
+        self.popfit_file.firstcall = self._default_firstcall
 
-    # def load(self):
-    #     pass
+    def _default_firstcall(self, f):
+        f.write(f"{time.time()}\t{0}\t[]\n")
 
     def make_root_interactive(self):
         create_parents = False
@@ -207,6 +213,6 @@ class Networks:
 
     def get_file(self, epoch, population_id):
         ensure_dir_exists(self.path, parents=False)
-        return File(self / f"e{epoch}-{population_id}.json")
+        return File(self.path / f"e{epoch}-{population_id}.json")
 
 

@@ -1,7 +1,9 @@
 import os
 import time
+import datetime
 import numpy as np
 from multiprocessing import Pool
+from tqdm.contrib.concurrent import process_map
 
 import neuro
 import eons
@@ -23,6 +25,7 @@ class EpochInfo:
     t_fitness: float
     t_eons: float
     t_end: float
+    t_elapsed: float
     best_net_id: int
     best_network: neuro.Network
     best_fitness: float
@@ -44,7 +47,8 @@ class EpochInfo:
         # Network size (nodes / edges)
         out += f" | Neurons: {self.best_network.num_nodes():3d} Synapses: {self.best_network.num_edges():3d}"
         # Timing information
-        out += f" | Time: {self.t_fitness:7.4f} {self.t_eons:7.4f} {self.t_total:6.4f}"
+        eons_ms = self.t_eons * 1000
+        out += f" | Time: {self.t_fitness:7.4f}s {eons_ms:5.1f}ms {self.t_total:6.4f}"
         return out
 
 
@@ -58,7 +62,8 @@ class Evolver:
         proc_name,
         proc_params,
         stop_fitness=None,
-        do_print=True
+        do_print=True,
+        tqdm=False,
     ):
 
         if not isinstance(eons_params, dict) or not isinstance(proc_params, dict):
@@ -90,6 +95,8 @@ class Evolver:
         self.best: float = float('-inf')
         self.pocket: EpochInfo | None = None
         self.scores_by_epoch = list()
+        self.tqdm = tqdm
+        self.t_start = 0
 
         self.net_callback = lambda net: net
 
@@ -119,7 +126,11 @@ class Evolver:
             f(self, epoch_info, new_best)
 
     def evaluate_population(self, networks):
-        return [self.app.fitness(self.sim, network) for network in self.net_callback(networks)]
+        generator = (self.app.fitness(self.sim, network) for network in self.net_callback(networks))
+        if self.tqdm:
+            return self.tqdm(generator, total=len(networks))
+        else:
+            return list(generator)
 
     def evaluate_validation(self, network):
         return self.app.validation(self.sim, network)
@@ -144,6 +155,9 @@ class Evolver:
     def do_epoch(self, update_params={}, **kwargs):  # noqa: B006
         t_start = time.time()
 
+        if self.epoch == 0:
+            self.t_start = t_start
+
         # Do any pre-epoch operations
         self.pre_epoch()
 
@@ -158,8 +172,8 @@ class Evolver:
 
         # bundle
         bundles = enumerate(zip(networks, self.fitness, scores))
-        best = max(bundles, key=lambda b: b[-1])  # get best net by score
-        topscoring_net_id, topscoring_net, topscoring_fitness, topscore = best
+        best = max(bundles, key=lambda b: b[1][-1])  # get best net by score
+        topscoring_net_id, (topscoring_net, topscoring_fitness, topscore) = best
         self.scores_by_epoch.append(topscore)
 
         # Validation score for the best network
@@ -174,6 +188,8 @@ class Evolver:
         # Increment our epoch counter
         self.epoch += 1
 
+        t_elapsed = t_eons - self.t_start
+
         t_end = time.time()
 
         info = EpochInfo(
@@ -182,6 +198,7 @@ class Evolver:
             t_fitness,
             t_eons,
             t_end,
+            t_elapsed,
             topscoring_net_id,
             topscoring_net,
             topscoring_fitness,
@@ -230,11 +247,18 @@ def mp_fitness(bundle):
 
 
 class MPEvolver(Evolver):
-    def __init__(self, *, pool=None, **kwargs):
+    def __init__(self, *, pool=None, max_workers=None, **kwargs):
         super().__init__(**kwargs)
         self.pool = Pool() if pool is None else pool
+        self.max_workers = max_workers
 
     @override
     def evaluate_population(self, networks):
+        c = os.cpu_count() if not self.max_workers else self.max_workers
         bundles = ((self.app, net, self.proc_name, self.proc_params) for net in networks)
+        if self.tqdm is True:
+            return process_map(mp_fitness, bundles, total=len(networks), max_workers=c)
+        elif self.tqdm:
+            return process_map(mp_fitness, bundles, total=len(networks), max_workers=c,
+                               tqdm_class=self.tqdm)
         return self.pool.map(mp_fitness, bundles)

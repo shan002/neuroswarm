@@ -25,8 +25,9 @@ class CustomPool():
     def __init__(self, **tqdm_kwargs):  # type:ignore[reportMissingSuperCall] # max_workers=args.threads
         self.kwargs = tqdm_kwargs
 
-    def map(self, fn, *iterables):
-        return process_map(fn, *iterables, **self.kwargs)
+    def map(self, fn, iterables):
+        breakpoint()
+        return process_map(fn, iterables)
 
 
 class TennExperiment(Application):
@@ -163,6 +164,7 @@ def train(app, args):
             'proc_params': app.processor_params,
             'stop_fitness': max_fitness,
             'do_print': False,
+            'tqdm': True,
     }
 
     if processes == 1:
@@ -173,7 +175,7 @@ def train(app, args):
     else:
         evolve = MPEvolver(  # multi-process for concurrent simulations
             **eons_args,
-            pool=CustomPool(max_workers=processes),  # type: ignore[reportArgumentType]
+            max_workers=processes,  # type: ignore[reportArgumentType]
         )
 
     try:
