@@ -111,8 +111,8 @@ def run(app, args):
 
     if args.log_trajectories:
         graphing.plot_multiple(world)
-        os.makedirs("/tmp", exist_ok=True)
-        graphing.export(world, output_file="/tmp/agent_trajectories.xlsx")
+        graphing.export(world, output_file=app.p.ensure_file_parents("agent_trajectories.xlsx"))
+        # TODO: handle when no project
 
     return fitness
 

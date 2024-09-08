@@ -7,6 +7,7 @@ import sys
 import time
 import pathlib
 import shutil
+import re
 
 # import custom cmd parser
 import common.argparse
@@ -19,15 +20,18 @@ from .application import Application
 from . import project
 
 
-class CustomPool():
-    """pool class for Evolver, so we can use tqdm for those sweet progress bars"""
+RE_CONTAINS_SEP = re.compile(r"[/\\]")
+DEFAULT_PROJECT_BASEPATH = pathlib.Path("out")
 
-    def __init__(self, **tqdm_kwargs):  # type:ignore[reportMissingSuperCall] # max_workers=args.threads
-        self.kwargs = tqdm_kwargs
+# class CustomPool():
+#     """pool class for Evolver, so we can use tqdm for those sweet progress bars"""
 
-    def map(self, fn, iterables):
-        breakpoint()
-        return process_map(fn, iterables)
+#     def __init__(self, **tqdm_kwargs):  # type:ignore[reportMissingSuperCall] # max_workers=args.threads
+#         self.kwargs = tqdm_kwargs
+
+#     def map(self, fn, iterables):
+#         breakpoint()
+#         return process_map(fn, iterables)
 
 
 class TennExperiment(Application):
@@ -63,15 +67,25 @@ class TennExperiment(Application):
             if args.project is None and args.action == "train":
                 # no project name specified, so use the experiment name and timestamp
                 project_name = f"{time.strftime('%Y%m%d-%H%M%S')}-{args.environment}"
-                self.p = project.Project(name=project_name)
-            self.log_fitnesses: function = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+                self.p = project.Project(path=args.root / project_name, name=project_name)
+            elif RE_CONTAINS_SEP.search(args.project):  # project name contains a path separator
+                project_name = pathlib.Path(args.project).name
+                if args.root is not DEFAULT_PROJECT_BASEPATH:
+                    print("WARNING: You seem to have specified a root path AND a full project path.")
+                    print(f"The root path will be ignored; path={args.project}")
+                self.p = project.Project(path=args.project, name=project_name)
+            else:
+                self.p = project.Project(path=args.root / project_name, name=project_name)
+            self.log_fitnesses = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
 
         app_params = ['encoder_ticks', ]
         self.app_params = dict()
 
         if args.action in ["test", "run", "validate"]:
+            if args.prnet:
+                raise NotImplementedError("TODO: load network from project folder")  # TODO
             self.net = neuro.Network()
-            self.p.load_bestnet()
+            self.p.load_bestnet(args.network)  # defaults to best.json if not specified via args
             self.net.from_json(self.p.bestnet)
             self.processor_params = self.net.get_data("processor")
             self.app_params = self.net.get_data("application")
@@ -227,8 +241,11 @@ def get_parsers(conflict_handler='resolve'):
         sub.add_argument('project', nargs='?', help="""
             Specify a project name or path.
             If a path is specified (i.e. contains '/'), it will be used as the project path.
-            If a name is specified, the project path will be results/{project_name}.
+            If a name is specified, the project path will be {root}/{project_name}.
+            by default, root is 'out' and project_name is the current time.
         """)
+        sub.add_argument('--root', help="Default path to directory to place project folder in",
+                         type=pathlib.Path, default=DEFAULT_PROJECT_BASEPATH)
         # sub.add_argument('--seed', type=int, help="rng seed for the app", default=None)
         sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=10)
         sub.add_argument('--cycles', type=int, default=1000,
@@ -236,7 +253,9 @@ def get_parsers(conflict_handler='resolve'):
 
     for sub in (sub_test, sub_run):  # arguments that apply to test/validation and stdin
         sub.add_argument('--stdin', help="Use stdin as input.", action="store_true")
-        sub.add_argument('--network', help="network", default="networks/experiment_tenn.json")
+        net = sub.add_mutually_exclusive_group(required=False)
+        net.add_argument('--network', help="network")
+        net.add_argument('--prnet', help="network name in the project folder")
         sub.add_argument('--viz', help="specify a specific visualizer", default=True)
         sub.add_argument('--noviz', help="explicitly disable viz", action="store_true")
         sub.add_argument('--viz_delay', type=float,  # default: None
@@ -265,8 +284,8 @@ def get_parsers(conflict_handler='resolve'):
                            help="json for eons parameters.")
     sub_train.add_argument('--snn_params', default="config/caspian.json",
                            help="json for SNN processor parameters.")
-    sub_train.add_argument('-p', '--processes', type=int, default=1,
-                           help="number of threads for concurrent fitness evaluation.")
+    sub_train.add_argument('-p', '--processes', type=int, default=None,
+                           help="number of threads for concurrent fitness evaluation. Defaults to detected CPU count.")
     sub_train.add_argument('--max_fitness', type=float, default=9999999999,
                            help="stop eons if this fitness is achieved.")
     sub_train.add_argument('--epochs', type=int, default=999,

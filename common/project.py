@@ -98,10 +98,10 @@ class FolderlessProject:
     def load_bestnet(self,
         path_or_jsonstr: None | str | os.PathLike | File | dict = None,
         update_path=True,
-    ):
+    ) -> None:
         if path_or_jsonstr is None:
             path_or_jsonstr = self._network_path_or_jsonstr
-        elif isinstance(path_or_jsonstr, File):
+        if isinstance(path_or_jsonstr, File):
             path_or_jsonstr = path_or_jsonstr.path
 
         # HACK: on most code paths, the json file will be loaded twice (json_detect, smartload)
@@ -164,6 +164,14 @@ class Project(FolderlessProject):
         self.popfit_file = Logger(self.root / POPULATION_FITNESS_NAME)
         self.popfit_file.firstcall = self._default_firstcall
 
+    def load_bestnet(self,
+        path_or_jsonstr: None | str | os.PathLike | File | dict = None,
+        update_path=True,
+    ) -> None:
+        if not path_or_jsonstr:
+            path_or_jsonstr = self.bestnet_file
+        super().load_bestnet(path_or_jsonstr, update_path)
+
     def _default_firstcall(self, f):
         f.write(f"{time.time()}\t{0}\t[]\n")
 
@@ -205,6 +213,17 @@ class Project(FolderlessProject):
 
     def log_popfit(self, info):
         self.popfit_file += f"{time.time()}\t{info.i}\t{repr(info.fitnesses)}\n"
+
+    def ensure_dir(self, relpath, parents=True, exist_ok=True, **kwargs):
+        path = self.root / relpath
+        ensure_dir_exists(path, parents=parents, exist_ok=exist_ok, **kwargs)
+        return path
+
+    def ensure_file_parents(self, relpath, parents=True, exist_ok=True, **kwargs):
+        path = self.root / relpath
+        ensure_dir_exists(path.parent, parents=parents, exist_ok=exist_ok, **kwargs)
+        return path
+
 
 
 class Networks:
