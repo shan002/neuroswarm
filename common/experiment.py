@@ -7,6 +7,7 @@ import sys
 import time
 import pathlib
 import shutil
+import yaml
 import re
 
 # import custom cmd parser
@@ -75,6 +76,7 @@ class TennExperiment(Application):
                     print(f"The root path will be ignored; path={args.project}")
                 self.p = project.Project(path=args.project, name=project_name)
             else:
+                project_name = args.project
                 self.p = project.Project(path=args.root / project_name, name=project_name)
             self.log_fitnesses = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
 
@@ -99,7 +101,6 @@ class TennExperiment(Application):
             self.runs = args.runs
             self.p.make_root_interactive()
             self.p.check_bestnet_writable()
-            self.max_epochs: int
 
         if args.all_counts_stream is not None:
             self.iostream = neuro.IO_Stream()
@@ -119,6 +120,7 @@ class TennExperiment(Application):
         # Get the number of neurons from the agent definition
 
         self.n_inputs, self.n_outputs, = 0, 0
+        self.args = args
 
     def run(self, processor, network):
         return None
@@ -157,6 +159,31 @@ class TennExperiment(Application):
             timestamp: str = time.strftime(timestamp)
         self.p.logfile += (f"{timestamp}{prompt}{msg}{end}")
 
+    def save_artifacts(self, evolver):
+        if not isinstance(self.p, project.Project):
+            return
+        self.p: project.Project
+        self.p.save_yaml_artifact("evolver.yaml", evolver)
+        self.p.save_yaml_artifact("experiment.yaml", self)
+        return True
+
+    def args_as_dict(self):
+        return vars(self.args)
+
+    def as_config_dict(self):
+        return {
+            "args": self.args_as_dict(),
+            "app_params": self.app_params,
+            "label": self.label,
+            "eons_seed": self.eons_seed,
+            "agents": self.agents,
+            "processes": self.processes,
+            "cycles": self.cycles,
+            "save_strategy": self.save_strategy,
+            "p": self.p,
+            "n_inputs": self.n_inputs,
+            "n_outputs": self.n_outputs,
+        }
 
 def train(app, args):
 
@@ -191,6 +218,8 @@ def train(app, args):
             **eons_args,
             max_workers=processes,  # type: ignore[reportArgumentType]
         )
+
+    app.save_artifacts(evolve)
 
     try:
         return evolve.train(app.max_epochs)

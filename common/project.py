@@ -3,7 +3,7 @@ import shutil
 import sys
 import time
 import os
-from yaml import safe_load, dump
+import yaml
 from . import jsontools as jst
 
 # typing
@@ -19,6 +19,7 @@ POPULATION_FITNESS_NAME = "population_fitnesses.log"
 RUNINFO_NAME = "runinfo.yaml"
 BACKUPNET_NAME = "previous.json"
 NETWORKS_DIR_NAME = "networks"
+ARTIFACTS_DIR_NAME = "artifacts"
 
 def _NONE1(x):
     pass
@@ -38,6 +39,25 @@ def check_if_writable(path):
     if not os.access(path, os.W_OK):
         msg = f"{path} could not be accessed. Check that you have permissions to write to it."
         raise PermissionError(msg)
+
+
+def get_dict(obj):
+    if hasattr(obj, "as_dict"):
+        return obj.as_dict()
+    if hasattr(obj, "asdict"):
+        return obj.asdict()
+    if isinstance(obj, dict):
+        return obj
+    if isinstance(obj, list):
+        return {i: get_dict(obj[i]) for i in range(len(obj))}
+
+    return vars(obj)
+
+
+def get_config_dict(obj):
+    if hasattr(obj, "as_config_dict"):
+        return obj.as_config_dict()
+    return get_dict(obj)
 
 
 cache = {}
@@ -224,6 +244,10 @@ class Project(FolderlessProject):
         ensure_dir_exists(path.parent, parents=parents, exist_ok=exist_ok, **kwargs)
         return path
 
+    def save_yaml_artifact(self, name, obj):
+        artifacts = pathlib.Path(ARTIFACTS_DIR_NAME)
+        with open(self.ensure_file_parents(artifacts / name), "w") as f:
+            yaml.dump(get_config_dict(obj), f)
 
 
 class Networks:

@@ -105,8 +105,8 @@ class Evolver:
             t0 = time.time()
 
         # Create a template network with the right number of inputs & outputs
-        template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs)  # type: ignore[reportAttributeAccessIssue]
-        self.eo.set_template_network(template_net)
+        self.template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs)  # type: ignore[reportAttributeAccessIssue]
+        self.eo.set_template_network(self.template_net)
 
         # Generate a new initial population for this EONS instance
         self.pop = self.eo.generate_population(self.eons_params, moa_state)
@@ -238,6 +238,18 @@ class Evolver:
         ax.plot(self.scores_by_epoch)
         plt.show()
 
+    def as_config_dict(self):
+        return {
+            "app": self.app,
+            "eons_params": self.eons_params,
+            "proc_name": self.proc_name,
+            "proc_params": self.proc_params,
+            "stop_fitness": self.stop_fitness,
+            "do_print": self.do_print,
+            "tqdm": self.tqdm,
+            "t_start": self.t_start,
+            "net_callback": self.net_callback,
+        }
 
 # Helper function for MP Pool mapping
 def mp_fitness(bundle):

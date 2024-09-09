@@ -92,6 +92,29 @@ class ConnorMillingExperiment(TennExperiment):
         world_output = self.simulate(processor, network, init_callback)
         return self.extract_fitness(world_output)
 
+    def as_config_dict(self):
+        d = super().as_config_dict()
+        d.update({
+            "agent_yaml_path": self.agent_yaml,
+            "world_yaml_path": self.world_yaml,
+            # "run_info": self.run_info,
+        })
+        return d
+
+    def save_artifacts(self, evolver, *args, **kwargs):
+        if super().save_artifacts(evolver, *args, **kwargs) is None:
+            return
+        cycles = self.cycles
+        self.cycles = 0
+        proc = caspian.Processor(self.processor_params)
+        world = self.simulate(proc, evolver.template_net)
+
+        self.p.save_yaml_artifact("env.yaml", world)
+
+        self.cycles = cycles
+        if 'rss' in globals():
+            del rss
+
 
 def run(app, args):
 
