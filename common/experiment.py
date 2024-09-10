@@ -80,7 +80,7 @@ class TennExperiment(Application):
                 self.p = project.Project(path=args.root / project_name, name=project_name)
             self.log_fitnesses = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
 
-        app_params = ['encoder_ticks', ]
+        # app_params = ['encoder_ticks', ]
         self.app_params = dict()
 
         if args.action in ["test", "run", "validate"]:
@@ -95,7 +95,6 @@ class TennExperiment(Application):
 
         # Get params from defaults/cmd params and default proc/eons cfg
         elif args.action == "train":
-            self.encoder_ticks = args.encoder_ticks
             self.eons_params = jst.smartload(args.eons_params)
             self.processor_params = jst.smartload(args.snn_params)
             self.runs = args.runs
@@ -111,9 +110,9 @@ class TennExperiment(Application):
 
         # If an app param hasn't been set on the network, use defaults.
         # This helps prevent old networks from becoming obsolete.
-        for arg in app_params:
-            if arg not in self.app_params:
-                self.app_params[arg] = vars(args)[arg]
+        # for arg in app_params:
+        #     if arg not in self.app_params:
+        #         self.app_params[arg] = vars(args)[arg]
 
         # Note: encoders/decoders *can* be saved to or read from the network. not implemented yet.
 
@@ -143,6 +142,7 @@ class TennExperiment(Application):
             net.set_data("label", self.label)
         net.set_data("processor", self.processor_params)
         net.set_data("application", self.app_params)
+        self.p.bestnet = net
         path.write(str(net))
 
     def save_best_network(self, info, safe_overwrite=True):
@@ -305,10 +305,10 @@ def get_parsers(conflict_handler='resolve'):
     sub_train.add_argument('--logfile', default=None,
                            help="running log file path. By default, this is saved to the projectdir/training.log")
 
-    sub_train.add_argument('--encoder_ticks', type=int, default=10,
-                           help="Used to determine the encoder/decoder ticks.")
-    sub_train.add_argument('--extra_ticks', type=int, default=5,
-                        help="Extra ticks to account for propagation time.")
+    # sub_train.add_argument('--encoder_ticks', type=int, default=None,
+    #                        help="Used to determine the encoder/decoder ticks.")
+    # sub_train.add_argument('--extra_ticks', type=int, default=5,
+    #                     help="Extra ticks to account for propagation time.")
     sub_train.add_argument('--eons_params', default="eons/std.json",
                            help="json for eons parameters.")
     sub_train.add_argument('--snn_params', default="config/caspian.json",

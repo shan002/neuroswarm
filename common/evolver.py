@@ -105,8 +105,8 @@ class Evolver:
             t0 = time.time()
 
         # Create a template network with the right number of inputs & outputs
-        self.template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs)  # type: ignore[reportAttributeAccessIssue]
-        self.eo.set_template_network(self.template_net)
+        template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs)  # type: ignore[reportAttributeAccessIssue]
+        self.eo.set_template_network(template_net)
 
         # Generate a new initial population for this EONS instance
         self.pop = self.eo.generate_population(self.eons_params, moa_state)

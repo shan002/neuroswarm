@@ -10,6 +10,7 @@ from tqdm import tqdm
 # Provided Python utilities from tennlab framework/examples/common
 from common.experiment import TennExperiment
 import common.experiment
+from common.utils import make_template
 
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
@@ -36,7 +37,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders(self.app_params['encoder_ticks'])
+        self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders()
 
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
@@ -101,19 +102,33 @@ class ConnorMillingExperiment(TennExperiment):
         })
         return d
 
-    def save_artifacts(self, evolver, *args, **kwargs):
-        if super().save_artifacts(evolver, *args, **kwargs) is None:
-            return
+    def save_network(self, net, path):
+        if 'encoder_ticks' not in self.app_params:
+            world = self.get_sample_world(delete_rss=False)
+            self.app_params.update({'encoder_ticks': world.population[0].neuro_tpc})
+        super().save_network(net, path)
+
+    def get_sample_world(self, delete_rss=True):
         cycles = self.cycles
         self.cycles = 0
         proc = caspian.Processor(self.processor_params)
-        world = self.simulate(proc, evolver.template_net)
-
-        self.p.save_yaml_artifact("env.yaml", world)
-
+        template_net = make_template(proc, self.n_inputs, self.n_outputs)
+        world = self.simulate(proc, template_net)
         self.cycles = cycles
+        if delete_rss:
+            self.delete_rss()
+        return world
+
+    def delete_rss(self):
         if 'rss' in globals():
             del rss
+
+    def save_artifacts(self, evolver, *args, **kwargs):
+        if super().save_artifacts(evolver, *args, **kwargs) is None:
+            return
+        self.p.save_yaml_artifact("env.yaml", self.get_sample_world(delete_rss=False))
+        self.delete_rss()
+
 
 
 def run(app, args):

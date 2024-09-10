@@ -163,6 +163,10 @@ class FolderlessProject:
                 new_path = self.bestnet_file.path.with_name(BACKUPNET_NAME)
             self.bestnet_file.path.rename(new_path)
 
+    @property
+    def is_bestnet_loaded(self):
+        return bool(self.bestnet)
+
 
 class Project(FolderlessProject):
     isproj = True

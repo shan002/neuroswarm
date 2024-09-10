@@ -39,7 +39,15 @@ simulator = simulator  # explicit export
 SCALE = 1  # Set the conversion factor for Body Lengths to pixels (all metrics will be scaled appropriately by this value)
 
 
-def configure_robots(network, agent_config_class, agent_yaml_path, seed=None, track_all=None, track_io=False, scale=SCALE):
+def configure_robots(
+    network,
+    agent_config_class,
+    agent_yaml_path,
+    seed=None,
+    track_all=None,
+    track_io=False,
+    scale=SCALE,
+):
     """
     Select the Robot's Sensors and Embodiment, return the robot configuration
     """
