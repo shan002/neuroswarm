@@ -56,7 +56,8 @@ class TennlabGUI(DifferentialDriveGUI):
         if not self.fig:
             self.fig, self.ax = plt.subplots()
 
-        plot_single(a, self.fig, self.ax)
+        if not self.sim_paused:
+            plot_single(a, self.fig, self.ax)
 
         plt.draw()
         plt.show()
