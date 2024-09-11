@@ -202,7 +202,7 @@ class Project(FolderlessProject):
     def make_root_interactive(self):
         create_parents = False
         if self.root.is_dir():
-            s = input(f"Project folder already exists:\n\t{str(self.root)}\n'y' to continue, 'rm' to delete the contents of the folder, anything else to exit.")  # noqa: E501
+            s = input(f"Project folder already exists:\n\t{str(self.root)}\n'y' to continue, 'rm' to delete the contents of the folder, anything else to exit. ")  # noqa: E501
             if s.lower() not in ('y', 'yes', 'rm'):
                 print("Exiting. Your filesystem has not been modified.")
                 sys.exit(1)
@@ -213,7 +213,7 @@ class Project(FolderlessProject):
             print("WARNING: You're trying to put the project in")
             print(str(self.root.parent))
             print("but some part of it does not exist! Would you like to create it?")
-            s = input("Type 'y' to create it, anything else to exit.")
+            s = input("Type 'y' to create it, anything else to exit. ")
             if s.lower() not in ('y', 'yes'):
                 print("Exiting. Your filesystem has not been modified.")
                 sys.exit(1)
