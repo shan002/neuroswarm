@@ -11,6 +11,7 @@ from tqdm import tqdm
 from common.experiment import TennExperiment
 import common.experiment
 from common.utils import make_template
+from common import env_tools as envt
 
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
@@ -128,6 +129,23 @@ class ConnorMillingExperiment(TennExperiment):
             return
         self.p.save_yaml_artifact("env.yaml", self.get_sample_world(delete_rss=False))
         self.delete_rss()
+
+    def get_env_info(self):
+        d = super().get_env_info()
+        try:
+            novel_swarms_path = envt.module_editable_path('novel_swarms')
+            d['.dependencies'].update({
+                'novel_swarms': {
+                    'path': str(novel_swarms_path.resolve()),
+                    "branch": envt.get_branch_name(novel_swarms_path),
+                    "HEAD": envt.git_hash(novel_swarms_path),
+                    "status": [s.strip() for s in envt.git_porcelain(novel_swarms_path).split('\n')],
+                    'version': envt.get_module_version('novel_swarms'),
+                },
+            })
+        except Exception:
+            d['.dependencies'].update({'novel_swarms': envt.get_module_version('novel_swarms')})
+        return d
 
 
 

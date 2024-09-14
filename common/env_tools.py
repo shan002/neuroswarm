@@ -6,7 +6,8 @@ __version__ = "0.0.1"
 import json
 import string
 import subprocess as sp
-from importlib.metadata import Distribution
+from urllib.parse import urlparse
+from importlib.metadata import Distribution, version
 import pathlib as pl
 
 
@@ -23,12 +24,29 @@ def is_root(path):
 
 def module_editable_path(module):
     # https://stackoverflow.com/questions/43348746/how-to-detect-if-module-is-installed-in-editable-mode
-    direct_url = Distribution.from_name(module.__name__).read_text("direct_url.json")
+    is_module = not isinstance(module, str)
+    name = module.__name__ if is_module else module
+    direct_url = Distribution.from_name(name).read_text("direct_url.json")
     if direct_url is None:
-        return False
-    is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
-    file = pl.Path(module.__file__)
-    return file.parent if file.is_file() and is_editable else False
+        return
+    info = json.loads(direct_url)
+    is_editable = info.get("dir_info", {}).get("editable", False)
+    if is_editable:
+        if is_module:
+            if (file := pl.Path(module.__file__)).exists():
+                return file.parent
+        if url := info.get("url", None):
+            parsed = urlparse(url)
+            assert parsed.scheme == "file", f"Received a non-file url for editable module {name}: {url}"
+            return pl.Path(urlparse(url).path)
+
+
+def get_module_version(module):
+    if isinstance(module, str):
+        return version(module)
+    else:
+        return version(module.__version__)
+
 
 
 def search_git_root(path, max_recursions=10):
@@ -67,6 +85,11 @@ def get_branch_name(path) -> str:
     return str(ref_path.relative_to('refs/heads')).strip(string.whitespace + '/\\')
 
 
-def git_porcelain(path):
+def git_porcelain(path='.'):
     ret = sp.run(['git', 'status', '--porcelain'], stdout=sp.PIPE, stderr=sp.PIPE, cwd=path)
-    return ret.stdout.decode('utf-8')
+    return ret.stdout.decode('utf-8').strip()
+
+
+def git_hash(path='.'):
+    ret = sp.run(['git', 'rev-parse', 'HEAD'], stdout=sp.PIPE, stderr=sp.PIPE, cwd=path)
+    return ret.stdout.decode('utf-8').strip()

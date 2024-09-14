@@ -4,6 +4,7 @@ import neuro
 import caspian
 import os
 import sys
+import platform
 import time
 import pathlib
 import shutil
@@ -19,6 +20,7 @@ from .evolver import MPEvolver
 from . import jsontools as jst
 from .application import Application
 from . import project
+from . import env_tools as envt
 
 
 RE_CONTAINS_SEP = re.compile(r"[/\\]")
@@ -173,6 +175,7 @@ class TennExperiment(Application):
     def as_config_dict(self):
         return {
             "args": self.args_as_dict(),
+            "env_info": self.get_env_info(),
             "app_params": self.app_params,
             "label": self.label,
             "eons_seed": self.eons_seed,
@@ -184,6 +187,23 @@ class TennExperiment(Application):
             "n_inputs": self.n_inputs,
             "n_outputs": self.n_outputs,
         }
+
+    def get_env_info(self):
+        d = {
+            "uname": platform.uname()._asdict(),
+            "python_version": platform.python_version(),
+            "cwd": os.getcwd(),
+            ".dependencies": {},
+        }
+        try:
+            d.update({
+                "branch": envt.get_branch_name('.'),
+                "HEAD": envt.git_hash('.'),
+                "status": [s.strip() for s in envt.git_porcelain('.').split('\n')],
+            })
+        except Exception:
+            d.update({"git_repo": None})
+        return d
 
 def train(app, args):
 

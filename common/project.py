@@ -1,3 +1,7 @@
+# project file management for EONS experiments
+
+__version__ = "0.0.1"
+
 import pathlib
 import shutil
 import sys
@@ -20,6 +24,7 @@ RUNINFO_NAME = "runinfo.yaml"
 BACKUPNET_NAME = "previous.json"
 NETWORKS_DIR_NAME = "networks"
 ARTIFACTS_DIR_NAME = "artifacts"
+
 
 def _NONE1(x):
     pass
