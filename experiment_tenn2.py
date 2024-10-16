@@ -15,13 +15,14 @@ from common import env_tools as envt
 
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
-from novel_swarms.behavior import Circliness
+import novel_swarms.behavior as behavior
 
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
 
 # typing:
 from typing import override
+from novel_swarms.world.RectangularWorld import RectangularWorld
 
 from common.argparse import ArgumentError
 
@@ -57,7 +58,11 @@ class ConnorMillingExperiment(TennExperiment):
                                              track_all=self.viz, track_io=self.track_history)
         world = rss.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
                                         num_agents=self.agents, stop_at=self.cycles)
-        world.behavior = [Circliness(history=max(self.cycles, 1), avg_history_max=450)]
+        world.behavior = [
+            behavior.Aggregation(history=max(self.cycles, 1)),
+            behavior.Circliness(history=max(self.cycles, 1), avg_history_max=450),
+            behavior.DistanceSizeRatio(history=max(self.cycles, 1)),
+        ]
 
         def callback(world, screen):
             a = world.selected
@@ -85,9 +90,9 @@ class ConnorMillingExperiment(TennExperiment):
         )
         return world_output
 
-    def extract_fitness(self, world_output):
+    def extract_fitness(self, world_output: RectangularWorld):
         self.run_info = world_output.behavior[0].value_history
-        return world_output.behavior[0].out_current()[1]
+        return world_output.behavior_dict['DistanceSizeRatio'].out_current()[1]
 
     @override
     def fitness(self, processor, network, init_callback=lambda x: x):
