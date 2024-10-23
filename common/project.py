@@ -46,6 +46,30 @@ def check_if_writable(path):
         raise PermissionError(msg)
 
 
+def inquire_project(root=None):
+    if root is None:
+        root = DEFAULT_PROJECT_BASEPATH
+    from InquirerPy import inquirer
+    projects = list(root.iterdir())
+    if not list:
+        return None
+    return inquirer.fuzzy(choices=sorted(projects), message="Select a project").execute()
+
+
+def inquire_size(file: pathlib.Path, limit=300e6):  # 300 MB
+    size = file.stat().st_size
+    if size < limit:
+        return
+    mb = round(size / 1e6, 3)
+    message = f"The file {file} is {mb} MB. Do you want to continue?"
+    try:
+        from InquirerPy import inquirer
+        return not inquirer.confirm(message=message, default=True).execute()
+    except ImportError:
+        print(message)
+        input("Press enter to continue, ctrl-c to cancel.")
+
+
 def get_dict(obj):
     if hasattr(obj, "as_dict"):
         return obj.as_dict()
@@ -54,9 +78,11 @@ def get_dict(obj):
     if isinstance(obj, dict):
         return obj
     if isinstance(obj, list):
-        return {i: get_dict(obj[i]) for i in range(len(obj))}
+        return {i: get_dict(val) for i, val in enumerate(obj)}
+    if hasattr(obj, "__dict__"):
+        return vars(obj)
 
-    return vars(obj)
+    return obj
 
 
 def get_config_dict(obj):
@@ -95,6 +121,12 @@ class File:
     def __str__(self):
         return str(self.path)
 
+    def as_config_dict(self):
+        return self.as_dict()
+
+    def as_dict(self):
+        return {'path': str(self)}
+
 
 class Logger(File):
     def __init__(self, path, firstcall=None):
@@ -108,6 +140,11 @@ class Logger(File):
             self.firstcall(self)
             self._initialized = True
         super().append(s)
+
+    def as_dict(self):
+        d = super().as_dict()
+        d.update({'firstcall': repr(self.firstcall)})
+        return d
 
 
 class FolderlessProject:

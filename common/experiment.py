@@ -71,6 +71,9 @@ class TennExperiment(Application):
                 # no project name specified, so use the experiment name and timestamp
                 project_name = f"{time.strftime('%y%m%d-%H%M%S')}-{args.environment}"
                 self.p = project.Project(path=args.root / project_name, name=project_name)
+            elif args.project is None:
+                # no project name specified; ask user
+                self.p = project.inquire_project(root=args.root)
             elif RE_CONTAINS_SEP.search(args.project):  # project name contains a path separator
                 project_name = pathlib.Path(args.project).name
                 if args.root is not DEFAULT_PROJECT_BASEPATH:

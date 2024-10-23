@@ -2,3 +2,4 @@ tqdm
 pandas
 openpyxl
 pyyaml
+inquirerpy
