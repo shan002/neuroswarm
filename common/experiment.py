@@ -236,11 +236,19 @@ def train(app, args):
             **eons_args,
         )
         evolve.net_callback = lambda x: tqdm(x,)  # type: ignore[reportAttributeAccessIssue]
+        if args.processes is None:
+            print(f"Using single detected CPU (single threaded).")
+        else:
+            print(f"Using single thread.")
     else:
         evolve = MPEvolver(  # multi-process for concurrent simulations
             **eons_args,
             max_workers=processes,  # type: ignore[reportArgumentType]
         )
+        if args.processes is None:
+            print(f"Using {os.cpu_count()} detected CPUs/threads.")
+        else:
+            print(f"Using {args.processes} threads.")
 
     app.save_artifacts(evolve)
 
