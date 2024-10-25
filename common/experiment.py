@@ -73,7 +73,8 @@ class TennExperiment(Application):
                 self.p = project.Project(path=args.root / project_name, name=project_name)
             elif args.project is None:
                 # no project name specified; ask user
-                self.p = project.inquire_project(root=args.root)
+                path = project.inquire_project(root=args.root)
+                self.p = project.Project(path=path, name=path.name)
             elif RE_CONTAINS_SEP.search(args.project):  # project name contains a path separator
                 project_name = pathlib.Path(args.project).name
                 if args.root is not DEFAULT_PROJECT_BASEPATH:
