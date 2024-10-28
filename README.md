@@ -4,7 +4,7 @@ To install, you'll need to have a python virtual environment setup first.
 
 Experiments 1-5 require Tennlab's framework for now, so install that first and use its default environment (`source framework/pyframework/bin/activate`)
 
-`experiment_tenn2.py` requires [my fork](https://github.com/kenblu24/RobotSwarmSimulator/tree/Goal-Seeking-Agents) of [Connor Mattson's RobotSwarmSimulator](https://github.com/Connor-Mattson/RobotSwarmSimulator) on the [`Goal-Seeking-Agents` branch](https://github.com/kenblu24/RobotSwarmSimulator/tree/Goal-Seeking-Agents). I have it installed as **editable** in the venv (`pip install -e RobotSwarmSimulator`)
+`experiment_tenn2.py` requires [my fork](https://github.com/kenblu24/RobotSwarmSimulator/tree/main) of [Connor Mattson's RobotSwarmSimulator](https://github.com/Connor-Mattson/RobotSwarmSimulator) on the [`main` branch](https://github.com/kenblu24/RobotSwarmSimulator/tree/main). I have it installed as **editable** in the venv (`pip install -e RobotSwarmSimulator`)
 
 Most experiments use a common base and utilities from `common/` so make sure that folder is either in the same directory as the experiment script, or somehow on your sys.path .
 
@@ -18,13 +18,24 @@ The three default ones are `run`, `train`, and `test`.
 Some options are allowed for all actions:
 
 ### common options for `run`, `train`, `test`
+* `project`: Specify a project name or path. Networks and logs will be saved to this folder.
+    If a path is specified (i.e. contains '/'), it will be used as the project path.
+    If a name is specified, the project path will be {root}/{project_name}.
+    by default, root is 'out' and project_name is the current time.
+    ```cmd
+    experiment_?????.py {run|train|test} project_name_here
+    ```
+* `--root`: Default path to directory to place project folder in
+    ```cmd
+    experiment_?????.py {run|train|test} --root /path/  # default './out'
+    ```
 * `-N`, `--agents`: Override the number of agents via the command line:
     ```cmd
     experiment_?????.py {run|train|test} -N 10  # default 10
     ```
-`--sim_time`: Override the number of ticks to run the simulation.  
+* `--cycles`: Override the number of ticks to run the simulation.  
     ```cmd
-    experiment_?????.py {run|train|test} -sim_time 1000  # default 1000
+    experiment_?????.py {run|train|test} -cycles 1000  # default 1000
     ```
 
 ### common options for `run`, `test`
@@ -47,7 +58,6 @@ Run has several options:
 * `--prompt`: Wait for a return to continue at each step. Legacy.
 * `--viz_delay 0`: Delay between timesteps for viz. `default=None`
 * `--viz`: Specify a specific visualizer. `default=True`
-* `--track_history`: enable sensor vs. output plotting by clicking on an agent in RobotSwarmSimulator.  
 
 ### common options for `train`
 To start a training session, use
@@ -62,15 +72,17 @@ Train has several options:
 * `--logfile path/to/logfile.log`: running log file path. Will be *appended to* if it already exists.  
     Default is `tenn_train.log`, but this is overridden in each experiment script.
 * `--label label_name`: label to put into network JSON
-<!-- * `--save_best_nets`: store_true') -->
+* `--save_best_nets`: If specified, the best network from each epoch will be saved to the project folder.
+* `--save_all_nets`: If specified, all networks from each epoch will be saved to the project folder.
 * `--proc_ticks 10`: Override the number of simulated processor ticks per processor output/action. `default=10`
 <!-- * `--population_size 100`: override EONS population size, typically set in the EONS config json. -->
 * `--eons_params path/to/eons_config.json`: path to json for eons parameters.
      Default is `eons/std.json`.
-* `--processor_params`: json for processor parameters.
+* `--snn_params path/to/snn_config.json`: json for processor parameters.
      Default is `config/caspian.json`.
 * `--max_fitness 9E9`: Stop EONS early if this fitness is achieved. `default=9999999999`
 * `--epochs 999`: Stop EONS after this number of epochs. `default=999`
+* `--population_size 100`: Override EONS population size. Defaults to EONS config value.
 * `--eons_seed 20`: Seed for EONS. Leave blank for random (time seeded)
 * `--graph_distribution path/to/output.tsv`: Specify a file to output fitness distribution over epochs. Will be *overwritten* if it already exists.
 * `--viz`: specify a specific visualizer `default=False`
@@ -81,19 +93,18 @@ These override any of the defaults shown above.
 
 ### tenn2 options for `run`, `train`, `test`:
 * `--agent_yaml`: path to yaml config for agent  
-    Default path is `../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/flockbot.yaml`  
+    Default path is `rss/turbopi-milling/flockbot.yaml`  
 * `--world_yaml`: path to yaml config for world  
-    Default path is `../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/world.yaml`  
+    Default path is `rss/turbopi-milling/world.yaml`  
 \^ **NB:** These two assume that RobotSwarmSimulator is in the directory above this one.
 
-### tenn2 options for `run`, `test`: 
-* `--network path/to/network.json`: path to network file. `default="networks/experiment_tenn??????.json"`
+### tenn2 options for `run`: 
+* `--track_history`: enable sensor vs. output plotting by clicking on an agent in RobotSwarmSimulator.
+* `--log_trajectories`: log sensor vs. output to file.
+* `--start_paused`: pause the simulation at startup. Press Space to unpause.
 
 ### tenn2 options for `train`:
-* **Override default**: `--network path/to/network.json`: output SNN network file path. Will be *overwritten* if it already exists.  
-    New default is `networks/experiment_tenn2_train.json`  
-* **Override default**: `--logfile path/to/logfile.log`: running log file path. Will be *appended to* if it already exists.  
-    New default is `tenn2_train.log`  
+* `--label label_name`: label to put into network JSON
 
 ### tenn2 options for `test`:
 `--positions path/to/positions.xlsx`: file containing agent positions. `default=None`  
