@@ -228,8 +228,6 @@ def get_parsers(parser, subpar):
 
     # Training args
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
-    sp['train'].add_argument('--logfile', default=None,
-                             help="running log file path. By default, this is saved to the projectdir/training.log or tenn2_train.log for non-project mode.")  # noqa: E501
 
     sp['run'].add_argument('--track_history', action='store_true',
                            help="pass this to enable sensor vs. output plotting.")
