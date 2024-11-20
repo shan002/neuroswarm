@@ -71,6 +71,10 @@ class TennExperiment(Application):
                 # no project name specified, so use the experiment name and timestamp
                 project_name = f"{time.strftime('%y%m%d-%H%M%S')}-{args.environment}"
                 self.p = project.Project(path=args.root / project_name, name=project_name)
+            elif args.project is None:
+                # no project name specified; ask user
+                path = project.inquire_project(root=args.root)
+                self.p = project.Project(path=path, name=path.name)
             elif RE_CONTAINS_SEP.search(args.project):  # project name contains a path separator
                 project_name = pathlib.Path(args.project).name
                 if args.root is not DEFAULT_PROJECT_BASEPATH:
@@ -233,11 +237,19 @@ def train(app, args):
             **eons_args,
         )
         evolve.net_callback = lambda x: tqdm(x,)  # type: ignore[reportAttributeAccessIssue]
+        if args.processes is None:
+            print(f"Using single detected CPU (single threaded).")
+        else:
+            print(f"Using single thread.")
     else:
         evolve = MPEvolver(  # multi-process for concurrent simulations
             **eons_args,
             max_workers=processes,  # type: ignore[reportArgumentType]
         )
+        if args.processes is None:
+            print(f"Using {os.cpu_count()} detected CPUs/threads.")
+        else:
+            print(f"Using {args.processes} threads.")
 
     app.save_artifacts(evolve)
 
