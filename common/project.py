@@ -50,10 +50,14 @@ def inquire_project(root=None):
     if root is None:
         root = DEFAULT_PROJECT_BASEPATH
     from InquirerPy import inquirer
+    from InquirerPy.base import Choice
     projects = list(root.iterdir())
     if not list:
         return None
-    return inquirer.fuzzy(choices=sorted(projects), message="Select a project").execute()
+    projects = sorted(projects)
+    newest = max(projects, key=lambda f: f.stat().st_mtime)
+    projects.insert(0, Choice(newest, name=f"Suggested (newest): {newest.name}"))
+    return inquirer.fuzzy(choices=projects, message="Select a project").execute()
 
 
 def inquire_size(file: pathlib.Path, limit=300e6):  # 300 MB
@@ -213,7 +217,7 @@ class FolderlessProject:
 class Project(FolderlessProject):
     isproj = True
 
-    def __init__(self, name=None, path=None):
+    def __init__(self, name=None, path=None, overwrite=False):
         self.name = name
         self.root = pathlib.Path(path) if path is not None else None
         if name is None and isinstance(path, pathlib.Path):
@@ -224,6 +228,7 @@ class Project(FolderlessProject):
         elif name is not None and path is None:
             # if name is given, use as project directory name
             self.root = pathlib.Path(DEFAULT_PROJECT_BASEPATH / name)
+        self.allow_overwrite = overwrite
         self.bestnet_file = File(self.root / BESTNET_NAME)
         self.networks = Networks(self, NETWORKS_DIR_NAME)
         self.logfile = Logger(self.root / LOGFILE_NAME)
@@ -244,7 +249,10 @@ class Project(FolderlessProject):
     def make_root_interactive(self):
         create_parents = False
         if self.root.is_dir():
-            s = input(f"Project folder already exists:\n\t{str(self.root)}\n'y' to continue, 'rm' to delete the contents of the folder, anything else to exit. ")  # noqa: E501
+            if self.allow_overwrite:
+                s = 'rm'
+            else:
+                s = input(f"Project folder already exists:\n\t{str(self.root)}\n'y' to continue, 'rm' to delete the contents of the folder, anything else to exit. ")  # noqa: E501
             if s.lower() not in ('y', 'yes', 'rm'):
                 print("Exiting. Your filesystem has not been modified.")
                 sys.exit(1)

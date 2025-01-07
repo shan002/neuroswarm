@@ -83,7 +83,7 @@ class TennExperiment(Application):
                 self.p = project.Project(path=args.project, name=project_name)
             else:
                 project_name = args.project
-                self.p = project.Project(path=args.root / project_name, name=project_name)
+                self.p = project.Project(path=args.root / project_name, name=project_name, overwrite=args.overwrite_project)
             self.log_fitnesses = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
 
         # app_params = ['encoder_ticks', ]
@@ -197,6 +197,7 @@ class TennExperiment(Application):
             "uname": platform.uname()._asdict(),
             "python_version": platform.python_version(),
             "cwd": os.getcwd(),
+            "cmd": ' '.join(sys.argv),
             ".dependencies": {},
         }
         try:
@@ -329,13 +330,15 @@ def get_parsers(conflict_handler='resolve'):
         """)
 
     # Training args
-    savestrat = sub_train.add_mutually_exclusive_group(required=False)
-    savestrat.add_argument('--save_best_nets', action='store_true')
-    savestrat.add_argument('--save_all_nets', action='store_true')
     sub_train.add_argument('--network', default=None,
                            help="Force best network file path. By default, this is saved to the projectdir/best.json")
     sub_train.add_argument('--logfile', default=None,
                            help="running log file path. By default, this is saved to the projectdir/training.log")
+    sub_train.add_argument('--overwrite_project', action='store_true',
+                           help="overwrite project folder if it already exists.")
+    savestrat = sub_train.add_mutually_exclusive_group(required=False)
+    savestrat.add_argument('--save_best_nets', action='store_true')
+    savestrat.add_argument('--save_all_nets', action='store_true')
 
     # sub_train.add_argument('--encoder_ticks', type=int, default=None,
     #                        help="Used to determine the encoder/decoder ticks.")
