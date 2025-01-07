@@ -99,7 +99,7 @@ def create_environment(robot_config, world_yaml_path, num_agents=20, seed=None, 
     # search_and_rendezvous_world = WorldYAMLFactory.from_yaml("demo/configs/flockbots-icra/world.yaml")
 
     # Import the world data from YAML
-    world_cfg = WorldYAMLFactory.from_yaml(world_yaml_path)
+    world_cfg = RectangularWorldConfig.from_yaml(world_yaml_path)
     world_cfg.addAgentConfig(robot_config)
     world_cfg.population_size = num_agents
     world_cfg.stop_at = stop_at

@@ -13,8 +13,7 @@ import common.experiment
 from common.utils import make_template
 from common import env_tools as envt
 
-from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
-from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
+from rss.MillingAgentCaspian import MillingAgentCaspian, MillingAgentCaspianConfig
 import novel_swarms.behavior as behavior
 
 from rss.gui import TennlabGUI
@@ -35,7 +34,6 @@ class ConnorMillingExperiment(TennExperiment):
 
     def __init__(self, args):
         super().__init__(args)
-        self.agent_yaml = args.agent_yaml
         self.world_yaml = args.world_yaml
         self.run_info = None
 
@@ -49,19 +47,32 @@ class ConnorMillingExperiment(TennExperiment):
         self.log("initialized experiment_tenn2")
 
     def simulate(self, processor, network, init_callback=lambda x: x):
-        import rss.rss2 as rss
-        # setup sim
+        # import rss.rss2 as rss
+        from novel_swarms.config import register_agent_type, store
+        from novel_swarms.world.RectangularWorld import RectangularWorldConfig
+        from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
+        from novel_swarms.world.simulate import main as simulator
 
+        # setup network
         network.set_data("processor", self.processor_params)
 
-        robot_config = rss.configure_robots(network, MillingAgentCaspianConfig, agent_yaml_path=self.agent_yaml,
-                                             track_all=self.viz, track_io=self.track_history)
-        world = rss.create_environment(robot_config=robot_config, world_yaml_path=self.world_yaml,
-                                        num_agents=self.agents, stop_at=self.cycles)
-        world.behavior = [
-            behavior.Aggregation(history=max(self.cycles, 1)),
+        # register agent type
+        register_agent_type("MillingAgentCaspian", MillingAgentCaspian, MillingAgentCaspianConfig)
+
+        # setup world
+        config = RectangularWorldConfig.from_yaml(self.world_yaml)
+        config.stop_at = self.cycles
+        agent_config_dict = config.spawners[0]['agent']
+        agent_config_dict['track_io'] = self.track_history
+        agent_config_dict['track_all'] = self.viz
+        agent_config_dict['network'] = network
+        if self.agents is not None:
+            config.spawners[0]['n'] = self.agents
+
+        config.behavior = [
             behavior.Circliness(history=max(self.cycles, 1), avg_history_max=450),
-            behavior.DistanceSizeRatio(history=max(self.cycles, 1)),
+            # behavior.Aggregation(history=max(self.cycles, 1)),
+            # behavior.DistanceSizeRatio(history=max(self.cycles, 1)),
         ]
 
         def callback(world, screen):
@@ -77,32 +88,32 @@ class ConnorMillingExperiment(TennExperiment):
         if self.viz is False or self.noviz:
             gui = False
 
-        world_subscriber = rss.WorldSubscriber(func=callback)
+        world_subscriber = WorldSubscriber(func=callback)
 
-        world = init_callback(world)
+        # allow for callback to modify config
+        config = init_callback(config)
 
-        world_output = rss.simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
-            world_config=world,
+        world = simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
+            world_config=config,
             subscribers=[world_subscriber],
             gui=gui,
             show_gui=bool(gui),
             start_paused=self.start_paused,
         )
-        return world_output
+        return world
 
     def extract_fitness(self, world_output: RectangularWorld):
-        self.run_info = world_output.behavior[0].value_history
-        return world_output.behavior_dict['DistanceSizeRatio'].out_current()[1]
+        self.run_info = world_output.behavior[0].value_history if world_output.behavior else None
+        return world_output.behavior[0].out_current()[1] if world_output.behavior else 0.0
 
     @override
     def fitness(self, processor, network, init_callback=lambda x: x):
-        world_output = self.simulate(processor, network, init_callback)
-        return self.extract_fitness(world_output)
+        world_final_state = self.simulate(processor, network, init_callback)
+        return self.extract_fitness(world_final_state)
 
     def as_config_dict(self):
         d = super().as_config_dict()
         d.update({
-            "agent_yaml_path": self.agent_yaml,
             "world_yaml_path": self.world_yaml,
             # "run_info": self.run_info,
         })
@@ -223,10 +234,9 @@ def get_parsers(parser, subpar):
     sp = subpar.parsers
 
     for sub in sp.values():  # applies to everything
-        sub.add_argument('--agent_yaml', default="rss/turbopi-milling/turbopi.yaml",
-                         type=str, help="path to yaml config for agent")
+        sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=None)  # override: use default from world.yaml
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
-                         type=str, help="path to yaml config for world")
+                         type=str, help="path to yaml config for sim")
 
     # for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
     #     pass  # sp[key].add_argument()
