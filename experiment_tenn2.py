@@ -13,7 +13,8 @@ import common.experiment
 from common.utils import make_template
 from common import env_tools as envt
 
-from rss.MillingAgentCaspian import MillingAgentCaspian, MillingAgentCaspianConfig
+from rss.CaspianBinaryController import CaspianBinaryController
+from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
 import novel_swarms.behavior as behavior
 
 from rss.gui import TennlabGUI
@@ -37,7 +38,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = MillingAgentCaspian.get_default_encoders()
+        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
 
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
@@ -48,7 +49,7 @@ class ConnorMillingExperiment(TennExperiment):
 
     def simulate(self, processor, network, init_callback=lambda x: x):
         # import rss.rss2 as rss
-        from novel_swarms.config import register_agent_type, store
+        from novel_swarms.config import register_dictlike_type
         from novel_swarms.world.RectangularWorld import RectangularWorldConfig
         from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
         from novel_swarms.world.simulate import main as simulator
@@ -56,16 +57,18 @@ class ConnorMillingExperiment(TennExperiment):
         # setup network
         network.set_data("processor", self.processor_params)
 
-        # register agent type
-        register_agent_type("MillingAgentCaspian", MillingAgentCaspian, MillingAgentCaspianConfig)
+        # register controller type with RSS
+        register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
+        register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
 
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
         config.stop_at = self.cycles
-        agent_config_dict = config.spawners[0]['agent']
-        agent_config_dict['track_io'] = self.track_history
-        agent_config_dict['track_all'] = self.viz
-        agent_config_dict['network'] = network
+        agent_config = config.spawners[0]['agent']
+        agent_config['track_io'] = self.track_history
+        controller_config = agent_config['controller']
+        controller_config['neuro_track_all'] = self.viz
+        controller_config['network'] = network
         if self.agents is not None:
             config.spawners[0]['n'] = self.agents
 

@@ -28,8 +28,8 @@ class TennlabGUI(DifferentialDriveGUI):
         if pygame.font:
             if self.selected:
                 a: MazeAgent = self.selected
-                if a.neuron_counts is not None:
-                    self.appendTextToGUI(screen, f"outs: {a.neuron_counts}")
+                if a.controller.neuron_counts is not None:
+                    self.appendTextToGUI(screen, f"outs: {a.controller.neuron_counts}")
                 self.graph_selected()
 
     @staticmethod
