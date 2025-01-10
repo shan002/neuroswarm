@@ -17,7 +17,7 @@ import common.experiment
 # from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
 
 
-class ConnorMillingExperiment(TennExperiment):
+class NetworkCloneExperiment(TennExperiment):
     """Tennbots application for TennLab neuro framework & Connor RobotSwarmSimulator (RSS)
 
 
@@ -33,7 +33,7 @@ class ConnorMillingExperiment(TennExperiment):
         #     MillingAgentCaspian.get_default_encoders(self.app_params['proc_ticks']))
 
         # number of ticks to run the processor every control (sensor->actuator) cycle
-        self.neuro_tpc = 10
+        self.neuro_tpc = args.encoder_ticks
 
         self.n_inputs, self.n_outputs = (2, 2)
         encoder_params = {
@@ -94,7 +94,7 @@ class ConnorMillingExperiment(TennExperiment):
         error = 0
         for i in range(999):
             observation = random.getrandbits(1)  # fake observation
-            target = target_func(observation)
+            target = self.target_func(observation)
             # input_vector = (1,)
             # target = 1
             # x = robot.run_processor(observation)
@@ -129,21 +129,17 @@ def get_parsers(parser, subpar):
     sp = subpar.parsers
 
     for sub in sp.values():  # applies to everything
-        sub.add_argument('--agent_yaml', default="../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/flockbot.yaml",
+        sub.add_argument('--agent_yaml', default="rss/turbopi-milling/turbopi.yaml",
                          type=str, help="path to yaml config for agent")
-        sub.add_argument('--world_yaml', default="../RobotSwarmSimulator/demo/configs/flockbots-icra-milling/world.yaml",
+        sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for world")
-
-    for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
-        sp[key].add_argument('--network', help="network", default="networks/experiment_tenn2symclone.json")
+        sub.add_argument('', default="rss/turbopi-milling/world.yaml",
+                         type=str, help="path to yaml config for world")
+        sub.add_argument('--encoder_ticks', type=int, default=10,
+                           help="SNN encoder ticks cycle. default=10")
 
     # Training args
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
-    sp['train'].add_argument('--network', default="networks/experiment_tenn2symclone_train.json",
-                             help="output network file path.")
-    sp['train'].add_argument('--logfile', default="tenn2symclone_train.log",
-                             help="running log file path.")
-
     return parser, subpar
 
 
@@ -154,6 +150,9 @@ def main():
     args = parser.parse_args()
 
     args.environment = "fakesim_snn_eons-v01"
+    if args.project is None and args.logfile is None:
+        args.logfile = "tenn2symclone_train.log"
+
 
     app = ConnorMillingExperiment(args)
 
