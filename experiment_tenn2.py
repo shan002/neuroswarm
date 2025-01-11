@@ -15,7 +15,6 @@ from common import env_tools as envt
 
 from rss.CaspianBinaryController import CaspianBinaryController
 from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
-import novel_swarms.behavior as behavior
 
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
@@ -53,6 +52,7 @@ class ConnorMillingExperiment(TennExperiment):
         from novel_swarms.world.RectangularWorld import RectangularWorldConfig
         from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
         from novel_swarms.world.simulate import main as simulator
+        from novel_swarms import metrics
 
         # setup network
         network.set_data("processor", self.processor_params)
@@ -72,10 +72,10 @@ class ConnorMillingExperiment(TennExperiment):
         if self.agents is not None:
             config.spawners[0]['n'] = self.agents
 
-        config.behavior = [
-            behavior.Circliness(history=max(self.cycles, 1), avg_history_max=450),
-            # behavior.Aggregation(history=max(self.cycles, 1)),
-            # behavior.DistanceSizeRatio(history=max(self.cycles, 1)),
+        config.metrics = [
+            metrics.Circliness(history=max(self.cycles, 1), avg_history_max=450),
+            # metrics.Aggregation(history=max(self.cycles, 1)),
+            # metrics.DistanceSizeRatio(history=max(self.cycles, 1)),
         ]
 
         def callback(world, screen):
@@ -106,8 +106,8 @@ class ConnorMillingExperiment(TennExperiment):
         return world
 
     def extract_fitness(self, world_output: RectangularWorld):
-        self.run_info = world_output.behavior[0].value_history if world_output.behavior else None
-        return world_output.behavior[0].out_current()[1] if world_output.behavior else 0.0
+        self.run_info = world_output.metrics[0].value_history if world_output.metrics else None
+        return world_output.metrics[0].out_current()[1] if world_output.metrics else 0.0
 
     @override
     def fitness(self, processor, network, init_callback=lambda x: x):

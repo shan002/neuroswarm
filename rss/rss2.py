@@ -24,9 +24,9 @@ from novel_swarms.world.initialization.PredefInit import PredefinedInitializatio
 from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
 
 # Import the Behavior Measurements (Metrics) that can measure the agents over time
-from novel_swarms.behavior import RadialVarianceBehavior
-from novel_swarms.behavior import AgentsAtGoal
-# from novel_swarms.behavior import Circliness
+from novel_swarms.metrics import RadialVariance
+from novel_swarms.metrics import AgentsAtGoal
+# from novel_swarms.metrics import Circliness
 
 # Import the custom Controller Class
 from novel_swarms.agent.control.Controller import Controller
@@ -91,7 +91,7 @@ def establish_goal_metrics():
 
 def establish_milling_metrics():
     # TODO: Update this value with Kevin's Formulation
-    circliness = RadialVarianceBehavior()
+    circliness = RadialVariance()
     return [circliness]
 
 
