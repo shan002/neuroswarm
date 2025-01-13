@@ -6,6 +6,9 @@ PACKAGES=`realpath 'packages'`
 
 module load automake
 module load autotools
+module load readline
+module load bzip2
+module load sqlite
 
 cd ~/.local
 wget https://ftp.wayne.edu/gnu/autoconf/autoconf-2.72.tar.xz
@@ -57,10 +60,14 @@ source pyframework/bin/activate
 pip install uv
 alias pip='uv pip'
 shopt -s expand_aliases
-pip install -r requirements.txt
 ./scripts/create_env.sh
 cd ~/neuromorphic/RobotSwarmSimulator
 pip install -e .
 pip install -r mindeps.txt
-pip install tqdm circle_fit
+
+cd ~/neuromorphic/turtwig
+pip install -r requirements.txt
+cd
 unalias pip
+
+
