@@ -1,4 +1,12 @@
+#!/bin/bash
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+
+cd "$parent_path"
+
 set -e  # exit on error
+
+mkdir -p ~/privatemodules
+cp -Rf privatemodules/** ~/privatemodules
 
 mkdir -p ~/.local/packages
 cd ~/.local/packages
