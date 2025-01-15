@@ -8,6 +8,22 @@ set -e  # exit on error
 mkdir -p ~/privatemodules
 cp -Rf privatemodules/** ~/privatemodules
 
+mkdir -p ~/neuromorphic
+cd ~/neuromorphic
+
+if [ ! -d ~/neuromorphic/RobotSwarmSimulator ]; then
+  git clone https://github.com/kenblu24/RobotSwarmSimulator.git
+fi
+
+if [ ! -d ~/neuromorphic/framework ]; then
+  git clone git@bitbucket.org:neuromorphic-utk/framework.git
+fi
+
+if [ ! -d ~/neuromorphic/framework/processors/caspian ]; then
+  git clone git@bitbucket.org:neuromorphic-utk/caspian.git ~/neuromorphic/framework/processors/caspian
+fi
+
+
 mkdir -p ~/.local/packages
 cd ~/.local/packages
 PACKAGES=`realpath 'packages'`

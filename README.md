@@ -153,6 +153,23 @@ These override any of the defaults shown above.
     Note: You can generate sets for more agents than you test with; 
 
 
+### Cluster Installation
+
+Installing to the Hopper cluster requires a very specific setup.  
+Here's a script to automate the process:  
+```console
+git clone https://gitlab.orc.gmu.edu/kzhu4/neuromorphic_experiments.git ~/neuromorphic/turtwig
+~/neuromorphic/turtwig/scripts/hopper/deploy.sh
+```
+This will create the environment necessary to run the simulations,
+including the dependencies necessary to build Python 3.12.
+You will need to add your cluster SSH key to your bitbucket/ORNL account to access the restricted Tennlab framework repository.
+
+Any time you login to the Hopper cluster, you'll need to activate the environment with
+```console
+source ~/neuromorphic/turtwig/scripts/hopper/neuromodules.sh
+```
+
 &nbsp;
 
 &nbsp;
