@@ -84,14 +84,14 @@ source pyframework/bin/activate
 pip install uv
 shopt -s expand_aliases
 alias pip='uv pip'
-./scripts/create_env.sh
+source ./scripts/create_env.sh
 cd ~/neuromorphic/RobotSwarmSimulator
-pip install -e .
 pip install -r mindeps.txt
+pip install -e .
 
 cd ~/neuromorphic/turtwig
 pip install -r requirements.txt
-cd
+cd ~/neuromorphic
 unalias pip
 
 
