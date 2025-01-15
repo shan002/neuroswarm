@@ -82,8 +82,8 @@ pip install virtualenv
 python -m virtualenv pyframework
 source pyframework/bin/activate
 pip install uv
-alias pip='uv pip'
 shopt -s expand_aliases
+alias pip='uv pip'
 ./scripts/create_env.sh
 cd ~/neuromorphic/RobotSwarmSimulator
 pip install -e .
