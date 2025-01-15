@@ -125,7 +125,7 @@ class ConnorMillingExperiment(TennExperiment):
     def save_network(self, net, path):
         if 'encoder_ticks' not in self.app_params:
             world = self.get_sample_world(delete_rss=False)
-            self.app_params.update({'encoder_ticks': world.population[0].neuro_tpc})
+            self.app_params.update({'encoder_ticks': world.population[0].controller.neuro_tpc})
         super().save_network(net, path)
 
     def get_sample_world(self, delete_rss=True):
