@@ -85,6 +85,10 @@ pip install uv
 shopt -s expand_aliases
 alias pip='uv pip'
 source ./scripts/create_env.sh
+if [ -z ${VIRTUAL_ENV+x} ];  # if no virtual environment detected
+then
+	source pyframework/bin/activate
+fi
 cd ~/neuromorphic/RobotSwarmSimulator
 pip install -r mindeps.txt
 pip install -e .
@@ -94,7 +98,7 @@ pip install -r requirements.txt
 cd ~/neuromorphic
 unalias pip
 
-set -x
+set -x  # print commands
 python -c 'import neuro'
 python -c 'import caspian'
 python -c 'import novel_swarms'
