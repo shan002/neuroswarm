@@ -94,4 +94,12 @@ pip install -r requirements.txt
 cd ~/neuromorphic
 unalias pip
 
+set -x
+python -c 'import neuro'
+python -c 'import caspian'
+python -c 'import novel_swarms'
+set +x
 
+echo Everything seems to be working!
+echo "Next time you login, don't forget to enable the modules:"
+echo ">>>  source ~/neuromorphic/turtwig/scripts/hopper/neuromodules.sh"
