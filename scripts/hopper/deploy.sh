@@ -48,7 +48,6 @@ cd ~/.local
 wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
 tar -xf libffi-3.4.6.tar.gz
 cd libffi-3.4.6
-PKG_CONFIG_PATH=$PACKAGES/libffi-3.4.6/lib/pkgconfig
 ./configure --prefix $PACKAGES/libffi-3.4.6
 make && make install
 
