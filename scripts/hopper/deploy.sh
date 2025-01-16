@@ -59,10 +59,7 @@ module load libffi-3.4.6
 
 if ! command -v pyenv &> /dev/null
 then
-
-	if [ -d ~/.pyenv ]; then
-		rm -rf ~/.pyenv
-	fi
+	rm -rf ~/.pyenv
 
 	curl https://pyenv.run | bash
 
