@@ -27,6 +27,7 @@ echo
 echo "git clone https://gitlab.orc.gmu.edu/kzhu4/neuromorphic_experiments.git ~/neuromorphic/turtwig"
 echo "~/neuromorphic/turtwig/scripts/hopper/deploy.sh"
 echo
+echo "see also: https://gitlab.orc.gmu.edu/kzhu4/neuromorphic_experiments#cluster-installation"
 
 if [ ! -z ${VIRTUAL_ENV+x} ];  # deactivate if we're in a venv
 then
@@ -60,7 +61,9 @@ rm -rf ~/.local/packages/libffi-3.4.6
 
 rm -rf ~/neuromorphic
 { set +x; } 2>/dev/null  # stop printing commands  https://stackoverflow.com/a/19226038
-
+echo "~/neuromorphic has been scheduled to be removed after this script exits"
+echo
 echo "So long, and thanks for all the fish"
 echo "You may want to log out to unload the previously installed modules"
+# https://unix.stackexchange.com/a/33201
 (sleep 1; rm -rf ~/neuromorphic) & exit 0
