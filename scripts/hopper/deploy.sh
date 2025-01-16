@@ -26,7 +26,7 @@ fi
 
 mkdir -p ~/.local/packages
 cd ~/.local/packages
-PACKAGES=`realpath 'packages'`
+PACKAGES=`realpath '.'`
 
 module load automake
 module load autotools
@@ -48,6 +48,7 @@ cd ~/.local
 wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
 tar -xf libffi-3.4.6.tar.gz
 cd libffi-3.4.6
+PKG_CONFIG_PATH=$PACKAGES/libffi-3.4.6/lib/pkgconfig
 ./configure --prefix $PACKAGES/libffi-3.4.6
 make && make install
 
@@ -58,6 +59,12 @@ module load libffi-3.4.6
 
 if ! command -v pyenv &> /dev/null
 then
+
+	if [ -d ~/.pyenv ]; then
+	then
+		rm -rf ~/.pyenv
+	fi
+
 	curl https://pyenv.run | bash
 
 	echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
