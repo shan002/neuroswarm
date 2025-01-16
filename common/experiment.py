@@ -237,7 +237,7 @@ def train(app, args):
         evolve = Evolver(
             **eons_args,
         )
-        evolve.net_callback = lambda x: tqdm(x,)  # type: ignore[reportAttributeAccessIssue]
+        # evolve.net_callback = lambda x: tqdm(x,)  # type: ignore[reportAttributeAccessIssue]
         if args.processes is None:
             print(f"Using single detected CPU (single threaded).")
         else:

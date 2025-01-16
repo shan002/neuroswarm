@@ -4,6 +4,7 @@ import datetime
 import numpy as np
 from multiprocessing import Pool
 from tqdm.contrib.concurrent import process_map
+import tqdm
 
 import neuro
 import eons
@@ -63,7 +64,7 @@ class Evolver:
         proc_params,
         stop_fitness=None,
         do_print=True,
-        tqdm=False,
+        tqdm=None,
     ):
 
         if not isinstance(eons_params, dict) or not isinstance(proc_params, dict):
@@ -127,6 +128,8 @@ class Evolver:
 
     def evaluate_population(self, networks):
         generator = (self.app.fitness(self.sim, network) for network in self.net_callback(networks))
+        if self.tqdm is True:
+            return [x for x in tqdm.tqdm(generator, total=len(networks))]
         if self.tqdm:
             return self.tqdm(generator, total=len(networks))
         else:
