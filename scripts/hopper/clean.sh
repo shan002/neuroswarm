@@ -63,3 +63,4 @@ rm -rf ~/neuromorphic
 
 echo "So long, and thanks for all the fish"
 echo "You may want to log out to unload the previously installed modules"
+(sleep 1; rm -rf ~/neuromorphic) & exit 0
