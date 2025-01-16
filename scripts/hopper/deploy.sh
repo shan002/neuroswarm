@@ -61,7 +61,6 @@ if ! command -v pyenv &> /dev/null
 then
 
 	if [ -d ~/.pyenv ]; then
-	then
 		rm -rf ~/.pyenv
 	fi
 
