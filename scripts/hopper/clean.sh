@@ -45,7 +45,7 @@ removefrom_bashrc 'export PYENV_ROOT="$HOME/.pyenv"'
 removefrom_bashrc 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"'
 removefrom_bashrc 'eval "$(pyenv init -)"'
 
-set +x  # print commands
+set -x  # print commands
 rm -rf ~/privatemodules/autoconf-2.72
 rm -rf ~/privatemodules/libffi-3.4.6
 
@@ -57,6 +57,6 @@ rm -rf ~/.local/libffi-3.4.6*  # also removes duplicate downloads
 rm -rf ~/.local/packages/libffi-3.4.6
 
 rm -rf ~/neuromorphic
-set -x
+{ set +x; } 2>/dev/null  # stop printing commands  https://stackoverflow.com/a/19226038
 
 echo "So long, and thanks for all the fish"

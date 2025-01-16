@@ -103,7 +103,7 @@ pip --version
 set -x  # print commands
 # check that we have _ctypes for scipy
 python -c 'import _ctypes'
-set +x
+{ set +x; } 2>/dev/null  # stop printing commands
 
 # make the pyframework virtual environment manually
 # the framework/scripts/create_env.sh script uses `venv`` which is less versatile
@@ -138,7 +138,7 @@ set -x  # print commands
 python -c 'import neuro'
 python -c 'import caspian'
 python -c 'import novel_swarms'
-set +x
+{ set +x; } 2>/dev/null  # stop printing commands  https://stackoverflow.com/a/19226038
 
 echo Everything seems to be working!
 echo "Next time you login, don't forget to enable the modules:"
