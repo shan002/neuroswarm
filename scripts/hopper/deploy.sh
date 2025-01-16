@@ -14,7 +14,10 @@ cd ~/neuromorphic
 
 # download the relevant repositories
 if [ ! -d ~/neuromorphic/RobotSwarmSimulator ]; then
+	echo "Downloading RobotSwarmSimulator from github"
   git clone https://github.com/kenblu24/RobotSwarmSimulator.git
+else
+	echo "RobotSwarmSimulator dir exists, skipping download"
 fi
 
 # This next bit downloads the TENNLAB framework.
@@ -30,9 +33,13 @@ fi
 #    UserKnownHostsFile ~/.ssh/known_hosts
 #
 if [ ! -d ~/neuromorphic/framework ]; then
+	echo "Attempting to download TennLab framework from bitbucket"
   git clone git@bitbucket.org:neuromorphic-utk/framework.git
+else
+	echo "TennLab framework already downloaded"
 fi
 if [ ! -d ~/neuromorphic/framework/processors/caspian ]; then
+	echo "Downloading ORNL caspian from bitbucket"
   git clone git@bitbucket.org:neuromorphic-utk/caspian.git ~/neuromorphic/framework/processors/caspian
 fi
 
@@ -43,6 +50,7 @@ PACKAGES=`realpath '.'`
 
 # luckily hopper has these dependencies available already; no need to build them
 # let's load them now
+echo "Loading automake, autotools, readline, bzip2, sqlite"
 module load automake
 module load autotools
 module load readline
@@ -53,45 +61,69 @@ module load sqlite
 # libffi is needed for _ctypes which is needed for scipy
 
 # download and build autoconf-2.72
+echo
+echo "Downloading autoconf-2.72"
+echo
 cd ~/.local
 wget https://ftp.wayne.edu/gnu/autoconf/autoconf-2.72.tar.xz
 tar -xf autoconf-2.72.tar.xz
 cd autoconf-2.72
+echo
+echo "Installing autoconf"
+echo
 ./configure --prefix $PACKAGES/autoconf-2.72
 make && make install
 
 module load use.own  # load this to update the available user modules
 module load autoconf-2.72
+echo "autoconf module loaded"
 
 # download and build libffi
+echo
+echo "Downloading libffi-3.4.6"
+echo
 cd ~/.local
 wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
 tar -xf libffi-3.4.6.tar.gz
 cd libffi-3.4.6
+echo
+echo "Installing libffi"
+echo
 ./configure --prefix $PACKAGES/libffi-3.4.6
 make && make install
 
 module load use.own  # load this to update the available user modules
 module load libffi-3.4.6
+echo "libffi module loaded"
 
 cd
 
 # download and install pyenv if we don't have it
 if ! command -v pyenv &> /dev/null
 then
+	echo
+	echo "Installing pyenv"
+	echo
 	rm -rf ~/.pyenv  # if ~/.pyenv exists, the install script will error
 
 	curl https://pyenv.run | bash
 
+	echo "adding pyenv shims to your .bashrc"
 	echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
 	echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
 	echo 'eval "$(pyenv init -)"' >> ~/.bashrc
 
 	source ~/.bashrc
+else
+	echo
+	echo "pyenv command already installed, skipping"
+	echo
 fi
 
 pyenv doctor  # check if pyenv thinks we can build python
 
+echo
+echo "Installing Python now. This might take a while..."
 pyenv install 3.12.4 --force
 
 pyenv global 3.12.4  # load our newly-built python
@@ -99,7 +131,9 @@ pyenv global 3.12.4  # load our newly-built python
 # make sure we can run python and pip
 python --version
 pip --version
-
+echo "Python installed successfully!"
+echo
+echo "Checking if we can import _ctypes (requires libffi) (scipy needs this)"
 set -x  # print commands
 # check that we have _ctypes for scipy
 python -c 'import _ctypes'
@@ -108,6 +142,9 @@ python -c 'import _ctypes'
 # make the pyframework virtual environment manually
 # the framework/scripts/create_env.sh script uses `venv`` which is less versatile
 # so we run `virtualenv`` ourselves to make it ahead of time
+echo
+echo "Building & Installing framework"
+echo
 mkdir -p ~/neuromorphic/framework
 cd ~/neuromorphic/framework
 pip install virtualenv
@@ -123,23 +160,31 @@ then
 fi
 
 # install RSS and its dependencies
+echo
+echo "Installing RobotSwarmSimulator and its dependencies"
+echo
 cd ~/neuromorphic/RobotSwarmSimulator
 pip install -r mindeps.txt
 pip install -e .
 
 # install other dependencies
+echo
+echo "Installing dependencies for neuromorphic_experiments (turtwig)"
+echo
 cd ~/neuromorphic/turtwig
 pip install -r requirements.txt
 cd ~/neuromorphic
 unalias pip
 
+echo
+echo "Testing if we can import what we just installed"
+echo
 set -x  # print commands
-# check that these work
 python -c 'import neuro'
 python -c 'import caspian'
 python -c 'import novel_swarms'
 { set +x; } 2>/dev/null  # stop printing commands  https://stackoverflow.com/a/19226038
-
+echo
 echo Everything seems to be working!
 echo "Next time you login, don't forget to enable the modules:"
 echo ">>>  source ~/neuromorphic/turtwig/scripts/hopper/neuromodules.sh"

@@ -21,7 +21,9 @@ then
     [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
 fi
 
+echo
 echo "To re-install, you can do: "
+echo
 echo "git clone https://gitlab.orc.gmu.edu/kzhu4/neuromorphic_experiments.git ~/neuromorphic/turtwig"
 echo "~/neuromorphic/turtwig/scripts/hopper/deploy.sh"
 echo
@@ -60,3 +62,4 @@ rm -rf ~/neuromorphic
 { set +x; } 2>/dev/null  # stop printing commands  https://stackoverflow.com/a/19226038
 
 echo "So long, and thanks for all the fish"
+echo "You may want to log out to unload the previously installed modules"
