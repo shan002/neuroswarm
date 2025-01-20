@@ -9,6 +9,10 @@ proc ModulesHelp { } {
 
 module-whatis "adds local install of autoconf to your environment variables"
 
+# author: kzhu4@gmu.edu
+# this module was created to be used for building Python
+# https://gitlab.orc.gmu.edu/kzhu4/neuromorphic_experiments/-/tree/master/scripts/hopper
+
 # You can specify additional modules (if any) to be loaded before loading your
 # custom module like shown below.
 # Note: for python we don't need any additional module to be loaded beforehand.
@@ -17,11 +21,15 @@ module-whatis "adds local install of autoconf to your environment variables"
 #}
 
 # Add in required module(s) needed as prerequisite.
-# We don't need any prerequisite module for using GCL
+# We don't need any prerequisite module, this is just an example
 #prereq <module_name>
 
+# get the $HOME path from shell variables for this user
+# https://wiki.tcl-lang.org/page/env
+set HOME $::env(HOME)
+
 # Add the path to the autoconf binaries
-prepend-path PATH /home/kzhu4/.local/packages/autoconf-2.72/bin/
+prepend-path PATH $HOME/.local/packages/autoconf-2.72/bin/
 
 ## Add the path to the autoconf libraries
-prepend-path LD_LIBRARY_PATH /home/kzhu4/.local/autoconf-2.72/lib/
+prepend-path LD_LIBRARY_PATH $HOME/.local/autoconf-2.72/lib/

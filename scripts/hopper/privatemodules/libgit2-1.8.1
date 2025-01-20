@@ -17,16 +17,23 @@ module-whatis "adds local install of libgit to your environment variables"
 #}
 
 # Add in required module(s) needed as prerequisite.
-# We don't need any prerequisite module for using GCL
+# We don't need any prerequisite module, this is just an example
 #prereq <module_name>
 
+# get the $HOME path from shell variables for this user
+# https://wiki.tcl-lang.org/page/env
+set HOME $::env(HOME)
+set LOCALPATH $HOME/.local
+
+# set package path
+
 # Add the path to the autoconf binaries
-prepend-path PATH /home/kzhu4/.local/packages/libgit2-1.8.1/bin/
+prepend-path PATH $LOCALPATH/packages/libgit2-1.8.1/bin/
 
 ## Add the path to the autoconf libraries
-prepend-path LD_LIBRARY_PATH /home/kzhu4/.local/packages/libgit2-1.8.1/lib64
-prepend-path LD_LIBRARY_PATH /home/kzhu4/.local/packages/include
-#setenv LDFLAGS -L/home/kzhu4/.local/libffi-3.4.6/lib
-#setenv CFLAGS -I/home/kzhu4/.local/libffi-3.4.6/include
-prepend-path PKG_CONFIG_PATH /home/kzhu4/.local/packages/libgit2-1.8.1/pkgconfig
+prepend-path LD_LIBRARY_PATH $LOCALPATH/packages/libgit2-1.8.1/lib64
+prepend-path LD_LIBRARY_PATH $LOCALPATH/packages/include
+#setenv LDFLAGS -L$LOCALPATH/libffi-3.4.6/lib
+#setenv CFLAGS -I$LOCALPATH/libffi-3.4.6/include
+prepend-path PKG_CONFIG_PATH $LOCALPATH/packages/libgit2-1.8.1/pkgconfig
 

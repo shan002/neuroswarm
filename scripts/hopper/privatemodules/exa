@@ -21,5 +21,5 @@ module-whatis "adds local install of exa to your environment variables"
 #prereq libgit2-1.8.1
 
 # Add the path to the autoconf binaries
-prepend-path PATH /home/kzhu4/.local/packages/exa/
+prepend-path PATH $::env(HOME)/.local/packages/exa/
 
