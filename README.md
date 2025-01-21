@@ -92,8 +92,6 @@ Train has several options:
 These override any of the defaults shown above.
 
 ### tenn2 options for `run`, `train`, `test`:
-* `--agent_yaml`: path to yaml config for agent  
-    Default path is `rss/turbopi-milling/flockbot.yaml`  
 * `--world_yaml`: path to yaml config for world  
     Default path is `rss/turbopi-milling/world.yaml`  
 \^ **NB:** These two assume that RobotSwarmSimulator is in the directory above this one.
