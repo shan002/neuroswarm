@@ -7,7 +7,7 @@ import shutil
 import sys
 import time
 import os
-import yaml
+from novel_swarms import yaml
 from . import jsontools as jst
 
 # typing
@@ -221,10 +221,8 @@ class Project(FolderlessProject):
         self.name = name
         self.root = pathlib.Path(path) if path is not None else None
         if name is None and isinstance(path, pathlib.Path):
-            # TODO: check if path contains runinfo.yaml and try to use name from that
-            # try to determine name from path
-            self.name = self.root
-            raise NotImplementedError("TODO: determine project name from path")
+            # determine name from path
+            self.name = self.root.name
         elif name is not None and path is None:
             # if name is given, use as project directory name
             self.root = pathlib.Path(DEFAULT_PROJECT_BASEPATH / name)
