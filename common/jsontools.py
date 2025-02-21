@@ -119,4 +119,8 @@ def json_detect(x) -> type:
     except NameError:  # this python doesn't have ExceptionGroup
         raise Exception(errors)
     else:
-        raise ExceptionGroup("Tried resolving as JSON string or as path to file but errors ocurred.", errors)  # new in python 3.11
+        s = str(x)
+        if len(s) > 110:
+            s = s[:50] + "..." + s[-50:]
+        msg = f"Error(s) when attempting resolving as JSON string or as file: {s}"
+        raise ExceptionGroup(msg, errors)  # new in python 3.11

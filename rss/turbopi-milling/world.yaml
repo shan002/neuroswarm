@@ -7,7 +7,6 @@ time_step: !np 1 / 40  # 0.025 seconds
 seed: 2023
 spawners:
   - type: UniformAgentSpawner
-    oneshot: true
     n: 06  # default number of agents BUT may be overridden by user args
     facing: away
     region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
