@@ -258,15 +258,19 @@ class Project(FolderlessProject):
                 shutil.rmtree(self.root)   # type: ignore[reportArgumentType]
                 print(f"Deleted {self.root}.")
         elif not self.root.parent.is_dir():
-            print("WARNING: You're trying to put the project in")
-            print(str(self.root.parent))
-            print("but some part of it does not exist! Would you like to create it?")
-            s = input("Type 'y' to create it, anything else to exit. ")
-            if s.lower() not in ('y', 'yes'):
-                print("Exiting. Your filesystem has not been modified.")
-                sys.exit(1)
+            if 'MAKE_PARENTS' in os.environ and os.environ['MAKE_PARENTS'].lower() in ('true', '1'):
+                env_ask_parents = False
             else:
-                create_parents = True
+                env_ask_parents = True
+            if env_ask_parents:
+                print("WARNING: You're trying to put the project in")
+                print(str(self.root.parent))
+                print("but some part of it does not exist! Would you like to create it?")
+                s = input("Type 'y' to create it, anything else to exit. ")
+                if s.lower() not in ('y', 'yes'):
+                    print("Exiting. Your filesystem has not been modified.")
+                    sys.exit(1)
+            create_parents = True
         print(f"Creating project folder at {self.root}")
         ensure_dir_exists(self.root, parents=create_parents)
 
