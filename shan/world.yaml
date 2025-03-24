@@ -15,13 +15,13 @@ spawners:
 objects:
   - type: "StaticObject"
     name: "goal"
-    position: [1, 1]
-    # size: 0.9
+    position: [4, 4]
+    size: 0.9
 metadata:
   hash: _hash
 
 experiment:
-  runner_speed: 0.3
+  runner_speed: 0.1
   runner_color: [255, 255, 0]       # Runner's color (RGB)
   window_size: [300, 300]         # GUI window size in pixels (width, height)
   # runner_position: [7, 8]       # Runner's initial position (meters)

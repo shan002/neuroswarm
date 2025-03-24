@@ -107,7 +107,11 @@ class HunterVsRunnerExperiment(TennExperiment):
             result = check_sim_result(world)
             if result:
                 print(result)
-                sys.exit(0)  # Stop the simulation immediately
+                # sys.exit(0)  # Stop the simulation immediately
+                while True:
+                    inp = input("Press q/Q to stop: ")
+                    if inp == 'q' or inp == 'Q':
+                        sys.exit(0)
             
             a = world.selected
             if a and self.iostream:
