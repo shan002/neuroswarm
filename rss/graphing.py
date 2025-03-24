@@ -1,6 +1,7 @@
 import pandas as pd
 import colorsys
 import itertools
+from novel_swarms.metrics.Circliness import Circliness
 
 
 def hr(h, s, l):  # noqa: E741
@@ -63,8 +64,10 @@ def plot_multiple_new(world):
 
     # Plot overall circliness
     if world.metrics and hasattr(world.metrics[0], 'value_history'):
-        circliness_values = world.metrics[0].value_history
-        plot_overall_circliness(axs[0], circliness_values)
+        circliness: Circliness = world.metrics[0]
+        fatness = circliness.fatness.value_history
+        tangentness = circliness.tangentness.value_history
+        plot_overall_circliness(axs[0], circliness.value_history, fatness, tangentness)
 
     for i, agent in enumerate(world.population):
         plot_single(agent, fig, axs[i + 1])
@@ -74,15 +77,17 @@ def plot_multiple_new(world):
     plt.tight_layout()
     plt.show()
 
-def plot_overall_circliness(ax, circliness_values):
+def plot_overall_circliness(ax, circliness_values, fatness, tangentness):
     import numpy as np
     import matplotlib.ticker as mticker
     import mplcursors
 
     t = range(len(circliness_values))
     ax.plot(t, circliness_values, color='green', label='Circliness')
+    ax.plot(t[len(t)-450:], fatness, color='red', label='Fatness')
+    ax.plot(t[len(t)-450:], tangentness, color='blue', label='Tangentness')
     ax.set_title('Circliness over Time')
-    ax.set_ylabel('Circliness')
+    ax.set_ylabel('Circliness, Fatness, Tangentness')
 
     ax.grid(True)
     ax.set_ylim(0, max(1.0, max(circliness_values) * 1.1))
@@ -102,8 +107,8 @@ def plot_overall_circliness(ax, circliness_values):
                    label=f'Reach 0.9 at t={x_threshold}')
 
     # Compute and plot the average circliness value
-    avg_value = np.mean(circliness_values)
-    ax.axhline(y=avg_value, color='blue', linestyle='-.', linewidth=1, label=f'Average ({avg_value:.3f})')
+    # avg_value = np.mean(circliness_values)
+    # ax.axhline(y=avg_value, color='blue', linestyle='-.', linewidth=1, label=f'Average ({avg_value:.3f})')
 
     mplcursors.cursor(ax, hover=True)
     ax.legend(loc='center left', bbox_to_anchor=(0, 0.5))
