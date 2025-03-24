@@ -54,6 +54,62 @@ def plot_multiple(world):
         plot_single(agent, fig, ax)
     plt.show()
 
+def plot_multiple_new(world):
+    import matplotlib.pyplot as plt
+
+    # Create one extra row: first row for overall circliness
+    n_agents = len(world.population)
+    fig, axs = plt.subplots(nrows=n_agents + 1, ncols=1, figsize=(8, 12), sharex=True)
+
+    # Plot overall circliness
+    if world.metrics and hasattr(world.metrics[0], 'value_history'):
+        circliness_values = world.metrics[0].value_history
+        plot_overall_circliness(axs[0], circliness_values)
+
+    for i, agent in enumerate(world.population):
+        plot_single(agent, fig, axs[i + 1])
+        axs[i + 1].set_ylabel(f"Agent {i}")
+    
+    axs[-1].set_xlabel('Timestep')
+    plt.tight_layout()
+    plt.show()
+
+def plot_overall_circliness(ax, circliness_values):
+    import numpy as np
+    import matplotlib.ticker as mticker
+    import mplcursors
+
+    t = range(len(circliness_values))
+    ax.plot(t, circliness_values, color='green', label='Circliness')
+    ax.set_title('Circliness over Time')
+    ax.set_ylabel('Circliness')
+
+    ax.grid(True)
+    ax.set_ylim(0, max(1.0, max(circliness_values) * 1.1))
+    ax.yaxis.set_minor_locator(mticker.AutoMinorLocator(10))
+
+    # Draw a horizontal line at y = 0.9 (threshold)
+    ax.axhline(y=0.9, color='red', linestyle='--', linewidth=1, label='Threshold 0.9')
+
+    # Determine the first time index where circliness reaches or exceeds 0.9
+    x_threshold = None
+    for i, v in enumerate(circliness_values):
+        if v >= 0.9:
+            x_threshold = i
+            break
+    if x_threshold is not None:
+        ax.axvline(x=x_threshold, color='red', linestyle='--', linewidth=1,
+                   label=f'Reach 0.9 at t={x_threshold}')
+
+    # Compute and plot the average circliness value
+    avg_value = np.mean(circliness_values)
+    ax.axhline(y=avg_value, color='blue', linestyle='-.', linewidth=1, label=f'Average ({avg_value:.3f})')
+
+    mplcursors.cursor(ax, hover=True)
+    ax.legend(loc='center left', bbox_to_anchor=(0, 0.5))
+
+
+
 
 def export(world, output_file):
     data = [extract_history(agent) for agent in world.population]
