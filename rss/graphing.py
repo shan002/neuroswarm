@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import colorsys
 import itertools
 from novel_swarms.metrics.Circliness import Circliness
@@ -114,6 +115,36 @@ def plot_overall_circliness(ax, circliness_values, fatness, tangentness):
     ax.legend(loc='center left', bbox_to_anchor=(0, 0.5))
 
 
+def build_metrics_df(world):
+    metrics_obj = world.metrics[0]
+    n = len(metrics_obj.value_history)
+    t = list(range(1, n + 1))
+
+    # Full circliness is available for all timesteps.
+    circliness = metrics_obj.value_history
+
+    # fatness and tangentness are only plotted for the last 450 timesteps.
+    # Padding the initial timesteps with NaN so that the DataFrame has the same length.
+    pad_length = max(n - 450, 0)
+    # If there are less than 450 timesteps, we don't pad.
+    fatness_data = np.array(metrics_obj.fatness.value_history)
+    tangentness_data = np.array(metrics_obj.tangentness.value_history)
+    if pad_length > 0:
+        fatness_full = np.concatenate([np.full(pad_length, np.nan), fatness_data[-450:]])
+        tangentness_full = np.concatenate([np.full(pad_length, np.nan), tangentness_data[-450:]])
+    else:
+        fatness_full = fatness_data
+        tangentness_full = tangentness_data
+
+    df_metrics = pd.DataFrame({
+        't': t,
+        'circliness': circliness,
+        'fatness': fatness_full,
+        'tangentness': tangentness_full
+    })
+
+    return df_metrics
+
 
 
 def export(world, output_file):
@@ -124,3 +155,6 @@ def export(world, output_file):
             data = list(zip(*data))
             df = pd.DataFrame(data, columns=['t', 'x', 'y', 'angle (rads from east)', 'sense', 'v', 'w'])
             df.to_excel(writer, sheet_name=f'{i}')
+
+        df_metrics = build_metrics_df(world)
+        df_metrics.to_excel(writer, sheet_name='metrics')
