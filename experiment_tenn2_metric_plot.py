@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+import random
 # import matplotlib.pyplot as plt
 
 import caspian
@@ -45,6 +46,11 @@ class ConnorMillingExperiment(TennExperiment):
         self.start_paused = getattr(args, 'start_paused', False)
 
         self.log("initialized experiment_tenn2")
+    
+    def pre_epoch(self, eons):
+        self.random_agent_count = random.randint(4, 7)
+        print(f"Pre-epoch: setting agent count to {self.random_agent_count}")
+        super().pre_epoch(eons)
 
     def simulate(self, processor, network, init_callback=lambda x: x):
         # import rss.rss2 as rss
@@ -63,6 +69,15 @@ class ConnorMillingExperiment(TennExperiment):
 
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
+
+        
+        if hasattr(self, "random_agent_count"):
+            config.spawners[0]['n'] = self.random_agent_count
+            # Remove the attribute so that it is only used once per epoch.
+            del self.random_agent_count
+
+
+
         config.stop_at = self.cycles
         agent_config = config.spawners[0]['agent']
         agent_config['track_io'] = self.track_history
