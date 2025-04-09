@@ -49,7 +49,7 @@ class ConnorMillingExperiment(TennExperiment):
     
     def pre_epoch(self, eons):
         self.random_agent_count = random.randint(4, 7)
-        print(f"Pre-epoch: setting agent count to {self.random_agent_count}")
+        print(f"Number of agents = {self.random_agent_count}")
         super().pre_epoch(eons)
 
     def simulate(self, processor, network, init_callback=lambda x: x):
@@ -73,8 +73,9 @@ class ConnorMillingExperiment(TennExperiment):
         
         if hasattr(self, "random_agent_count"):
             config.spawners[0]['n'] = self.random_agent_count
+            # print(config.spawners[0]['n'])
             # Remove the attribute so that it is only used once per epoch.
-            del self.random_agent_count
+            # del self.random_agent_count
 
 
 
@@ -84,8 +85,8 @@ class ConnorMillingExperiment(TennExperiment):
         controller_config = agent_config['controller']
         controller_config['neuro_track_all'] = self.viz
         controller_config['network'] = network
-        if self.agents is not None:
-            config.spawners[0]['n'] = self.agents
+        # if self.agents is not None:
+        #     config.spawners[0]['n'] = self.agents
 
         config.metrics = [
             metrics.Circliness(history=max(self.cycles, 1), avg_history_max=450),
