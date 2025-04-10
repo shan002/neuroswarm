@@ -48,7 +48,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.log("initialized experiment_tenn2")
     
     def pre_epoch(self, eons):
-        self.random_agent_count = random.randint(4, 7)
+        self.random_agent_count = random.randint(4, 20)
         print(f"Number of agents = {self.random_agent_count}")
         super().pre_epoch(eons)
 
