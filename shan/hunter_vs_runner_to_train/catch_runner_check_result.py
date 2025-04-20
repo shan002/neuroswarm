@@ -23,8 +23,8 @@ def check_sim_result(world) -> str | None:
     goal = next((obj for obj in world.objects if isinstance(obj.name, str) and obj.name.lower() == "goal"), None)
     
     if goal is not None:
-        goal_size = getattr(goal, "size", 0.2)
-        if np.linalg.norm(np.array(runner.pos) - np.array(goal.pos)) <= (runner.radius + goal_size): # distance 
+        goal_radius = getattr(goal, "agent_radius", 0.2)
+        if np.linalg.norm(np.array(runner.pos) - np.array(goal.pos)) <= (runner.radius + goal_radius): # distance 
             return "Failure"
 
     for agent in world.population:

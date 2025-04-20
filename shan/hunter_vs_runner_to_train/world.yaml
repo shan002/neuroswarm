@@ -10,13 +10,14 @@ spawners:
   - type: UniformAgentSpawner
     n: 6
     facing: away
-    region: [[3.1, 3.1], [3.1, 4.9], [4.9, 4.9], [4.9, 3.1]]    # [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
+    region: [[0, 2], [8, 2], [6, 6], [0, 6]]  # [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
     agent: !include turbopi.yaml
 objects:
   - type: "StaticObject"
     name: "goal"
-    position: [4, 4]
-    size: 0.2
+    agent_radius: 0.3
+    region: [[0, 0], [8, 0], [8, 1], [0, 1]]
+    # position: [4, 4]
 metadata:
   hash: _hash
 
@@ -24,4 +25,5 @@ experiment:
   runner_speed: 0.2
   runner_color: [255, 255, 0]       # Runner's color (RGB)
   window_size: [300, 300]         # GUI window size in pixels (width, height)
+  runner_region: [[0, 7], [8, 7], [8, 8], [0, 8]]
   # runner_position: [7, 8]       # Runner's initial position (meters)

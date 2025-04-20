@@ -44,19 +44,26 @@ class HunterVsRunnerExperiment(TennExperiment):
         self.track_history = getattr(args, "track_history", False) or getattr(args, "log_trajectories", False)
         self.log_trajectories = getattr(args, "log_trajectories", False)
         self.start_paused = getattr(args, "start_paused", False)
-        self.runner_position = None
+        # self.runner_position = None
         # self.runner_position = getattr(args, "runner_position", (7, 8))
         self.log("initialized HunterVsRunnerExperiment")
         # if self.net is None:
         #     proc = caspian.Processor(self.processor_params)
         #     self.net = make_template(proc, self.n_inputs, self.n_outputs)
 
-    def get_rand_runner_pos(self, config):
-        goal_position = np.array([4.0, 4.0])
-        goal_radius = 0.2
-        runner_radius = 0.1
+    def get_rand_pos_within_region(self, region):
+        region = np.array(region)
+        mins = region.min(axis=0)
+        maxs = region.max(axis=0)
+        point = np.random.uniform(low=mins, high=maxs)
 
-        min_distance_from_goal = goal_radius + runner_radius + 0.1  # + extra buffer
+        return point
+        
+    def get_rand_pos_outside_goal(self, config):
+        goal = [object for object in config.objects if object['name'] == 'goal'][0]
+        agent_radius = config.spawners[0]['agent']['agent_radius']
+        CLEARANCE_FROM_GOAL = 0.1
+        min_distance_from_goal = goal['agent_radius'] + agent_radius + CLEARANCE_FROM_GOAL
         world_width, world_height = config.size
         margin = 1
 
@@ -66,7 +73,7 @@ class HunterVsRunnerExperiment(TennExperiment):
                 np.random.uniform(margin, world_width - margin),
                 np.random.uniform(margin, world_height - margin)
             ])
-            if np.linalg.norm(candidate - goal_position) > min_distance_from_goal:
+            if np.linalg.norm(candidate - goal['position']) > min_distance_from_goal:
                 break
 
         return tuple(candidate)
@@ -88,11 +95,23 @@ class HunterVsRunnerExperiment(TennExperiment):
         # Load experiment-specific parameters from the YAML
         exp_params = getattr(config, "experiment", {})
         runner_speed = exp_params.get("runner_speed", 0.1)
-        self.runner_position = self.get_rand_runner_pos(config)
         runner_color = exp_params.get("runner_color", [0, 255, 0])
+        runner_region = exp_params.get("runner_region", None)
         window_size = exp_params.get("window_size", [300, 300])
-
         agent_config = config.spawners[0]['agent']
+
+        # Set random goal position within the goal region
+        goal = [object for object in config.objects if object['name'] == 'goal'][0]
+        goal['position'] = self.get_rand_pos_within_region(goal['region'])
+
+        # self.runner_position = self.get_rand_pos_outside_goal(config)
+
+        # Override number of hunter agents if -N is passed
+        n_agents = getattr(self.args, 'agents', None)
+        if n_agents is not None:
+            config.spawners[0]['n'] = n_agents
+            self.log(f"Overriding number of agents to {n_agents}")
+
         agent_config['track_io'] = self.track_history
         controller_config = agent_config['controller']
         controller_config['network'] = network
@@ -107,9 +126,11 @@ class HunterVsRunnerExperiment(TennExperiment):
         agent_cls, runner_config = get_agent_class(base_agent_config)
 
         # Update runner configuration from YAML experiment settings
-        runner_config.position = self.runner_position
+        # runner_config.position = self.runner_position
         runner_config.team = "runner"  # tag as runner
         runner_config.body_color = runner_color
+        if runner_region is not None:
+            runner_config.position = self.get_rand_pos_within_region(runner_region)
 
         # Override the controller to use RunnerController.
         runner_config.controller = {"type": "RunnerController", "speed": runner_speed}
@@ -167,7 +188,7 @@ class HunterVsRunnerExperiment(TennExperiment):
     #     world_final_state = self.simulate(processor, network, init_callback)
     #     return self.extract_fitness(world_final_state)
     def fitness(self, processor, network, init_callback=lambda config: config):
-        trials = 5  # or 10 — tune as needed
+        trials = 10  # or 10 — tune as needed
         fitnesses = []
         for i in range(trials):
             np.random.seed()
@@ -177,6 +198,7 @@ class HunterVsRunnerExperiment(TennExperiment):
             # print(f"[Trial {i+1}] Runner position: {self.runner_position}")
             if fitness is not None:
                 fitnesses.append(fitness)
+        print(fitnesses, np.mean(fitnesses))
         return np.mean(fitnesses) if fitnesses else 0.0
 
 
@@ -245,7 +267,8 @@ def run(app, args):
 
     world = app.simulate(proc, net)
     fitness = app.extract_fitness(world)
-    print(f"Fitness: {fitness:8.4f}")
+    if fitness:
+        print(f"Fitness: {fitness:8.4f}")
 
 
     if args.log_trajectories:
@@ -274,7 +297,7 @@ def test(app, args):
                 return world
             return setup
         fitnesses = [app.fitness(proc, net, setup_i(i)) for i in tqdm(range(n_runs))]
-        print(fitnesses)
+        # print(fitnesses)
         return fitnesses
     else:
         raise ArgumentError(args.positions, "Positions not specified")
