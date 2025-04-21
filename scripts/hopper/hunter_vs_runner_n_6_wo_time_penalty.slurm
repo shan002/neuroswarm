@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Give your job a name to distinguish it from other jobs you run.
-#SBATCH --job-name=hunter-runner-6n
+#SBATCH --job-name=hunter-runner-6n-wo-tp
 
 ## General partitions: all-HiPri, bigmem-HiPri   --   (12 hour limit)
 ##                     all-LoPri, bigmem-LoPri, gpuq  (5 days limit)
@@ -21,7 +21,7 @@
 #SBATCH --mem=4G        # Total memory needed per task (units: K,M,G,T)
 
 ## Specify how much time your job needs. (default: see partition above)
-#SBATCH --time=0-20:00  # Total time needed for job: Days-Hours:Minutes
+#SBATCH --time=0-23:00  # Total time needed for job: Days-Hours:Minutes
 
 #SBATCH --cpus-per-task 48
 
@@ -34,8 +34,8 @@ export MAKE_PARENTS=true
 
 ## Run your program or script
 ## python experiment_tenn2.py train --root out/agg/9 -p 48 --save_best --epochs 500 --eons_seed 20 -N 9
-python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 20
-python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 21
-python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 22
-python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 23
-python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 24
+python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 20
+python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 21
+python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 22
+python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 23
+python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 24
