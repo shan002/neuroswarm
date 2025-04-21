@@ -37,8 +37,6 @@ class ConnorMillingExperiment(TennExperiment):
         super().__init__(args)
         self.world_yaml = args.world_yaml
         self.run_info = None
-        self.n_epoch = 0
-        self.agent_count = 3
 
         self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
 
@@ -48,13 +46,6 @@ class ConnorMillingExperiment(TennExperiment):
         self.start_paused = getattr(args, 'start_paused', False)
 
         self.log("initialized experiment_tenn2")
-    
-    def pre_epoch(self, eons):
-        if self.n_epoch%50 == 0:
-            self.agent_count += 1
-            print(f"Number of agents = {self.agent_count}")
-        self.n_epoch += 1
-        super().pre_epoch(eons)
 
     def simulate(self, processor, network, init_callback=lambda x: x):
         # import rss.rss2 as rss
@@ -77,12 +68,11 @@ class ConnorMillingExperiment(TennExperiment):
         
         if hasattr(self, "random_agent_count"):
             config.spawners[0]['n'] = self.random_agent_count
-        
             # print(config.spawners[0]['n'])
             # Remove the attribute so that it is only used once per epoch.
             # del self.random_agent_count
 
-        n = config.spawners[0]
+
 
         config.stop_at = self.cycles
         agent_config = config.spawners[0]['agent']
@@ -98,10 +88,6 @@ class ConnorMillingExperiment(TennExperiment):
             # metrics.Aggregation(history=max(self.cycles, 1)),
             # metrics.DistanceSizeRatio(history=max(self.cycles, 1)),
         ]
-
-        def check_stop(world):
-
-            return True
 
         def callback(world, screen):
             a = world.selected
@@ -121,14 +107,12 @@ class ConnorMillingExperiment(TennExperiment):
         # allow for callback to modify config
         config = init_callback(config)
 
-
         world = simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
             world_config=config,
             subscribers=[world_subscriber],
             gui=gui,
             show_gui=bool(gui),
             start_paused=self.start_paused,
-            stop_detection=check_stop,
         )
         return world
 
