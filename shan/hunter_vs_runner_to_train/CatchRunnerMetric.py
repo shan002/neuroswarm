@@ -14,7 +14,7 @@ class CatchRunnerMetric(AbstractMetric):
         # print(result_step)
         if result == "Success":
             # print(self.world.config.stop_at)
-            reward = 1.0 - (result_step / self.world.config.stop_at)
+            reward = 1.0 #- (result_step / self.world.config.stop_at)
             self.set_value(reward)
         elif result == "Failure":
             self.set_value(0.0)
