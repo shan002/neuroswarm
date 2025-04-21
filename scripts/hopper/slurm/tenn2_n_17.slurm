@@ -18,10 +18,10 @@
 #SBATCH --mail-user=sbhatt28@gmu.edu     # Put your GMU email address here
 
 ## Specify how much memory your job needs. (2G is the default)
-#SBATCH --mem=4G        # Total memory needed per task (units: K,M,G,T)
+#SBATCH --mem=5G        # Total memory needed per task (units: K,M,G,T)
 
 ## Specify how much time your job needs. (default: see partition above)
-#SBATCH --time=0-16:00  # Total time needed for job: Days-Hours:Minutes
+#SBATCH --time=2-00:00  # Total time needed for job: Days-Hours:Minutes
 
 #SBATCH --cpus-per-task 48
 
@@ -32,10 +32,10 @@ cd turtwig/
 
 export MAKE_PARENTS=true
 
-## Run your program or script
-python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 2 --eons_seed 20 -N 17
-# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 20 -N 17
-# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 21 -N 17
-# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 22 -N 17
-# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 23 -N 17
-# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 24 -N 17
+## Run your program or script | Takes approximately 1 min / epoch
+# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 2 --eons_seed 20 -N 17
+srun python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 20 -N 17
+srun python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 21 -N 17
+srun python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 22 -N 17
+srun python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 23 -N 17
+srun python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 24 -N 17

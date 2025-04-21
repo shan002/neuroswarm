@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Give your job a name to distinguish it from other jobs you run.
-#SBATCH --job-name=tenn2_increase_n_per_50_epochs
+#SBATCH --job-name=tenn2_n_increment_per_N_epochs
 
 ## General partitions: all-HiPri, bigmem-HiPri   --   (12 hour limit)
 ##                     all-LoPri, bigmem-LoPri, gpuq  (5 days limit)
@@ -33,9 +33,9 @@ cd turtwig/
 export MAKE_PARENTS=true
 
 ## Run your program or script
-## python experiment_tenn2.py train --root out/agg/9 -p 48 --save_best --epochs 500 --eons_seed 20 -N 9
-python experiment_tenn2_metric_plot.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 20
-python experiment_tenn2_metric_plot.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 21
-python experiment_tenn2_metric_plot.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 22
-python experiment_tenn2_metric_plot.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 23
-python experiment_tenn2_metric_plot.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 24
+python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 3 --eons_seed 20
+# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 20
+# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 21
+# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 22
+# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 23
+# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 24
