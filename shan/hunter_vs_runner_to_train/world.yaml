@@ -10,7 +10,7 @@ spawners:
   - type: UniformAgentSpawner
     n: 6
     facing: away
-    region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]] #[[0, 2], [8, 2], [6, 6], [0, 6]]  # [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
+    region: [[0, 2], [8, 2], [6, 6], [0, 6]]  # [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
     agent: !include turbopi.yaml
 objects:
   - type: "StaticObject"

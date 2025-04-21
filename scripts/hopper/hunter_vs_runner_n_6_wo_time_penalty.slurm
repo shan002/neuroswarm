@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Give your job a name to distinguish it from other jobs you run.
-#SBATCH --job-name=hunter-runner-6n-wo-tp
+#SBATCH --job-name=hunter-runner-6n-wo-tp-wide-area-hunters
 
 ## General partitions: all-HiPri, bigmem-HiPri   --   (12 hour limit)
 ##                     all-LoPri, bigmem-LoPri, gpuq  (5 days limit)
@@ -34,8 +34,8 @@ export MAKE_PARENTS=true
 
 ## Run your program or script
 ## python experiment_tenn2.py train --root out/agg/9 -p 48 --save_best --epochs 500 --eons_seed 20 -N 9
-python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 20
-python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 21
-python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 22
-python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 23
-python hunter_vs_runner.py train --root out/farp/6wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 24
+python hunter_vs_runner.py train --root out/farp/6-wa-wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 20
+python hunter_vs_runner.py train --root out/farp/6-wa-wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 21
+python hunter_vs_runner.py train --root out/farp/6-wa-wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 22
+python hunter_vs_runner.py train --root out/farp/6-wa-wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 23
+python hunter_vs_runner.py train --root out/farp/6-wa-wotp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 24
