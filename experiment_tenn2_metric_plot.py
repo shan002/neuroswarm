@@ -37,6 +37,8 @@ class ConnorMillingExperiment(TennExperiment):
         super().__init__(args)
         self.world_yaml = args.world_yaml
         self.run_info = None
+        self.n_epoch = 0
+        self.agent_count = 3
 
         self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
 
@@ -48,8 +50,10 @@ class ConnorMillingExperiment(TennExperiment):
         self.log("initialized experiment_tenn2")
     
     def pre_epoch(self, eons):
-        self.random_agent_count = random.randint(4, 20)
-        print(f"Number of agents = {self.random_agent_count}")
+        if self.n_epoch%50 == 0:
+            self.agent_count += 1
+            print(f"Number of agents = {self.agent_count}")
+        self.n_epoch += 1
         super().pre_epoch(eons)
 
     def simulate(self, processor, network, init_callback=lambda x: x):

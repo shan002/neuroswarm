@@ -37,6 +37,16 @@
         },
 
         {
+            "name": "Python Debugger: tenn2 metric plot train",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "/home/shan/neuromorphic/turtwig/",
+            "program": "experiment_tenn2_metric_plot.py",
+            "args": ["train", "--root", "./out/debug/", "--epochs", "100", "-p", "1"],
+            "justMyCode": false,
+        },
+
+        {
             "name": "Python Debugger: hunter run",
             "type": "debugpy",
             "request": "launch",
