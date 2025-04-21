@@ -33,8 +33,9 @@ cd turtwig/
 export MAKE_PARENTS=true
 
 ## Run your program or script
-python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 20 -N 17
-python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 21 -N 17
-python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 22 -N 17
-python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 23 -N 17
-python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 24 -N 17
+python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 2 --eons_seed 20 -N 17
+# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 20 -N 17
+# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 21 -N 17
+# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 22 -N 17
+# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 23 -N 17
+# python experiment_tenn2.py train --root out/tenn2/n-17 -p 48 --save_best --epochs 500 --eons_seed 24 -N 17
