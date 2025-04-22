@@ -29,7 +29,6 @@ from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber
 from novel_swarms.world.simulate import main as simulator
 from novel_swarms import metrics
 from CatchRunnerMetric import CatchRunnerMetric
-from catch_runner_check_result import check_sim_result
 
 class HunterVsRunnerExperiment(TennExperiment):
     def __init__(self, args):
@@ -142,12 +141,20 @@ class HunterVsRunnerExperiment(TennExperiment):
 
         config.metrics = [CatchRunnerMetric()]
 
+        def check_stop(world):
+            ## calculate function use korte hobe
+            wold = world
+            world.metrics[0].calculate()
+            out = world.metrics[0].out_current()
+            output =  world.metrics[0].out_current()[1]
+            return output is not None
+
         def callback(world, screen):
-            if "result" not in world.meta:
-                result = check_sim_result(world)
-                if result:
-                    world.meta["result"] = result
-                    world.meta["result_step"] = world.total_steps
+            # if "result" not in world.meta:
+            #     result = check_sim_result(world)
+            #     if result:
+            #         world.meta["result"] = result
+            #         world.meta["result_step"] = world.total_steps
                     # print(f"[Sim result locked]: {result} at step {getattr(world, 'total_steps', '?')}")
             
             a = world.selected
@@ -163,25 +170,24 @@ class HunterVsRunnerExperiment(TennExperiment):
             gui = False
 
         world_subscriber = WorldSubscriber(func=callback)
+
+        # allow for callback to modify config
         config = init_callback(config)
+
         world = simulator(
             world_config=config,
             subscribers=[world_subscriber],
             gui=gui,
             show_gui=bool(gui),
             start_paused=self.start_paused,
+            stop_detection=check_stop
         )
-
-        result = world.meta.get("result", "No result detected")
-        # print(f"[Final Result After {self.cycles} Steps]: {result}")
 
         return world
 
 
     def extract_fitness(self, world_output: RectangularWorld):
-        if world_output.metrics:
-            return world_output.metrics[0].out_current()[1]
-        return 0.0
+        return world_output.metrics[0].out_current()[1] if world_output.metrics else 0.0
 
 
     # def fitness(self, processor, network, init_callback=lambda config: config):

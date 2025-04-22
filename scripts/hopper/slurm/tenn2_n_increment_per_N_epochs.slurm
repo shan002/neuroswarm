@@ -21,7 +21,7 @@
 #SBATCH --mem=4G        # Total memory needed per task (units: K,M,G,T)
 
 ## Specify how much time your job needs. (default: see partition above)
-#SBATCH --time=0-16:00  # Total time needed for job: Days-Hours:Minutes
+#SBATCH --time=1-00:00  # Total time needed for job: Days-Hours:Minutes
 
 #SBATCH --cpus-per-task 48
 
@@ -33,9 +33,9 @@ cd turtwig/
 export MAKE_PARENTS=true
 
 ## Run your program or script
-python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 3 --eons_seed 20
-# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 20
-# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 21
-# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 22
-# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 23
-# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 24
+# python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 3 --eons_seed 20
+python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 20
+python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 21
+python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 22
+python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 23
+python experiment_tenn2_n_increment_per_N_epochs.py train --root out/tenn2/n_per_50 -p 48 --save_best --epochs 500 --eons_seed 24
