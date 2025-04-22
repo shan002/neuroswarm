@@ -55,5 +55,15 @@
             "args": ["run", "--cy", "2000", "--root", "../../out/out_best"],
             "justMyCode": false,
         },
+
+        {
+            "name": "Python Debugger: hunter_wtp run",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "/home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train",
+            "program": "hunter_vs_runner_wtp.py",
+            "args": ["run", "--cy", "2000", "--root", "../../out/out_best"],
+            "justMyCode": false,
+        },
     ]
 }

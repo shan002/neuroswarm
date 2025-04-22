@@ -8,7 +8,8 @@ class CatchRunnerMetric(AbstractMetric):
         self.world = world
 
     def check_if_runner_in_sight(self, agent):
-        a_s = agent.sensors[0]
+        agent.sensors[0].checkForLOSCollisions(self.world) # this line is needed to create agent_in_sight attribute for BinaryFOVSensor
+        a_s = agent.sensors[0].agent_in_sight
         return a_s != None and a_s.team == "runner"
     
     def check_sim_result(self) -> str | None:
@@ -42,8 +43,7 @@ class CatchRunnerMetric(AbstractMetric):
     def calculate(self):
         result = self.check_sim_result()
         if result == "Success":
-            reward = 1.0
-            self.set_value(reward)
+            self.set_value(1.0)
         elif result == "Failure":
             self.set_value(0.0)
         else:

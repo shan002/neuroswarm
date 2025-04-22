@@ -28,7 +28,7 @@ from novel_swarms.world.RectangularWorld import RectangularWorldConfig
 from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber
 from novel_swarms.world.simulate import main as simulator
 from novel_swarms import metrics
-from CatchRunnerMetric import CatchRunnerMetric
+from CatchRunnerMetricWTP import CatchRunnerMetricWTP
 
 class HunterVsRunnerExperiment(TennExperiment):
     def __init__(self, args):
@@ -37,7 +37,7 @@ class HunterVsRunnerExperiment(TennExperiment):
         if not os.path.isabs(args.snn_params):
             args.snn_params = os.path.join(parent_dir, args.snn_params)
         super().__init__(args)
-        self.world_yaml = args.world_yaml
+        self.world_yaml = self.world_yaml = args.world_yaml
         self.run_info = None
         self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
         self.track_history = getattr(args, "track_history", False) or getattr(args, "log_trajectories", False)
@@ -136,7 +136,7 @@ class HunterVsRunnerExperiment(TennExperiment):
             config.agents = []
         config.agents.append(runner_config)
 
-        config.metrics = [CatchRunnerMetric()]
+        config.metrics = [CatchRunnerMetricWTP()]
 
         def check_stop(world):
             output =  world.metrics[0].out_current()[1]
@@ -332,5 +332,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python hunter_vs_runner.py run --root ../../out/out_best --cy -1
+# python hunter_vs_runner.py run --log_t --root ../out_best --cy -1
 # python hunter_vs_runner.py train --root out/ --cy 2000 --save_best --epochs 500 --eons_seed 20
