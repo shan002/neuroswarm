@@ -190,7 +190,7 @@ class HunterVsRunnerExperiment(TennExperiment):
             # print(f"[Trial {i+1}] Runner position: {self.runner_position}")
             if fitness is not None:
                 fitnesses.append(fitness)
-        print(fitnesses, np.mean(fitnesses))
+        # print(f"Fiteness: {fitnesses}, {np.mean(fitnesses)}")
         return np.mean(fitnesses) if fitnesses else 0.0
 
 

@@ -22,7 +22,7 @@ metadata:
   hash: _hash
 
 experiment:
-  runner_speed: 0.2
+  runner_speed: 0.3
   runner_color: [255, 255, 0]       # Runner's color (RGB)
   window_size: [300, 300]         # GUI window size in pixels (width, height)
   runner_region: [[0, 7], [8, 7], [8, 8], [0, 8]]

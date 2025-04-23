@@ -21,7 +21,7 @@
 #SBATCH --mem=4G        # Total memory needed per task (units: K,M,G,T)
 
 ## Specify how much time your job needs. (default: see partition above)
-#SBATCH --time=0-23:00  # Total time needed for job: Days-Hours:Minutes
+#SBATCH --time=1-15:00  # Total time needed for job: Days-Hours:Minutes
 
 #SBATCH --cpus-per-task 48
 
@@ -34,8 +34,8 @@ export MAKE_PARENTS=true
 
 ## Run your program or script
 # srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 2 --eons_seed 20
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 20
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 21
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 22
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 23
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 500 --eons_seed 24
+srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 20
+srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 21
+srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 22
+srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 23
+srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 24
