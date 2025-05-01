@@ -33,7 +33,7 @@ cd turtwig/shan/hunter_vs_runner_to_train
 export MAKE_PARENTS=true
 
 ## Run your program or script
-# srun python hunter_vs_runner.py train --root out/farp/6-wah -p 48 --cy 2000 --world_yaml ./world_wah.yaml --save_best --epochs 2 --eons_seed 20
+# Took 12:10:31 on last run
 srun python hunter_vs_runner.py train --root out/farp/6-wah -p 48 --cy 2000 --world_yaml ./world_wah.yaml --save_best --epochs 200 --eons_seed 20
 srun python hunter_vs_runner.py train --root out/farp/6-wah -p 48 --cy 2000 --world_yaml ./world_wah.yaml --save_best --epochs 200 --eons_seed 21
 srun python hunter_vs_runner.py train --root out/farp/6-wah -p 48 --cy 2000 --world_yaml ./world_wah.yaml --save_best --epochs 200 --eons_seed 22

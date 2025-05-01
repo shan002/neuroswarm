@@ -33,7 +33,7 @@ cd turtwig/shan/hunter_vs_runner_to_train
 export MAKE_PARENTS=true
 
 ## Run your program or script
-# srun python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 2 --eons_seed 20 --> Took 3 mins 44 secs to complete
+# Took 1-01:20:07 on last run
 srun python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 20
 srun python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 21
 srun python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 22
