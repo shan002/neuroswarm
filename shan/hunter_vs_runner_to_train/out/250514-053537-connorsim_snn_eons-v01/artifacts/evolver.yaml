@@ -9,7 +9,7 @@ app: !!python/object:__main__.HunterVsRunnerExperiment
     environment: connorsim_snn_eons-v01
     eons_params: /home/shan/neuromorphic/turtwig/eons/std.json
     eons_seed: 20
-    epochs: 5
+    epochs: 500
     label: null
     log_trajectories: false
     logfile: tenn2_train.log
@@ -24,8 +24,8 @@ app: !!python/object:__main__.HunterVsRunnerExperiment
     project: null
     root: !!python/object/apply:pathlib._local.PosixPath
       args:
-      - out/farp/6-wah
-      resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/farp/6-wah
+      - out
+      resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out
     runs: 1
     save_all_nets: false
     save_best_nets: true
@@ -33,9 +33,11 @@ app: !!python/object:__main__.HunterVsRunnerExperiment
     start_paused: false
     stdin: false
     track_history: false
+    trial_seed: 410
+    trials: 10
     viz: false
     viz_delay: null
-    world_yaml: ./world_wah.yaml
+    world_yaml: ./world.yaml
   cycles: 2000
   env_name: connorsim_snn_eons-v01
   eons_params: &id002
@@ -72,21 +74,21 @@ app: !!python/object:__main__.HunterVsRunnerExperiment
     bestnet_file: !!python/object:common.project.File
       path: !!python/object/apply:pathlib._local.PosixPath
         args:
-        - out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/best.json
-        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/best.json
+        - out/250514-053537-connorsim_snn_eons-v01/best.json
+        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/250514-053537-connorsim_snn_eons-v01/best.json
     logfile: !!python/object:common.project.Logger
       _initialized: true
       firstcall: !!python/name:common.project._NONE1 ''
       path: !!python/object/apply:pathlib._local.PosixPath
         args:
-        - out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/training.log
-        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/training.log
-    name: 250501-123824-connorsim_snn_eons-v01
+        - out/250514-053537-connorsim_snn_eons-v01/training.log
+        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/250514-053537-connorsim_snn_eons-v01/training.log
+    name: 250514-053537-connorsim_snn_eons-v01
     networks: !!python/object:common.project.Networks
       path: !!python/object/apply:pathlib._local.PosixPath
         args:
-        - out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/networks
-        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/networks
+        - out/250514-053537-connorsim_snn_eons-v01/networks
+        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/250514-053537-connorsim_snn_eons-v01/networks
     popfit_file: !!python/object:common.project.Logger
       _initialized: false
       firstcall: !!python/object/apply:builtins.getattr
@@ -94,15 +96,15 @@ app: !!python/object:__main__.HunterVsRunnerExperiment
       - _default_firstcall
       path: !!python/object/apply:pathlib._local.PosixPath
         args:
-        - out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/population_fitnesses.log
-        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/farp/6-wah/250501-123824-connorsim_snn_eons-v01/population_fitnesses.log
+        - out/250514-053537-connorsim_snn_eons-v01/population_fitnesses.log
+        resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/250514-053537-connorsim_snn_eons-v01/population_fitnesses.log
     root: !!python/object/apply:pathlib._local.PosixPath
       args:
-      - out/farp/6-wah/250501-123824-connorsim_snn_eons-v01
-      resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/farp/6-wah/250501-123824-connorsim_snn_eons-v01
+      - out/250514-053537-connorsim_snn_eons-v01
+      resolved: /home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train/out/250514-053537-connorsim_snn_eons-v01
   - log_popfit
   log_trajectories: false
-  max_epochs: 5
+  max_epochs: 500
   n_inputs: 2
   n_outputs: 4
   noviz: false
@@ -125,9 +127,21 @@ app: !!python/object:__main__.HunterVsRunnerExperiment
   save_strategy: best_per_epoch
   start_paused: false
   track_history: false
+  trial_seeds:
+  - 3811360942
+  - 2394185018
+  - 2765225378
+  - 2267600165
+  - 4126525856
+  - 3676950668
+  - 3505171857
+  - 3238102662
+  - 3893465224
+  - 166942140
+  trials: 10
   viz: false
   viz_delay: null
-  world_yaml: ./world_wah.yaml
+  world_yaml: ./world.yaml
 do_print: false
 eons_params: *id002
 net_callback: !!python/name:common.evolver.%3Clambda%3E ''

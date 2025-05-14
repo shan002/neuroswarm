@@ -45,7 +45,11 @@ class HunterVsRunnerExperiment(TennExperiment):
         self.start_paused = getattr(args, "start_paused", False)
         # self.runner_position = None
         # self.runner_position = getattr(args, "runner_position", (7, 8))
-        self.log("initialized HunterVsRunnerExperiment")
+        self.trials = 10
+        rng = np.random.RandomState(args.trial_seed)
+        self.trial_seeds = rng.randint(low=0, high=np.iinfo(np.uint32).max, size=self.trials).tolist()
+        self.log("Initialized Hunter vs RunnerExperiment")
+        self.log(f"Using trial_seed={args.trial_seed} → trial_seeds={self.trial_seeds}")
 
     def get_rand_pos_within_region(self, region):
         region = np.array(region)
@@ -176,24 +180,23 @@ class HunterVsRunnerExperiment(TennExperiment):
         return world_output.metrics[0].out_current()[1] if world_output.metrics else 0.0
 
 
-    # def fitness(self, processor, network, init_callback=lambda config: config):
-    #     world_final_state = self.simulate(processor, network, init_callback)
-    #     return self.extract_fitness(world_final_state)
     def fitness(self, processor, network, init_callback=lambda config: config):
-        trials = 10
         fitnesses = []
-        
-        for i in range(trials):
-            np.random.seed()
-            world_final_state = self.simulate(processor, network, init_callback)
-            fitness = self.extract_fitness(world_final_state)
-            # print(f"trial - {i+1}: fitness = {fitness}")
-            # print(f"[Trial {i+1}] Runner position: {self.runner_position}")
-            if fitness is not None:
-                fitnesses.append(fitness)
-        print(f"Fiteness: {fitnesses}, {np.mean(fitnesses)}")
-        return np.mean(fitnesses) if fitnesses else 0.0
+        print(f"During training: {self.trial_seeds}")
+        for i, seed in enumerate(self.trial_seeds):
+            # reseed numpy (and python’s random if you use it elsewhere)
+            np.random.seed(seed)
 
+            # print(f"trial - {i+1}: fitness = {fitness}")
+            # print(f"[Trial {i+1}] Runner position: {self.runner_position}"
+            world_final_state = self.simulate(processor, network, init_callback)
+            f = self.extract_fitness(world_final_state)
+            if f is not None:
+                fitnesses.append(f)
+
+        avg = float(np.mean(fitnesses)) if fitnesses else 0.0
+        print(f"Fitnesses: {fitnesses} → mean = {avg}")
+        return avg
 
     def as_config_dict(self):
         d = super().as_config_dict()
@@ -265,21 +268,27 @@ def run(app, args):
 
 # run-and-average over args.trials
     fitnesses = []
-    for i in range(args.trials):
-        world = app.simulate(proc, net)
-        f = app.extract_fitness(world)
-        fitnesses.append(f)
-        fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
-        print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {fitness:6.4f}")
+    rng = np.random.RandomState(args.trial_seed)
+    trial_seeds = rng.randint(low=0, high=np.iinfo(np.uint32).max, size=args.trials).tolist()
+    print(f"During running: {trial_seeds}")
+    for i, seed in enumerate(trial_seeds):
+        np.random.seed(seed)
 
-    fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
-    print(f"\nFitness after {args.trials} trials: {fitness:8.4f}")
+        world = app.simulate(proc, net)
+        f     = app.extract_fitness(world)
+        fitnesses.append(f)
+
+        avg = sum(fitnesses) / len(fitnesses)
+        print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {avg:6.4f}")
+
+    final = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
+    print(f"\nFitness after {args.trials} trials: {final:8.4f}")
 
 
     if args.log_trajectories:
         graphing.plot_multiple(world)
         graphing.export(world, output_file=app.p.ensure_file_parents("agent_trajectories.xlsx"))
-    return fitness
+    return final
 
 
 def test(app, args):
@@ -313,11 +322,11 @@ def get_parsers(parser, subpar):
         sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=None)
         sub.add_argument('--world_yaml', default="./world.yaml",
                          type=str, help="path to yaml config for sim")
+        sub.add_argument('--trial_seed', '-S', type=int, default=12345, help="[train] seed for generating 10 trial-seeds")
+        sub.add_argument('-T','--trials', type=int, default=1, help="number of independent runs to average over")
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
     sp['run'].add_argument('--track_history', action='store_true',
                            help="pass this to enable sensor vs. output plotting.")
-    sp['run'].add_argument('-T','--trials', type=int, default=1,
-                           help="number of independent runs to average over")
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")
     sp['run'].add_argument('--start_paused', action='store_true',
@@ -348,4 +357,4 @@ if __name__ == "__main__":
     main()
 
 # python hunter_vs_runner.py run --root ../../out/out_best --cy -1
-# python hunter_vs_runner.py train --root out/ --cy 2000 --save_best --epochs 500 --eons_seed 20
+# python hunter_vs_runner_test.py train --root out/ --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 410 --eons_seed 20
