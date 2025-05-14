@@ -1,6 +1,7 @@
 import sys
 import os
 import numpy as np
+import random
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if parent_dir not in sys.path:
@@ -182,15 +183,16 @@ class HunterVsRunnerExperiment(TennExperiment):
     def fitness(self, processor, network, init_callback=lambda config: config):
         trials = 10
         fitnesses = []
+        np.random.seed()
         for i in range(trials):
-            np.random.seed()
+            # random.seed()
             world_final_state = self.simulate(processor, network, init_callback)
             fitness = self.extract_fitness(world_final_state)
             # print(f"trial - {i+1}: fitness = {fitness}")
             # print(f"[Trial {i+1}] Runner position: {self.runner_position}")
             if fitness is not None:
                 fitnesses.append(fitness)
-        # print(f"Fiteness: {fitnesses}, {np.mean(fitnesses)}")
+        print(f"Fiteness: {fitnesses}, {np.mean(fitnesses)}")
         return np.mean(fitnesses) if fitnesses else 0.0
 
 
@@ -257,10 +259,22 @@ def run(app, args):
             app.net = make_template(proc, app.n_inputs, app.n_outputs)
         net = app.net
 
-    world = app.simulate(proc, net)
-    fitness = app.extract_fitness(world)
-    if fitness is not None:
-        print(f"Fitness: {fitness:8.4f}")
+    # world = app.simulate(proc, net)
+    # fitness = app.extract_fitness(world)
+    # if fitness is not None:
+    #     print(f"Fitness: {fitness:8.4f}")
+
+# run-and-average over args.trials
+    fitnesses = []
+    for i in range(args.trials):
+        world = app.simulate(proc, net)
+        f = app.extract_fitness(world)
+        fitnesses.append(f)
+        fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
+        print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {fitness:6.4f}")
+
+    fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
+    print(f"\nFitness after {args.trials} trials: {fitness:8.4f}")
 
 
     if args.log_trajectories:
@@ -303,6 +317,8 @@ def get_parsers(parser, subpar):
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
     sp['run'].add_argument('--track_history', action='store_true',
                            help="pass this to enable sensor vs. output plotting.")
+    sp['run'].add_argument('-T','--trials', type=int, default=1,
+                           help="number of independent runs to average over")
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")
     sp['run'].add_argument('--start_paused', action='store_true',

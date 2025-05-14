@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+import random
 # import matplotlib.pyplot as plt
 
 import caspian
@@ -36,6 +37,8 @@ class ConnorMillingExperiment(TennExperiment):
         super().__init__(args)
         self.world_yaml = args.world_yaml
         self.run_info = None
+        self.n_epoch = 0
+        self.agent_count = 3
 
         self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
 
@@ -45,6 +48,13 @@ class ConnorMillingExperiment(TennExperiment):
         self.start_paused = getattr(args, 'start_paused', False)
 
         self.log("initialized experiment_tenn2")
+    
+    def pre_epoch(self, eons):
+        if self.n_epoch%50 == 0:
+            self.agent_count += 1
+            print(f"Number of agents = {self.agent_count}")
+        self.n_epoch += 1
+        super().pre_epoch(eons)
 
     def simulate(self, processor, network, init_callback=lambda x: x):
         # import rss.rss2 as rss
@@ -63,20 +73,33 @@ class ConnorMillingExperiment(TennExperiment):
 
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
+
+        
+        if hasattr(self, "agent_count"):
+            config.spawners[0]['n'] = self.agent_count
+        
+            # print(config.spawners[0]['n'])
+            # Remove the attribute so that it is only used once per epoch.
+            # del self.random_agent_count
+
         config.stop_at = self.cycles
         agent_config = config.spawners[0]['agent']
         agent_config['track_io'] = self.track_history
         controller_config = agent_config['controller']
         controller_config['neuro_track_all'] = self.viz
         controller_config['network'] = network
-        if self.agents is not None:
-            config.spawners[0]['n'] = self.agents
+        # if self.agents is not None:
+        #     config.spawners[0]['n'] = self.agents
 
         config.metrics = [
             metrics.Circliness(history=max(self.cycles, 1), avg_history_max=450),
             # metrics.Aggregation(history=max(self.cycles, 1)),
             # metrics.DistanceSizeRatio(history=max(self.cycles, 1)),
         ]
+
+        def check_stop(world):
+
+            return True
 
         def callback(world, screen):
             a = world.selected
@@ -96,12 +119,14 @@ class ConnorMillingExperiment(TennExperiment):
         # allow for callback to modify config
         config = init_callback(config)
 
+
         world = simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
             world_config=config,
             subscribers=[world_subscriber],
             gui=gui,
             show_gui=bool(gui),
             start_paused=self.start_paused,
+            stop_detection=check_stop,
         )
         return world
 

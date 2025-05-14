@@ -167,6 +167,7 @@ class Evolver:
         # Get the fitness for each network in the population
         t_fs = time.time()
         networks = [nn.network for nn in self.pop.networks]
+        print(f"Number of networks: {len(networks)}")
         self.fitness = self.evaluate_population(networks)
         t_fitness = time.time() - t_fs
 

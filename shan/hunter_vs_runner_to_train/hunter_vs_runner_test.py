@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
@@ -21,7 +21,6 @@ from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
 from novel_swarms.world.RectangularWorld import RectangularWorld
-from check_sim_result import check_sim_result
 
 from RunnerController import RunnerController
 from novel_swarms.config import register_dictlike_type, get_agent_class
@@ -29,25 +28,54 @@ from novel_swarms.world.RectangularWorld import RectangularWorldConfig
 from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber
 from novel_swarms.world.simulate import main as simulator
 from novel_swarms import metrics
+from CatchRunnerMetric import CatchRunnerMetric
 
 class HunterVsRunnerExperiment(TennExperiment):
     def __init__(self, args):
+        if not os.path.isabs(args.eons_params):
+            args.eons_params = os.path.join(parent_dir, args.eons_params)
+        if not os.path.isabs(args.snn_params):
+            args.snn_params = os.path.join(parent_dir, args.snn_params)
         super().__init__(args)
-        self.world_yaml = os.path.join(os.path.dirname(__file__), "world.yaml")
+        self.world_yaml = args.world_yaml
         self.run_info = None
         self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
         self.track_history = getattr(args, "track_history", False) or getattr(args, "log_trajectories", False)
         self.log_trajectories = getattr(args, "log_trajectories", False)
         self.start_paused = getattr(args, "start_paused", False)
-        self.runner_position = None
+        # self.runner_position = None
         # self.runner_position = getattr(args, "runner_position", (7, 8))
         self.log("initialized HunterVsRunnerExperiment")
-        if self.net is None:
-            proc = caspian.Processor(self.processor_params)
-            self.net = make_template(proc, self.n_inputs, self.n_outputs)
+
+    def get_rand_pos_within_region(self, region):
+        region = np.array(region)
+        mins = region.min(axis=0)
+        maxs = region.max(axis=0)
+        point = np.random.uniform(low=mins, high=maxs)
+
+        return point
+        
+    def get_rand_pos_outside_goal(self, config):
+        goal = [object for object in config.objects if object['name'] == 'goal'][0]
+        agent_radius = config.spawners[0]['agent']['agent_radius']
+        CLEARANCE_FROM_GOAL = 0.1
+        min_distance_from_goal = goal['agent_radius'] + agent_radius + CLEARANCE_FROM_GOAL
+        world_width, world_height = config.size
+        margin = 1
+
+        # Run the loop until get a point outside the goal
+        while True:
+            candidate = np.array([
+                np.random.uniform(margin, world_width - margin),
+                np.random.uniform(margin, world_height - margin)
+            ])
+            if np.linalg.norm(candidate - goal['position']) > min_distance_from_goal:
+                break
+
+        return tuple(candidate)
+
 
     def simulate(self, processor, network, init_callback=lambda config: config):
-
         network.set_data("processor", self.processor_params)
 
         # Register controller types
@@ -58,20 +86,26 @@ class HunterVsRunnerExperiment(TennExperiment):
         # Load the world configuration from YAML
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
         config.stop_at = self.cycles
+        config.meta = {}
 
         # Load experiment-specific parameters from the YAML
         exp_params = getattr(config, "experiment", {})
         runner_speed = exp_params.get("runner_speed", 0.1)
-        world_width, world_height = config.size
-        margin = 1
-        self.runner_position = (
-            np.random.uniform(margin, world_width - margin),
-            np.random.uniform(margin, world_height - margin)
-        )
         runner_color = exp_params.get("runner_color", [0, 255, 0])
+        runner_region = exp_params.get("runner_region", None)
         window_size = exp_params.get("window_size", [300, 300])
-
         agent_config = config.spawners[0]['agent']
+
+        # Set random goal position within the goal region
+        goal = [object for object in config.objects if object['name'] == 'goal'][0]
+        goal['position'] = self.get_rand_pos_within_region(goal['region'])
+
+        # Override number of hunter agents if -N is passed
+        n_agents = getattr(self.args, 'agents', None)
+        if n_agents is not None:
+            config.spawners[0]['n'] = n_agents
+            self.log(f"Overriding number of agents to {n_agents}")
+
         agent_config['track_io'] = self.track_history
         controller_config = agent_config['controller']
         controller_config['network'] = network
@@ -86,9 +120,13 @@ class HunterVsRunnerExperiment(TennExperiment):
         agent_cls, runner_config = get_agent_class(base_agent_config)
 
         # Update runner configuration from YAML experiment settings
-        runner_config.position = self.runner_position
+        # runner_config.position = self.runner_position
         runner_config.team = "runner"  # tag as runner
         runner_config.body_color = runner_color
+        if runner_region is not None:
+            runner_config.position = self.get_rand_pos_within_region(runner_region)
+
+        # self.runner_position = self.get_rand_pos_outside_goal(config)
 
         # Override the controller to use RunnerController.
         runner_config.controller = {"type": "RunnerController", "speed": runner_speed}
@@ -98,21 +136,13 @@ class HunterVsRunnerExperiment(TennExperiment):
             config.agents = []
         config.agents.append(runner_config)
 
-        config.metrics = [
-            metrics.Circliness(history=max(self.cycles, 1), avg_history_max=450)
-        ]
+        config.metrics = [CatchRunnerMetric()]
+
+        def check_stop(world):
+            output =  world.metrics[0].out_current()[1]
+            return output is not None
 
         def callback(world, screen):
-
-            result = check_sim_result(world)
-            if result:
-                print(result)
-                # sys.exit(0)  # Stop the simulation immediately
-                while True:
-                    inp = input("Press q/Q to stop: ")
-                    if inp == 'q' or inp == 'Q':
-                        sys.exit(0)
-            
             a = world.selected
             if a and self.iostream:
                 self.iostream.write_json({
@@ -126,6 +156,8 @@ class HunterVsRunnerExperiment(TennExperiment):
             gui = False
 
         world_subscriber = WorldSubscriber(func=callback)
+
+        # allow for callback to modify config
         config = init_callback(config)
 
         world = simulator(
@@ -134,17 +166,33 @@ class HunterVsRunnerExperiment(TennExperiment):
             gui=gui,
             show_gui=bool(gui),
             start_paused=self.start_paused,
+            stop_detection=check_stop
         )
+
         return world
 
 
     def extract_fitness(self, world_output: RectangularWorld):
-        self.run_info = world_output.metrics[0].value_history if world_output.metrics else None
         return world_output.metrics[0].out_current()[1] if world_output.metrics else 0.0
 
+
+    # def fitness(self, processor, network, init_callback=lambda config: config):
+    #     world_final_state = self.simulate(processor, network, init_callback)
+    #     return self.extract_fitness(world_final_state)
     def fitness(self, processor, network, init_callback=lambda config: config):
-        world_final_state = self.simulate(processor, network, init_callback)
-        return self.extract_fitness(world_final_state)
+        trials = 10
+        fitnesses = []
+        for i in range(trials):
+            np.random.seed()
+            world_final_state = self.simulate(processor, network, init_callback)
+            fitness = self.extract_fitness(world_final_state)
+            # print(f"trial - {i+1}: fitness = {fitness}")
+            # print(f"[Trial {i+1}] Runner position: {self.runner_position}")
+            if fitness is not None:
+                fitnesses.append(fitness)
+        print(f"Fiteness: {fitnesses}, {np.mean(fitnesses)}")
+        return np.mean(fitnesses) if fitnesses else 0.0
+
 
     def as_config_dict(self):
         d = super().as_config_dict()
@@ -154,8 +202,10 @@ class HunterVsRunnerExperiment(TennExperiment):
     def save_network(self, net, path):
         if 'encoder_ticks' not in self.app_params:
             world = self.get_sample_world(delete_rss=False)
-            self.app_params.update({'encoder_ticks': world.population[0].controller.neuro_tpc})
+            hunter = next(agent for agent in world.population if getattr(agent, "team", None) != "runner")
+            self.app_params.update({'encoder_ticks': hunter.controller.neuro_tpc})
         super().save_network(net, path)
+
 
     def get_sample_world(self, delete_rss=True):
         cycles = self.cycles
@@ -207,9 +257,22 @@ def run(app, args):
             app.net = make_template(proc, app.n_inputs, app.n_outputs)
         net = app.net
 
-    world = app.simulate(proc, net)
-    fitness = app.extract_fitness(world)
-    print(f"Fitness: {fitness:8.4f}")
+    # world = app.simulate(proc, net)
+    # fitness = app.extract_fitness(world)
+    # if fitness is not None:
+    #     print(f"Fitness: {fitness:8.4f}")
+
+# run-and-average over args.trials
+    fitnesses = []
+    for i in range(args.trials):
+        world = app.simulate(proc, net)
+        f = app.extract_fitness(world)
+        fitnesses.append(f)
+        fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
+        print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {fitness:6.4f}")
+
+    fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
+    print(f"\nFitness after {args.trials} trials: {fitness:8.4f}")
 
 
     if args.log_trajectories:
@@ -238,7 +301,7 @@ def test(app, args):
                 return world
             return setup
         fitnesses = [app.fitness(proc, net, setup_i(i)) for i in tqdm(range(n_runs))]
-        print(fitnesses)
+        # print(fitnesses)
         return fitnesses
     else:
         raise ArgumentError(args.positions, "Positions not specified")
@@ -254,6 +317,8 @@ def get_parsers(parser, subpar):
                            help="pass this to enable sensor vs. output plotting.")
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")
+    sp['run'].add_argument('-T','--trials', type=int, default=1,
+                           help="number of independent runs to average over")
     sp['run'].add_argument('--start_paused', action='store_true',
                            help="pass this to pause the simulation at startup. Press Space to unpause.")
     sp['test'].add_argument('--positions', default=None, help="file containing agent positions")
@@ -281,4 +346,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-#python hunter_vs_runner.py run --log_t --root ../out_best --cy -1
+# python hunter_vs_runner.py run --root ../../out/out_best --cy -1
+# python hunter_vs_runner.py train --root out/ --cy 2000 --save_best --epochs 500 --eons_seed 20
