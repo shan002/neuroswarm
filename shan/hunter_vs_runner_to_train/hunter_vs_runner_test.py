@@ -182,7 +182,7 @@ class HunterVsRunnerExperiment(TennExperiment):
 
     def fitness(self, processor, network, init_callback=lambda config: config):
         fitnesses = []
-        print(f"During training: {self.trial_seeds}")
+        # print(f"During training: {self.trial_seeds}")
         for i, seed in enumerate(self.trial_seeds):
             # reseed numpy (and python’s random if you use it elsewhere)
             np.random.seed(seed)
