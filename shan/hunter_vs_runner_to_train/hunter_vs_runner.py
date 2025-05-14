@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy as np
-import random
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if parent_dir not in sys.path:
@@ -183,9 +182,9 @@ class HunterVsRunnerExperiment(TennExperiment):
     def fitness(self, processor, network, init_callback=lambda config: config):
         trials = 10
         fitnesses = []
-        np.random.seed()
+        
         for i in range(trials):
-            # random.seed()
+            np.random.seed()
             world_final_state = self.simulate(processor, network, init_callback)
             fitness = self.extract_fitness(world_final_state)
             # print(f"trial - {i+1}: fitness = {fitness}")

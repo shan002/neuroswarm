@@ -182,6 +182,7 @@ class HunterVsRunnerExperiment(TennExperiment):
     def fitness(self, processor, network, init_callback=lambda config: config):
         trials = 10
         fitnesses = []
+        
         for i in range(trials):
             np.random.seed()
             world_final_state = self.simulate(processor, network, init_callback)
@@ -315,10 +316,10 @@ def get_parsers(parser, subpar):
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
     sp['run'].add_argument('--track_history', action='store_true',
                            help="pass this to enable sensor vs. output plotting.")
-    sp['run'].add_argument('--log_trajectories', action='store_true',
-                           help="pass this to log sensor vs. output to file.")
     sp['run'].add_argument('-T','--trials', type=int, default=1,
                            help="number of independent runs to average over")
+    sp['run'].add_argument('--log_trajectories', action='store_true',
+                           help="pass this to log sensor vs. output to file.")
     sp['run'].add_argument('--start_paused', action='store_true',
                            help="pass this to pause the simulation at startup. Press Space to unpause.")
     sp['test'].add_argument('--positions', default=None, help="file containing agent positions")
