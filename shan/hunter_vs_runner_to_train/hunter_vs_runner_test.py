@@ -356,5 +356,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python hunter_vs_runner.py run --root ../../out/out_best --cy -1
+# python hunter_vs_runner_test.py run --root /mnt/c/Users/sbhatt28/Documents/new --cy -1
 # python hunter_vs_runner_test.py train --root out/ --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 410 --eons_seed 20
