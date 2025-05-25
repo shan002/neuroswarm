@@ -1,0 +1,102 @@
+agents: 6
+app_params: {}
+args:
+  action: train
+  agents: 6
+  all_counts_stream: null
+  cycles: 1000
+  environment: connorsim_snn_eons-v01
+  eons_params: eons/std.json
+  eons_seed: 20
+  epochs: 500
+  label: null
+  log_trajectories: false
+  logfile: tenn2_train.log
+  max_fitness: 9999999999
+  network: null
+  noviz: false
+  overwrite_project: false
+  population_size: null
+  positions: null
+  prnet: null
+  processes: 24
+  project: null
+  root: !!python/object/apply:pathlib._local.PosixPath
+    args:
+    - out/binary_controller/rand/n_6
+    resolved: /home/videblu/neuromorphic/turtwig/out/binary_controller/rand/n_6
+  runs: 1
+  save_all_nets: false
+  save_best_nets: true
+  snn_params: config/caspian.json
+  start_paused: false
+  stdin: false
+  track_history: false
+  viz: false
+  viz_delay: null
+  world_yaml: rss/turbopi-milling/world.yaml
+cycles: 1000
+env_info:
+  .dependencies:
+    novel_swarms:
+      HEAD: 506d5a486b92b6b2edef65f412b7b83e07a8256c
+      branch: main
+      path: /home/videblu/neuromorphic/RobotSwarmSimulator
+      status:
+      - ''
+      version: 0.1.9a0
+  HEAD: 4ef99dc24d108262dd38a9162f88f89b66df775b
+  branch: shan/runner
+  cmd: experiment_tenn2.py train --root out/binary_controller/rand/n_6 -p 24 --save_best
+    --epochs 500 --eons_seed 20 -N 6
+  cwd: /home/videblu/neuromorphic/turtwig
+  python_version: 3.13.1
+  status:
+  - ''
+  uname:
+    machine: x86_64
+    node: ubuwu24
+    processor: x86_64
+    release: 6.8.0-51-generic
+    system: Linux
+    version: '#52-Ubuntu SMP PREEMPT_DYNAMIC Thu Dec  5 13:09:44 UTC 2024'
+eons_seed: 20
+label: null
+n_inputs: 2
+n_outputs: 4
+p: &id001 !!python/object:common.project.Project
+  allow_overwrite: false
+  bestnet_file: !!python/object:common.project.File
+    path: !!python/object/apply:pathlib._local.PosixPath
+      args:
+      - out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/best.json
+      resolved: /home/videblu/neuromorphic/turtwig/out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/best.json
+  logfile: !!python/object:common.project.Logger
+    _initialized: true
+    firstcall: !!python/name:common.project._NONE1 ''
+    path: !!python/object/apply:pathlib._local.PosixPath
+      args:
+      - out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/training.log
+      resolved: /home/videblu/neuromorphic/turtwig/out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/training.log
+  name: 250326-164745-connorsim_snn_eons-v01
+  networks: !!python/object:common.project.Networks
+    path: !!python/object/apply:pathlib._local.PosixPath
+      args:
+      - out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/networks
+      resolved: /home/videblu/neuromorphic/turtwig/out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/networks
+  popfit_file: !!python/object:common.project.Logger
+    _initialized: false
+    firstcall: !!python/object/apply:builtins.getattr
+    - *id001
+    - _default_firstcall
+    path: !!python/object/apply:pathlib._local.PosixPath
+      args:
+      - out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/population_fitnesses.log
+      resolved: /home/videblu/neuromorphic/turtwig/out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01/population_fitnesses.log
+  root: !!python/object/apply:pathlib._local.PosixPath
+    args:
+    - out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01
+    resolved: /home/videblu/neuromorphic/turtwig/out/binary_controller/rand/n_6/250326-164745-connorsim_snn_eons-v01
+processes: 24
+save_strategy: best_per_epoch
+world_yaml_path: rss/turbopi-milling/world.yaml

@@ -1,0 +1,386 @@
+{
+  "Associated_Data": {
+    "application": {
+      "encoder_ticks": 1
+    },
+    "processor": {
+      "Leak_Enable": true,
+      "Max_Axon_Delay": 0,
+      "Max_Leak": 4,
+      "Max_Synapse_Delay": 255,
+      "Max_Threshold": 127,
+      "Max_Weight": 127,
+      "Min_Axon_Delay": 0,
+      "Min_Leak": -1,
+      "Min_Synapse_Delay": 0,
+      "Min_Threshold": 0,
+      "Min_Weight": -127
+    }
+  },
+  "Edges": [
+    {
+      "from": 5,
+      "to": 50,
+      "values": [
+        57.0,
+        147.0
+      ]
+    },
+    {
+      "from": 2,
+      "to": 53,
+      "values": [
+        -99.0,
+        48.0
+      ]
+    },
+    {
+      "from": 11,
+      "to": 11,
+      "values": [
+        15.0,
+        26.0
+      ]
+    },
+    {
+      "from": 0,
+      "to": 11,
+      "values": [
+        71.0,
+        47.0
+      ]
+    },
+    {
+      "from": 4,
+      "to": 5,
+      "values": [
+        31.0,
+        22.0
+      ]
+    },
+    {
+      "from": 64,
+      "to": 12,
+      "values": [
+        51.0,
+        47.0
+      ]
+    },
+    {
+      "from": 12,
+      "to": 4,
+      "values": [
+        103.0,
+        31.0
+      ]
+    },
+    {
+      "from": 3,
+      "to": 70,
+      "values": [
+        -121.0,
+        29.0
+      ]
+    },
+    {
+      "from": 64,
+      "to": 4,
+      "values": [
+        119.0,
+        205.0
+      ]
+    },
+    {
+      "from": 2,
+      "to": 95,
+      "values": [
+        -97.0,
+        94.0
+      ]
+    },
+    {
+      "from": 50,
+      "to": 2,
+      "values": [
+        33.0,
+        238.0
+      ]
+    },
+    {
+      "from": 5,
+      "to": 12,
+      "values": [
+        89.0,
+        238.0
+      ]
+    },
+    {
+      "from": 1,
+      "to": 95,
+      "values": [
+        -39.0,
+        84.0
+      ]
+    },
+    {
+      "from": 12,
+      "to": 3,
+      "values": [
+        66.0,
+        118.0
+      ]
+    },
+    {
+      "from": 1,
+      "to": 4,
+      "values": [
+        -41.0,
+        2.0
+      ]
+    },
+    {
+      "from": 4,
+      "to": 3,
+      "values": [
+        126.0,
+        20.0
+      ]
+    },
+    {
+      "from": 5,
+      "to": 1,
+      "values": [
+        -87.0,
+        125.0
+      ]
+    },
+    {
+      "from": 11,
+      "to": 5,
+      "values": [
+        114.0,
+        29.0
+      ]
+    },
+    {
+      "from": 0,
+      "to": 12,
+      "values": [
+        108.0,
+        128.0
+      ]
+    }
+  ],
+  "Inputs": [
+    0,
+    1
+  ],
+  "Network_Values": [],
+  "Nodes": [
+    {
+      "id": 0,
+      "values": [
+        14.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 12,
+      "values": [
+        62.0,
+        4.0,
+        0.0
+      ]
+    },
+    {
+      "id": 69,
+      "values": [
+        44.0,
+        4.0,
+        0.0
+      ]
+    },
+    {
+      "id": 100,
+      "values": [
+        27.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 11,
+      "values": [
+        5.0,
+        -1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 3,
+      "values": [
+        113.0,
+        -1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 29,
+      "values": [
+        101.0,
+        -1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 81,
+      "values": [
+        21.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 53,
+      "values": [
+        90.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 31,
+      "values": [
+        90.0,
+        4.0,
+        0.0
+      ]
+    },
+    {
+      "id": 50,
+      "values": [
+        39.0,
+        4.0,
+        0.0
+      ]
+    },
+    {
+      "id": 79,
+      "values": [
+        46.0,
+        2.0,
+        0.0
+      ]
+    },
+    {
+      "id": 2,
+      "values": [
+        60.0,
+        4.0,
+        0.0
+      ]
+    },
+    {
+      "id": 64,
+      "values": [
+        71.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 70,
+      "values": [
+        95.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 4,
+      "values": [
+        99.0,
+        -1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 1,
+      "values": [
+        74.0,
+        2.0,
+        0.0
+      ]
+    },
+    {
+      "id": 95,
+      "values": [
+        64.0,
+        4.0,
+        0.0
+      ]
+    },
+    {
+      "id": 5,
+      "values": [
+        107.0,
+        1.0,
+        0.0
+      ]
+    }
+  ],
+  "Outputs": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "Properties": {
+    "edge_properties": [
+      {
+        "index": 1,
+        "max_value": 255.0,
+        "min_value": 0.0,
+        "name": "Delay",
+        "size": 1,
+        "type": 73
+      },
+      {
+        "index": 0,
+        "max_value": 127.0,
+        "min_value": -127.0,
+        "name": "Weight",
+        "size": 1,
+        "type": 73
+      }
+    ],
+    "network_properties": [],
+    "node_properties": [
+      {
+        "index": 2,
+        "max_value": 0.0,
+        "min_value": 0.0,
+        "name": "Delay",
+        "size": 1,
+        "type": 73
+      },
+      {
+        "index": 1,
+        "max_value": 4.0,
+        "min_value": -1.0,
+        "name": "Leak",
+        "size": 1,
+        "type": 73
+      },
+      {
+        "index": 0,
+        "max_value": 127.0,
+        "min_value": 0.0,
+        "name": "Threshold",
+        "size": 1,
+        "type": 73
+      }
+    ]
+  }
+}
