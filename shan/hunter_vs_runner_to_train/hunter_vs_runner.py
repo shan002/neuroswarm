@@ -182,7 +182,6 @@ class HunterVsRunnerExperiment(TennExperiment):
     def fitness(self, processor, network, init_callback=lambda config: config):
         trials = 10
         fitnesses = []
-        
         for i in range(trials):
             np.random.seed()
             world_final_state = self.simulate(processor, network, init_callback)

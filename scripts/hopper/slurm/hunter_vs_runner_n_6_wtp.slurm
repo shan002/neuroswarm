@@ -34,8 +34,14 @@ export MAKE_PARENTS=true
 
 ## Run your program or script
 # Took 16:44:04 on last run
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 20
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 21
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 22
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 23
-srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 24
+# srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 20
+# srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 21
+# srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 22
+# srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 23
+# srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 24
+
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 411 --eons_seed 20
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 412 --eons_seed 21
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 413 --eons_seed 22
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 414 --eons_seed 23
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 415 --eons_seed 24
