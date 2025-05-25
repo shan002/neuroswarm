@@ -5,3 +5,4 @@
 !/results/scatterplots.py
 /logs/*
 /out/*
+/shan/hunter_vs_runner_to_train/out/*
