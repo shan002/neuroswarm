@@ -26,4 +26,5 @@ experiment:
   runner_color: [255, 255, 0]       # Runner's color (RGB)
   window_size: [300, 300]         # GUI window size in pixels (width, height)
   runner_region: [[0, 7], [8, 7], [8, 8], [0, 8]]
+  runner_fov: 2 # Double of the hunters
   # runner_position: [7, 8]       # Runner's initial position (meters)

@@ -36,6 +36,7 @@ class CatchRunnerMetric(AbstractMetric):
         for agent in self.world.population:
             if getattr(agent, "team", None) != "runner":
                 if self.check_if_runner_in_sight(agent) or np.linalg.norm(np.array(runner.pos) - np.array(agent.pos)) <= (runner.radius + agent.radius + COLLISION_CLEARANCE):
+                # if np.linalg.norm(np.array(runner.pos) - np.array(agent.pos)) <= (runner.radius + agent.radius + COLLISION_CLEARANCE):
                     return "Success"
 
         return None

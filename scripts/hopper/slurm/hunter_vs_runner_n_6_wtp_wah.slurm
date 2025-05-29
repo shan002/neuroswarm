@@ -40,8 +40,8 @@ export MAKE_PARENTS=true
 # srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp-wah -p 48 --cy 2000 --world_yaml ./world_wah.yaml --save_best --epochs 200 --eons_seed 23
 # srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp-wah -p 48 --cy 2000 --world_yaml ./world_wah.yaml --save_best --epochs 200 --eons_seed 24
 
-srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 411 --eons_seed 20
-srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 412 --eons_seed 21
-srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 413 --eons_seed 22
-srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 414 --eons_seed 23
-srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 415 --eons_seed 24
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 511 --eons_seed 20
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 512 --eons_seed 21
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 513 --eons_seed 22
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 514 --eons_seed 23
+srun echo y | python hunter_vs_runner_wtp_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 515 --eons_seed 24
