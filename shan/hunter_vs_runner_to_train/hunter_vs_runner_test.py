@@ -200,7 +200,7 @@ class HunterVsRunnerExperiment(TennExperiment):
             fitnesses.append(f)
 
         avg = float(np.mean(fitnesses)) if fitnesses else 0.0
-        print(f"Fitnesses: {fitnesses} → mean = {avg}")
+        # print(f"Fitnesses: {fitnesses} → mean = {avg}")
         return avg
 
     def as_config_dict(self):
