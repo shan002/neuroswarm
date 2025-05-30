@@ -1,0 +1,1 @@
+Used a smart runner with the ability to chose randomly from 3 actions: {freeze for sometimes, dodge left, dodge right} in the presence of a hunter in its fov.
