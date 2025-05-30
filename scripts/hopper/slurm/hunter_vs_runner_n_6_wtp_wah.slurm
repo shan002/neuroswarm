@@ -18,10 +18,10 @@
 #SBATCH --mail-user=sbhatt28@gmu.edu     # Put your GMU email address here
 
 ## Specify how much memory your job needs. (2G is the default)
-#SBATCH --mem=4G        # Total memory needed per task (units: K,M,G,T)
+#SBATCH --mem=8G        # Total memory needed per task (units: K,M,G,T)
 
 ## Specify how much time your job needs. (default: see partition above)
-#SBATCH --time=1-15:00  # Total time needed for job: Days-Hours:Minutes
+#SBATCH --time=1-20:00  # Total time needed for job: Days-Hours:Minutes
 
 #SBATCH --cpus-per-task 48
 
