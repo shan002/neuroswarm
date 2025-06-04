@@ -37,7 +37,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
+        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryRemappedController.get_default_encoders()
 
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
@@ -288,3 +288,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+# python experiment_tenn2.py train -p 48 --save_best --epochs 500 --eons_seed 20 -N 15

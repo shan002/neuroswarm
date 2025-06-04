@@ -1,7 +1,7 @@
 # Units are MGS (Meters, Grams, Seconds) and radians unless otherwise specified
 type: "MazeAgent"
 sensors:
-  - type: "BinaryFOVSensor"
+  - type: "TernaryFOVSensor" # previously BinaryFOVSensor
     theta: 0.45  # Vision Angle / 2 (Radians)
     distance: 1.0  # meters. previously 2.55
     show: true
@@ -11,7 +11,7 @@ sensors:
     store_history: false
     seed: 10
 controller:
-  type: "CaspianBinaryController"
+  type: "CaspianTernaryController"
   neuro_tpc: 1
   scale_forward_speed: 0.2  # m/s forward speed factor
   scale_turning_rates: 2.0  # rad/s turning rate factor
@@ -19,7 +19,7 @@ controller:
 agent_radius: !np 0.2 / 2
 stop_at_goal: false
 scale_forward_speed: 0.2 # m/s
-scale_turning_rates: 2.0  # rad/s
+scale_turning_rates: 0.693  # rad/s
 body_color:
   - 255
   - 0
