@@ -2,7 +2,7 @@ from io import BytesIO
 import os
 # import matplotlib.pyplot as plt
 
-import caspian
+# import caspian
 
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
@@ -132,6 +132,7 @@ class ConnorMillingExperiment(TennExperiment):
         super().save_network(net, path)
 
     def get_sample_world(self, delete_rss=True):
+        import caspian
         cycles = self.cycles
         self.cycles = 0
         proc = caspian.Processor(self.processor_params)
@@ -179,7 +180,8 @@ def run(app, args):
         proc = None
         net = None
     else:
-        proc = caspian.Processor(app.processor_params)
+        # proc = caspian.Processor(app.processor_params)
+        proc = None
         net = app.net
 
     # Run app and print fitness
@@ -196,6 +198,7 @@ def run(app, args):
 
 
 def test(app, args):
+    import caspian
 
     # Set up simulator and network
     proc = caspian.Processor(app.processor_params)
