@@ -14,7 +14,7 @@ from common.utils import make_template
 from common import env_tools as envt
 
 from rss.CaspianBinaryController import CaspianBinaryController
-from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+from rss.CaspianBinaryRemappedControllerWOR import CaspianBinaryRemappedControllerWOR
 
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
@@ -37,7 +37,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryRemappedController.get_default_encoders()
+        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryRemappedControllerWOR.get_default_encoders()
 
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
@@ -59,7 +59,7 @@ class ConnorMillingExperiment(TennExperiment):
 
         # register controller type with RSS
         register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
-        register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
+        register_dictlike_type('controller', "CaspianBinaryRemappedControllerWOR", CaspianBinaryRemappedControllerWOR)
 
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
