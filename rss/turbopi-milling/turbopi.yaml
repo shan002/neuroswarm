@@ -13,7 +13,7 @@ sensors:
     store_history: false
     seed: 10
 controller:
-  type: "CaspianBinaryRemappedControllerWOR"
+  type: "CaspianBinaryController"
   neuro_tpc: 1
   scale_forward_speed: 0.276  # m/s forward speed factor
   scale_turning_rates: 0.602  # rad/s turning rate factor
