@@ -15,6 +15,8 @@ from common import env_tools as envt
 
 from rss.CaspianBinaryController import CaspianBinaryController
 from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+from rss.CasPyanBinaryController import CasPyanBinaryController
+from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
 
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
@@ -58,8 +60,10 @@ class ConnorMillingExperiment(TennExperiment):
         network.set_data("processor", self.processor_params)
 
         # register controller type with RSS
-        register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
-        register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
+        # register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
+        # register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
+        register_dictlike_type('controller', "CaspianBinaryController", CasPyanBinaryController)
+        register_dictlike_type('controller', "CaspianBinaryRemappedController", CasPyanBinaryRemappedController)
 
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
@@ -145,7 +149,7 @@ class ConnorMillingExperiment(TennExperiment):
 
     def delete_rss(self):
         if 'rss' in globals():
-            del rss
+            del rss  # noqa
 
     def save_artifacts(self, evolver, *args, **kwargs):
         if super().save_artifacts(evolver, *args, **kwargs) is None:
@@ -159,17 +163,16 @@ class ConnorMillingExperiment(TennExperiment):
             novel_swarms_path = envt.module_editable_path('novel_swarms')
             d['.dependencies'].update({
                 'novel_swarms': {
-                    'path': str(novel_swarms_path.resolve()),
-                    "branch": envt.get_branch_name(novel_swarms_path),
-                    "HEAD": envt.git_hash(novel_swarms_path),
-                    "status": [s.strip() for s in envt.git_porcelain(novel_swarms_path).split('\n')],
+                    'path': str(novel_swarms_path.resolve()),  # pyright: ignore
+                    "branch": envt.get_branch_name(novel_swarms_path),  # pyright: ignore
+                    "HEAD": envt.git_hash(novel_swarms_path),  # pyright: ignore
+                    "status": [s.strip() for s in envt.git_porcelain(novel_swarms_path).split('\n')],  # pyright: ignore
                     'version': envt.get_module_version('novel_swarms'),
                 },
             })
         except Exception:
             d['.dependencies'].update({'novel_swarms': envt.get_module_version('novel_swarms')})
         return d
-
 
 
 def run(app, args):
@@ -243,7 +246,8 @@ def get_parsers(parser, subpar):
     sp = subpar.parsers
 
     for sub in sp.values():  # applies to everything
-        sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=None)  # override: use default from world.yaml
+        sub.add_argument('-N', '--agents', default=None,  # override: use default from world.yaml
+                         type=int, help="# of agents to run with.",)
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for sim")
 
