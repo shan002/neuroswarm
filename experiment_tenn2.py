@@ -292,3 +292,4 @@ if __name__ == "__main__":
 
 
 # python experiment_tenn2.py train -p 48 --save_best --epochs 500 --eons_seed 20 -N 15
+# python python experiment_tenn2.py run --root ./results_sim/hopper/250607/n-15/ --cy -1 -N 8
