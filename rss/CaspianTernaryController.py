@@ -24,8 +24,8 @@ class CaspianTernaryController(AbstractController):
         neuro_tpc: int | None = 10,
         extra_ticks: int = 5,
         neuro_track_all: bool = False,
-        scale_forward_speed: float = 0.2,  # m/s forward speed factor
-        scale_turning_rates: float = 2.0,  # rad/s turning rate factor
+        scale_forward_speed: float = 0.276,  # m/s forward speed factor
+        scale_turning_rates: float = 0.602,  # rad/s turning rate factor
         sensor_id: int = 0,
     ) -> None:
         super().__init__(agent=agent, parent=parent)
@@ -113,7 +113,7 @@ class CaspianTernaryController(AbstractController):
             self.neuron_ids = [x.id for x in self.network.sorted_node_vector]
 
     @staticmethod
-    def int_to_one_hot(h: int):
+    def one_hot(h: int):
         """
         Convert a ternary h ∈ {0, 1, 2} into a one‐hot vector of length 3:
           h = 0 → (1, 0, 0)
@@ -129,7 +129,7 @@ class CaspianTernaryController(AbstractController):
 
     def run_processor(self, observation: int):
         # observation now is an integer 0, 1, or 2 from TernaryFOVSensor.current_state
-        input_vector = self.int_to_one_hot(observation)
+        input_vector = self.one_hot(observation)
         spikes = self.encoder.get_spikes(input_vector)
 
         self.processor.apply_spikes(spikes)
