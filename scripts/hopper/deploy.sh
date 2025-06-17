@@ -1,5 +1,6 @@
 #!/bin/bash
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+PYTHON_VERSION=${PYTHON_VERSION:-3.13}
 
 cd "$parent_path"  # cd to the location of this script
 
@@ -48,85 +49,31 @@ mkdir -p ~/.local/packages
 cd ~/.local/packages
 PACKAGES=`realpath '.'`
 
-# luckily hopper has these dependencies available already; no need to build them
-# let's load them now
-echo "Loading automake, autotools, readline, bzip2, sqlite"
-module load automake
-module load autotools
-module load readline
-module load bzip2
-module load sqlite
-
-# sadly autoconf and libffi are dependencies for python.
-# libffi is needed for _ctypes which is needed for scipy
-
-# download and build autoconf-2.72
-echo
-echo "Downloading autoconf-2.72"
-echo
-cd ~/.local
-wget https://ftp.wayne.edu/gnu/autoconf/autoconf-2.72.tar.xz
-tar -xf autoconf-2.72.tar.xz
-cd autoconf-2.72
-echo
-echo "Installing autoconf"
-echo
-./configure --prefix $PACKAGES/autoconf-2.72
-make && make install
-
-module load use.own  # load this to update the available user modules
-module load autoconf-2.72
-echo "autoconf module loaded"
-
-# download and build libffi
-echo
-echo "Downloading libffi-3.4.6"
-echo
-cd ~/.local
-wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
-tar -xf libffi-3.4.6.tar.gz
-cd libffi-3.4.6
-echo
-echo "Installing libffi"
-echo
-./configure --prefix $PACKAGES/libffi-3.4.6
-make && make install
-
-module load use.own  # load this to update the available user modules
-module load libffi-3.4.6
-echo "libffi module loaded"
-
 cd
 
-# download and install pyenv if we don't have it
-if ! command -v pyenv &> /dev/null
-then
+if [ ! -d ~/.pyenv ]; then
 	echo
-	echo "Installing pyenv"
+	echo "You don't have pyenv installed."
+	echo "You can install it with:"
 	echo
-	rm -rf ~/.pyenv  # if ~/.pyenv exists, the install script will error
-
-	curl https://pyenv.run | bash
-
-	echo "adding pyenv shims to your .bashrc"
-	echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-	echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-	echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-
-	source ~/.bashrc
-else
+	echo git clone https://gitlab.orc.gmu.edu/kzhu4/hoppertools.git ~/.hoppertools
+	echo cd ~/.hoppertools && make pyenv
 	echo
-	echo "pyenv command already installed, skipping"
-	echo
+elif command -v pyenv &> /dev/null; then
+	source ~/privatemodules/load_pyenv.sh
 fi
+
 
 pyenv doctor  # check if pyenv thinks we can build python
 
-echo
-echo "Installing Python now. This might take a while..."
-pyenv install 3.12.4 --force
+PYTHON_VERSION_ACTUAL="$(pyenv latest -k $PYTHON_VERSION)"
 
-pyenv global 3.12.4  # load our newly-built python
+echo
+echo "Python version $PYTHON_VERSION_ACTUAL will be installed."
+echo "Installing Python now. This might take a while..."
+pyenv install $PYTHON_VERSION_ACTUAL --force
+
+pyenv global $PYTHON_VERSION_ACTUAL  # load our newly-built python
 
 # make sure we can run python and pip
 python --version
