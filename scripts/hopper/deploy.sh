@@ -6,9 +6,6 @@ cd "$parent_path"  # cd to the location of this script
 
 set -e  # EXIT ON ERROR
 
-mkdir -p ~/privatemodules
-cp -Rf privatemodules/** ~/privatemodules  # copy privatemodules/ to $HOME
-
 # make project directory
 mkdir -p ~/neuromorphic
 cd ~/neuromorphic
@@ -56,8 +53,8 @@ if [ ! -d ~/.pyenv ]; then
 	echo "You don't have pyenv installed."
 	echo "You can install it with:"
 	echo
-	echo git clone https://gitlab.orc.gmu.edu/kzhu4/hoppertools.git ~/.hoppertools
-	echo cd ~/.hoppertools && make pyenv
+	echo "git clone https://gitlab.orc.gmu.edu/kzhu4/hoppertools.git ~/.hoppertools"
+	echo "cd ~/.hoppertools && make pyenv"
 	echo
 elif command -v pyenv &> /dev/null; then
 	source ~/privatemodules/load_pyenv.sh
@@ -118,7 +115,8 @@ pip install -e .
 echo
 echo "Installing dependencies for neuromorphic_experiments (turtwig)"
 echo
-cd ~/neuromorphic/turtwig
+cd "$parent_path"
+cd ../..
 pip install -r requirements.txt
 cd ~/neuromorphic
 unalias pip
