@@ -4,19 +4,19 @@ import random
 import math
 import numpy as np
 from dataclasses import dataclass
-from novel_swarms.agent.MazeAgent import MazeAgent, MazeAgentConfig
-from novel_swarms.config import filter_unexpected_fields, associated_type
-# from novel_swarms.util.collider.AABB import AABB
-# from novel_swarms.util.collider.Collider import CircularCollider
-# from novel_swarms.util.timer import Timer
+from swarmsim.agent.MazeAgent import MazeAgent, MazeAgentConfig
+from swarmsim.config import filter_unexpected_fields, associated_type
+# from swarmsim.util.collider.AABB import AABB
+# from swarmsim.util.collider.Collider import CircularCollider
+# from swarmsim.util.timer import Timer
 
 # typing
 from typing import Any, override
 
-# from novel_swarms.config.WorldConfig import RectangularWorldConfig
-from novel_swarms.sensors.BinaryFOVSensor import BinaryFOVSensor
-# from novel_swarms.world.World import World
-from novel_swarms.agent.control.Controller import Controller
+# from swarmsim.config.WorldConfig import RectangularWorldConfig
+from swarmsim.sensors.BinaryFOVSensor import BinaryFOVSensor
+# from swarmsim.world.World import World
+from swarmsim.agent.control.Controller import Controller
 
 import neuro
 import caspian
