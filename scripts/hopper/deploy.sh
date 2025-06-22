@@ -127,7 +127,7 @@ echo
 set -x  # print commands
 python -c 'import neuro'
 python -c 'import caspian'
-python -c 'import novel_swarms'
+python -c 'import swarmsim'
 { set +x; } 2>/dev/null  # stop printing commands  https://stackoverflow.com/a/19226038
 echo
 echo Everything seems to be working!
