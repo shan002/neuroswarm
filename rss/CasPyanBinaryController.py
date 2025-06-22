@@ -4,8 +4,8 @@ import numpy as np
 # typing
 from typing import Any, override
 
-from novel_swarms.sensors.BinaryFOVSensor import BinaryFOVSensor
-from novel_swarms.agent.control.AbstractController import AbstractController
+from swarmsim.sensors.BinaryFOVSensor import BinaryFOVSensor
+from swarmsim.agent.control.AbstractController import AbstractController
 
 import casPYan
 import casPYan.ende.rate as ende
