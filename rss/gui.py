@@ -2,13 +2,13 @@ import pygame
 import numpy as np
 from math import pi as PI
 
-from novel_swarms.gui.agentGUI import DifferentialDriveGUI
+from swarmsim.gui.agentGUI import DifferentialDriveGUI
 
 from rss.graphing import plot_single
 
 # typing
 from typing import override
-from novel_swarms.agent.MazeAgent import MazeAgent
+from swarmsim.agent.MazeAgent import MazeAgent
 
 matplotlib = None
 

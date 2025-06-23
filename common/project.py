@@ -7,7 +7,7 @@ import shutil
 import sys
 import time
 import os
-from novel_swarms import yaml
+from swarmsim import yaml
 from . import jsontools as jst
 
 # typing
