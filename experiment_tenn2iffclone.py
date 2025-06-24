@@ -13,8 +13,8 @@ import numpy as np
 from common.experiment import TennExperiment
 import common.experiment
 
-# from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspian
-# from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspian
+# from swarmsim.agent.MazeAgentCaspian import MazeAgentCaspian
+# from swarmsim.agent.MillingAgentCaspian import MillingAgentCaspian
 
 
 class NetworkCloneExperiment(TennExperiment):
