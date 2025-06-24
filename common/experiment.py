@@ -69,7 +69,8 @@ class TennExperiment(Application):
             # first set the project name
             if args.project is None and args.action == "train":
                 # no project name specified, so use the experiment name and timestamp
-                project_name = f"{time.strftime('%y%m%d-%H%M%S')}-{args.environment}"
+                suffix = args.environment if args.pname_suffix is None else args.pname_suffix
+                project_name = f"{time.strftime('%y%m%d-%H%M%S')}{'-' + suffix if suffix else ''}"
                 self.p = project.Project(path=args.root / project_name, name=project_name)
             elif args.project is None:
                 # no project name specified; ask user
@@ -336,6 +337,8 @@ def get_parsers(conflict_handler='resolve'):
                            help="running log file path. By default, this is saved to the projectdir/training.log")
     sub_train.add_argument('--overwrite_project', action='store_true',
                            help="overwrite project folder if it already exists.")
+    sub_train.add_argument('--pname_suffix', default=None,
+                           help="Change the project name suffix.")
     savestrat = sub_train.add_mutually_exclusive_group(required=False)
     savestrat.add_argument('--save_best_nets', action='store_true')
     savestrat.add_argument('--save_all_nets', action='store_true')

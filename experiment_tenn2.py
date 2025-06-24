@@ -107,7 +107,10 @@ class ConnorMillingExperiment(TennExperiment):
 
     def extract_fitness(self, world_output: RectangularWorld):
         self.run_info = world_output.metrics[0].value_history if world_output.metrics else None
-        return world_output.metrics[0].out_current()[1] if world_output.metrics else 0.0
+        if not world_output.metrics:
+            return 0.0
+        metric = world_output.metrics[0]
+        return metric.average if metric.instantaneous else metric.value
 
     @override
     def fitness(self, processor, network, init_callback=lambda x: x):
