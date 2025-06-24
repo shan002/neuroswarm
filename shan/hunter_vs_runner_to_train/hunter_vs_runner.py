@@ -20,14 +20,14 @@ from rss.CaspianBinaryController import CaspianBinaryController
 from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
-from novel_swarms.world.RectangularWorld import RectangularWorld
+from swarmsim.world.RectangularWorld import RectangularWorld
 
 from RunnerController import RunnerController
-from novel_swarms.config import register_dictlike_type, get_agent_class
-from novel_swarms.world.RectangularWorld import RectangularWorldConfig
-from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber
-from novel_swarms.world.simulate import main as simulator
-from novel_swarms import metrics
+from swarmsim.config import register_dictlike_type, get_agent_class
+from swarmsim.world.RectangularWorld import RectangularWorldConfig
+from swarmsim.world.subscribers.WorldSubscriber import WorldSubscriber
+from swarmsim.world.simulate import main as simulator
+from swarmsim import metrics
 from CatchRunnerMetric import CatchRunnerMetric
 import matplotlib.pyplot as plt
 
@@ -234,18 +234,18 @@ class HunterVsRunnerExperiment(TennExperiment):
     def get_env_info(self):
         d = super().get_env_info()
         try:
-            novel_swarms_path = envt.module_editable_path('novel_swarms')
+            swarmsim_path = envt.module_editable_path('swarmsim')
             d['.dependencies'].update({
-                'novel_swarms': {
-                    'path': str(novel_swarms_path.resolve()),
-                    "branch": envt.get_branch_name(novel_swarms_path),
-                    "HEAD": envt.git_hash(novel_swarms_path),
-                    "status": [s.strip() for s in envt.git_porcelain(novel_swarms_path).split('\n')],
-                    'version': envt.get_module_version('novel_swarms'),
+                'swarmsim': {
+                    'path': str(swarmsim_path.resolve()),
+                    "branch": envt.get_branch_name(swarmsim_path),
+                    "HEAD": envt.git_hash(swarmsim_path),
+                    "status": [s.strip() for s in envt.git_porcelain(swarmsim_path).split('\n')],
+                    'version': envt.get_module_version('swarmsim'),
                 },
             })
         except Exception:
-            d['.dependencies'].update({'novel_swarms': envt.get_module_version('novel_swarms')})
+            d['.dependencies'].update({'swarmsim': envt.get_module_version('swarmsim')})
         return d
 
 def run(app, args):

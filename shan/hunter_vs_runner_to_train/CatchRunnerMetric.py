@@ -1,4 +1,4 @@
-from novel_swarms.metrics.AbstractMetric import AbstractMetric
+from swarmsim.metrics.AbstractMetric import AbstractMetric
 
 class CatchRunnerMetric(AbstractMetric):
     def __init__(self, name="CatchRunnerMetric", history_size=1):

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import colorsys
 import itertools
-from novel_swarms.metrics.Circliness import Circliness
+from swarmsim.metrics.Circliness import Circliness
 
 
 def hr(h, s, l):  # noqa: E741
