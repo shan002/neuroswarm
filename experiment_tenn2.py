@@ -2,7 +2,7 @@ from io import BytesIO
 import os
 # import matplotlib.pyplot as plt
 
-import caspian
+# import caspian
 
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
@@ -10,11 +10,7 @@ from tqdm import tqdm
 # Provided Python utilities from tennlab framework/examples/common
 from common.experiment import TennExperiment
 import common.experiment
-from common.utils import make_template
 from common import env_tools as envt
-
-from rss.CaspianBinaryController import CaspianBinaryController
-from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
 
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
@@ -37,10 +33,21 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
-
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
+        self.use_caspian = getattr(args, 'caspian', True)
+
+        # register controller type with RSS
+        if self.use_caspian:
+            from rss.CaspianBinaryController import CaspianBinaryController
+            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+            self.controller, self.controller_remapped = CaspianBinaryController, CaspianBinaryRemappedController
+        else:
+            from rss.CasPyanBinaryController import CasPyanBinaryController
+            from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
+            self.controller, self.controller_remapped = CasPyanBinaryController, CasPyanBinaryRemappedController
+
+        self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
 
         self.start_paused = getattr(args, 'start_paused', False)
 
@@ -58,8 +65,16 @@ class ConnorMillingExperiment(TennExperiment):
         network.set_data("processor", self.processor_params)
 
         # register controller type with RSS
-        register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
-        register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
+        if self.use_caspian:
+            from rss.CaspianBinaryController import CaspianBinaryController
+            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+            register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
+            register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
+        else:
+            from rss.CasPyanBinaryController import CasPyanBinaryController
+            from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
+            register_dictlike_type('controller', "CaspianBinaryController", CasPyanBinaryController)
+            register_dictlike_type('controller', "CaspianBinaryRemappedController", CasPyanBinaryRemappedController)
 
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
@@ -132,6 +147,8 @@ class ConnorMillingExperiment(TennExperiment):
         super().save_network(net, path)
 
     def get_sample_world(self, delete_rss=True):
+        import caspian
+        from common.tennnetwork import make_template
         cycles = self.cycles
         self.cycles = 0
         proc = caspian.Processor(self.processor_params)
@@ -144,7 +161,7 @@ class ConnorMillingExperiment(TennExperiment):
 
     def delete_rss(self):
         if 'rss' in globals():
-            del rss
+            del rss  # noqa
 
     def save_artifacts(self, evolver, *args, **kwargs):
         if super().save_artifacts(evolver, *args, **kwargs) is None:
@@ -158,17 +175,16 @@ class ConnorMillingExperiment(TennExperiment):
             swarmsim_path = envt.module_editable_path('swarmsim')
             d['.dependencies'].update({
                 'swarmsim': {
-                    'path': str(swarmsim_path.resolve()),
-                    "branch": envt.get_branch_name(swarmsim_path),
-                    "HEAD": envt.git_hash(swarmsim_path),
-                    "status": [s.strip() for s in envt.git_porcelain(swarmsim_path).split('\n')],
+                    'path': str(swarmsim_path.resolve()),  # pyright: ignore
+                    "branch": envt.get_branch_name(swarmsim_path),  # pyright: ignore
+                    "HEAD": envt.git_hash(swarmsim_path),  # pyright: ignore
+                    "status": [s.strip() for s in envt.git_porcelain(swarmsim_path).split('\n')],  # pyright: ignore
                     'version': envt.get_module_version('swarmsim'),
                 },
             })
         except Exception:
             d['.dependencies'].update({'swarmsim': envt.get_module_version('swarmsim')})
         return d
-
 
 
 def run(app, args):
@@ -179,7 +195,8 @@ def run(app, args):
         proc = None
         net = None
     else:
-        proc = caspian.Processor(app.processor_params)
+        # proc = caspian.Processor(app.processor_params)
+        proc = None
         net = app.net
 
     # Run app and print fitness
@@ -196,6 +213,7 @@ def run(app, args):
 
 
 def test(app, args):
+    import caspian
 
     # Set up simulator and network
     proc = caspian.Processor(app.processor_params)
@@ -240,7 +258,8 @@ def get_parsers(parser, subpar):
     sp = subpar.parsers
 
     for sub in sp.values():  # applies to everything
-        sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=None)  # override: use default from world.yaml
+        sub.add_argument('-N', '--agents', default=None,  # override: use default from world.yaml
+                         type=int, help="# of agents to run with.",)
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for sim")
 
@@ -255,6 +274,8 @@ def get_parsers(parser, subpar):
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")
     sp['run'].add_argument('--start_paused', action='store_true',
+                           help="pass this to pause the simulation at startup. Press Space to unpause.")
+    sp['run'].add_argument('--caspian', action='store_true',
                            help="pass this to pause the simulation at startup. Press Space to unpause.")
 
     # Testing args

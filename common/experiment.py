@@ -1,7 +1,5 @@
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
-import neuro
-import caspian
 import os
 import sys
 import platform
@@ -12,11 +10,9 @@ import yaml
 import re
 
 # import custom cmd parser
-import common.argparse
+from . import argparse
 
 # Provided Python utilities from tennlab framework/examples/common
-from .evolver import Evolver
-from .evolver import MPEvolver
 from . import jsontools as jst
 from .application import Application
 from . import project
@@ -90,11 +86,21 @@ class TennExperiment(Application):
         # app_params = ['encoder_ticks', ]
         self.app_params = dict()
 
+        try:
+            import neuro
+        except ImportError:
+            neuro = None
+
+        try:
+            import casPYan as cap
+        except ImportError:
+            cap = None
+
         if args.action in ["test", "run", "validate"]:
             if args.prnet:
                 raise NotImplementedError("TODO: load network from project folder")  # TODO
-            self.net = neuro.Network()
             self.p.load_bestnet(args.network)  # defaults to best.json if not specified via args
+            self.net = neuro.Network() if neuro else cap.network.TennNetProxy()
             self.net.from_json(self.p.bestnet)
             self.processor_params = self.net.get_data("processor")
             self.app_params = self.net.get_data("application")
@@ -211,7 +217,11 @@ class TennExperiment(Application):
             d.update({"git_repo": None})
         return d
 
+
 def train(app, args):
+    import caspian
+    from .evolver import Evolver
+    from .evolver import MPEvolver
 
     processes = args.processes
     app.max_epochs = args.epochs
@@ -267,6 +277,10 @@ def train(app, args):
 
 
 def run(app, args):
+    try:
+        import caspian
+    except ImportError:
+        caspian = None
 
     # Set up simulator and network
 
@@ -274,7 +288,7 @@ def run(app, args):
         proc = None
         net = None
     else:
-        proc = caspian.Processor(app.processor_params)
+        proc = caspian.Processor(app.processor_params) if caspian else None
         net = app.net
 
     # Run app and print fitness
@@ -285,9 +299,9 @@ def run(app, args):
 
 def get_parsers(conflict_handler='resolve'):
     # parse cmd line args and run either `train(...)` or `run(...)`
-    HelpDefaults = common.argparse.ArgumentDefaultsHelpFormatter
+    HelpDefaults = argparse.ArgumentDefaultsHelpFormatter
     ch = conflict_handler
-    parser = common.argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='Script for running an experiment or training an SNN with EONS.',
         formatter_class=HelpDefaults,
         conflict_handler=ch,
