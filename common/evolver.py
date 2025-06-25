@@ -9,7 +9,7 @@ import tqdm
 import neuro
 import eons
 
-from .utils import make_template
+from .tennnetwork import make_template
 from .application import Application
 
 from dataclasses import dataclass

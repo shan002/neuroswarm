@@ -10,7 +10,6 @@ from tqdm import tqdm
 # Provided Python utilities from tennlab framework/examples/common
 from common.experiment import TennExperiment
 import common.experiment
-from common.utils import make_template
 from common import env_tools as envt
 
 from rss.gui import TennlabGUI
@@ -149,6 +148,7 @@ class ConnorMillingExperiment(TennExperiment):
 
     def get_sample_world(self, delete_rss=True):
         import caspian
+        from common.tennnetwork import make_template
         cycles = self.cycles
         self.cycles = 0
         proc = caspian.Processor(self.processor_params)
