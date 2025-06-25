@@ -13,11 +13,6 @@ import common.experiment
 from common.utils import make_template
 from common import env_tools as envt
 
-from rss.CaspianBinaryController import CaspianBinaryController
-from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
-from rss.CasPyanBinaryController import CasPyanBinaryController
-from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
-
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
 
@@ -39,10 +34,21 @@ class ConnorMillingExperiment(TennExperiment):
         self.world_yaml = args.world_yaml
         self.run_info = None
 
-        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
-
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
+        self.use_caspian = getattr(args, 'caspian', True)
+
+        # register controller type with RSS
+        if self.use_caspian:
+            from rss.CaspianBinaryController import CaspianBinaryController
+            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+            self.controller, self.controller_remapped = CaspianBinaryController, CaspianBinaryRemappedController
+        else:
+            from rss.CasPyanBinaryController import CasPyanBinaryController
+            from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
+            self.controller, self.controller_remapped = CasPyanBinaryController, CasPyanBinaryRemappedController
+
+        self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
 
         self.start_paused = getattr(args, 'start_paused', False)
 
@@ -60,10 +66,16 @@ class ConnorMillingExperiment(TennExperiment):
         network.set_data("processor", self.processor_params)
 
         # register controller type with RSS
-        # register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
-        # register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
-        register_dictlike_type('controller', "CaspianBinaryController", CasPyanBinaryController)
-        register_dictlike_type('controller', "CaspianBinaryRemappedController", CasPyanBinaryRemappedController)
+        if self.use_caspian:
+            from rss.CaspianBinaryController import CaspianBinaryController
+            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+            register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
+            register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
+        else:
+            from rss.CasPyanBinaryController import CasPyanBinaryController
+            from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
+            register_dictlike_type('controller', "CaspianBinaryController", CasPyanBinaryController)
+            register_dictlike_type('controller', "CaspianBinaryRemappedController", CasPyanBinaryRemappedController)
 
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
@@ -262,6 +274,8 @@ def get_parsers(parser, subpar):
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")
     sp['run'].add_argument('--start_paused', action='store_true',
+                           help="pass this to pause the simulation at startup. Press Space to unpause.")
+    sp['run'].add_argument('--caspian', action='store_true',
                            help="pass this to pause the simulation at startup. Press Space to unpause.")
 
     # Testing args
