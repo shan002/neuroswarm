@@ -10,11 +10,9 @@ import yaml
 import re
 
 # import custom cmd parser
-import common.argparse
+from . import argparse
 
 # Provided Python utilities from tennlab framework/examples/common
-from .evolver import Evolver
-from .evolver import MPEvolver
 from . import jsontools as jst
 from .application import Application
 from . import project
@@ -222,6 +220,8 @@ class TennExperiment(Application):
 
 def train(app, args):
     import caspian
+    from .evolver import Evolver
+    from .evolver import MPEvolver
 
     processes = args.processes
     app.max_epochs = args.epochs
@@ -299,9 +299,9 @@ def run(app, args):
 
 def get_parsers(conflict_handler='resolve'):
     # parse cmd line args and run either `train(...)` or `run(...)`
-    HelpDefaults = common.argparse.ArgumentDefaultsHelpFormatter
+    HelpDefaults = argparse.ArgumentDefaultsHelpFormatter
     ch = conflict_handler
-    parser = common.argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='Script for running an experiment or training an SNN with EONS.',
         formatter_class=HelpDefaults,
         conflict_handler=ch,
