@@ -3,9 +3,6 @@ from .CasPyanBinaryController import CasPyanBinaryController
 # typing
 from typing import Any, override
 
-import neuro
-import caspian
-
 
 class CasPyanBinaryRemappedController(CasPyanBinaryController):
 
