@@ -3,7 +3,7 @@ type: "MazeAgent"
 sensors:
   - type: "BinaryFOVSensor" # previously BinaryFOVSensor
     theta: 0.45  # Vision Angle / 2 (Radians)
-    distance: 1.0  # meters. previously 2.55
+    distance: 0.6  # meters. previously 1
     show: true
     goal_sensing_range: 1.0
     wall_sensing_range: 1.0
