@@ -6,9 +6,8 @@ import numpy as np
 # typing
 from typing import Any, override
 
-# Import the new TernaryFOVSensor instead of BinaryFOVSensor
 from rss.TernaryFOVSensor import TernaryFOVSensor
-from novel_swarms.agent.control.AbstractController import AbstractController
+from swarmsim.agent.control.AbstractController import AbstractController
 
 import neuro
 import caspian
@@ -146,7 +145,6 @@ class CaspianTernaryController(AbstractController):
         return v, w
 
     def get_actions(self, agent) -> tuple[float, float]:
-        # Use TernaryFOVSensor instead of BinaryFOVSensor
         sensor: TernaryFOVSensor = self.parent.sensors[self.sensor_id]
         self.parent.set_color_by_id(sensor.detection_id)
 

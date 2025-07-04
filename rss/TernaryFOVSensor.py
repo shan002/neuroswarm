@@ -3,13 +3,13 @@
 import pygame
 import numpy as np
 import math
-from novel_swarms.sensors.AbstractSensor import AbstractSensor
+from swarmsim.sensors.AbstractSensor import AbstractSensor
 from typing import List, TYPE_CHECKING, Any
 
-from novel_swarms.world.goals.Goal import CylinderGoal
+from swarmsim.world.goals.Goal import CylinderGoal
 
 if TYPE_CHECKING:
-    from novel_swarms.world.World import World
+    from swarmsim.world.World import World
 else:
     World = None
 
@@ -50,6 +50,7 @@ class TernaryFOVSensor(AbstractSensor):
         super().__init__(agent=agent, parent=parent)
 
         # Half‐angle of FOV cone (radians), sensing bias, FP/FN rates, etc.
+        self.angle = 0
         self.theta = theta
         self.bias = bias
         self.fp = false_positive

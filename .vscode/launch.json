@@ -52,7 +52,7 @@
             "request": "launch",
             "cwd": "/home/shan/neuromorphic/turtwig/shan/hunter_vs_runner_to_train",
             "program": "hunter_vs_runner.py",
-            "args": ["run", "--cy", "2000", "--root", "../../out/out_best"],
+            "args": ["run", "--cy", "2000", "--root", "~/neuromorphic/turtwig/out"],
             "justMyCode": false,
         },
 
