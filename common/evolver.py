@@ -1,6 +1,6 @@
 import os
 import time
-import datetime
+import numbers
 import numpy as np
 from multiprocessing import Pool
 from tqdm.contrib.concurrent import process_map
@@ -101,7 +101,7 @@ class Evolver:
 
         self.net_callback = lambda net: net
 
-    def initialize_population(self, moa_state=1):
+    def initialize_population(self, moa_state: int | list | None = 1):
         if self.do_print:
             t0 = time.time()
 
@@ -110,11 +110,23 @@ class Evolver:
         self.eo.set_template_network(template_net)
 
         # Generate a new initial population for this EONS instance
-        self.pop = self.eo.generate_population(self.eons_params, moa_state)
+        self.pop = self.generate_population(self.eons_params, moa_state)
 
         if self.do_print:
             print("Initialized population of {} networks in {:8.5f} seconds".format(
                 len(self.pop.networks), time.time() - t0))
+
+    def generate_population(self, eons_params, moa_state: int | list[int] | None = None):
+        if moa_state is None:
+            return self.eo.generate_population(eons_params)
+        try:
+            return self.eo.generate_population(self.eons_params, moa_state)
+        except TypeError:
+            try:
+                moa_state = [int(moa_state)]
+            except TypeError:
+                moa_state = [moa_state]
+            return self.eo.generate_population(eons_params, moa_state)
 
     def pre_epoch(self):
         f = getattr(self.app, 'pre_epoch', None)
