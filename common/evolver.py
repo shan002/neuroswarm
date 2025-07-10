@@ -18,6 +18,9 @@ from dataclasses import dataclass
 from typing import Tuple, override
 
 
+DEFAULT_MOA_STATE = [1, 1, 1, 1, 1]
+
+
 @dataclass
 class EpochInfo:
     """Class for the results of an epoch"""
@@ -101,7 +104,7 @@ class Evolver:
 
         self.net_callback = lambda net: net
 
-    def initialize_population(self, moa_state: int | list | None = 1):
+    def initialize_population(self, moa_state: list[int] | None = DEFAULT_MOA_STATE):
         if self.do_print:
             t0 = time.time()
 
@@ -116,17 +119,16 @@ class Evolver:
             print("Initialized population of {} networks in {:8.5f} seconds".format(
                 len(self.pop.networks), time.time() - t0))
 
-    def generate_population(self, eons_params, moa_state: int | list[int] | None = None):
+    def generate_population(self, eons_params, moa_state: list[int] | None = None):
         if moa_state is None:
             return self.eo.generate_population(eons_params)
-        try:
-            return self.eo.generate_population(self.eons_params, moa_state)
-        except TypeError:
+        elif moa_state == DEFAULT_MOA_STATE:
             try:
-                moa_state = [int(moa_state)]
+                return self.eo.generate_population(eons_params, moa_state)
             except TypeError:
-                moa_state = [moa_state]
-            return self.eo.generate_population(eons_params, moa_state)
+                return self.eo.generate_population(eons_params, 1)
+        else:
+            return self.eo.generate_population(self.eons_params, moa_state)
 
     def pre_epoch(self):
         f = getattr(self.app, 'pre_epoch', None)
