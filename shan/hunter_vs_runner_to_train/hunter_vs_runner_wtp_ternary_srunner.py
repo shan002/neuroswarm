@@ -18,19 +18,20 @@ from common import env_tools as envt
 from common.argparse import ArgumentError
 from common.project import Logger
 
-from rss.CaspianBinaryController import CaspianBinaryController
-from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+from rss.TernaryFOVSensor import TernaryFOVSensor
+from rss.CaspianTernaryController import CaspianTernaryController
+from rss.CaspianTernaryRemappedController import CaspianTernaryRemappedController
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
 from swarmsim.world.RectangularWorld import RectangularWorld
 
-from RunnerController import RunnerController
+from SmartRunnerController2 import SmartRunnerController2
 from swarmsim.config import register_dictlike_type, get_agent_class
 from swarmsim.world.RectangularWorld import RectangularWorldConfig
 from swarmsim.world.subscribers.WorldSubscriber import WorldSubscriber
 from swarmsim.world.simulate import main as simulator
 from swarmsim import metrics
-from CatchRunnerMetric import CatchRunnerMetric
+from CatchRunnerMetricWTP import CatchRunnerMetricWTP
 import matplotlib.pyplot as plt
 
 class HunterVsRunnerExperiment(TennExperiment):
@@ -42,7 +43,7 @@ class HunterVsRunnerExperiment(TennExperiment):
         super().__init__(args)
         self.world_yaml = args.world_yaml
         self.run_info = None
-        self.n_inputs, self.n_outputs, _, _ = CaspianBinaryController.get_default_encoders()
+        self.n_inputs, self.n_outputs, _, _ = CaspianTernaryRemappedController.get_default_encoders()
         self.track_history = getattr(args, "track_history", False) or getattr(args, "log_trajectories", False)
         self.log_trajectories = getattr(args, "log_trajectories", False)
         self.start_paused = getattr(args, "start_paused", False)
@@ -95,9 +96,10 @@ class HunterVsRunnerExperiment(TennExperiment):
         network.set_data("processor", self.processor_params)
 
         # Register controller types
-        register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
-        register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
-        register_dictlike_type('controller', "RunnerController", RunnerController)
+        register_dictlike_type('sensors', "TernaryFOVSensor", TernaryFOVSensor)
+        register_dictlike_type('controller', "CaspianTernaryController", CaspianTernaryController)
+        register_dictlike_type('controller', "CaspianTernaryRemappedController", CaspianTernaryRemappedController)
+        register_dictlike_type('controller', "SmartRunnerController2", SmartRunnerController2)
 
         # Load the world configuration from YAML
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
@@ -106,10 +108,12 @@ class HunterVsRunnerExperiment(TennExperiment):
 
         # Load experiment-specific parameters from the YAML
         exp_params = getattr(config, "experiment", {})
-        runner_speed = exp_params.get("runner_speed", 0.1)
+        runner_speed = exp_params.get("runner_speed", 0.276)
+        runner_turn_rate = exp_params.get("runner_turn_rate", 0.602)
         runner_color = exp_params.get("runner_color", [0, 255, 0])
         runner_region = exp_params.get("runner_region", None)
         window_size = exp_params.get("window_size", [300, 300])
+        runner_fov   = exp_params.get("runner_fov", 1.0)
         agent_config = config.spawners[0]['agent']
 
         # Set random goal position within the goal region
@@ -128,6 +132,12 @@ class HunterVsRunnerExperiment(TennExperiment):
         # Create a standalone runner agent by copying the spawner’s base agent config
         base_agent_config = deepcopy(agent_config)
 
+        # Changing the FOV of runner
+        for sensor_spec in base_agent_config['sensors']:
+            if sensor_spec.get('type') == 'TernaryFOVSensor':
+                sensor_spec['distance'] = runner_fov
+                break
+
         # Remove any network key from the controller config
         if "network" in base_agent_config.get("controller", {}):
             del base_agent_config["controller"]["network"]
@@ -142,15 +152,15 @@ class HunterVsRunnerExperiment(TennExperiment):
 
         # self.runner_position = self.get_rand_pos_outside_goal(config)
 
-        # Override the controller to use RunnerController.
-        runner_config.controller = {"type": "RunnerController", "speed": runner_speed}
+        # Override the controller to use SmartRunnerController2.
+        runner_config.controller = {"type": "SmartRunnerController2", "speed": runner_speed, "turn_rate": runner_turn_rate}
 
         # Add the runner agent to the standalone agents list
         if not hasattr(config, "agents"):
             config.agents = []
         config.agents.append(runner_config)
 
-        config.metrics = [CatchRunnerMetric()]
+        config.metrics = [CatchRunnerMetricWTP()]
 
         def check_stop(world):
             output =  world.metrics[0].out_current()[1]
@@ -202,6 +212,9 @@ class HunterVsRunnerExperiment(TennExperiment):
             f = self.extract_fitness(world_final_state)
             if f is not None:
                 fitnesses.append(f)
+            else:
+                print(f"[run] Time run out. Discarding trial.")
+                return
 
         avg = float(np.mean(fitnesses)) if fitnesses else 0.0
         print(f"Fitnesses: {fitnesses} → mean = {avg}")
@@ -280,12 +293,17 @@ def run(app, args):
 
         world = app.simulate(proc, net)
         f     = app.extract_fitness(world)
-        fitnesses.append(f)
+        if f is not None:
+            fitnesses.append(f)
+        else:
+            print(f"[run] Time run out. Discarding trial.")
+            app.run_log(f"[run] Time run out. Discarding trial.")
+            return
 
-        avg = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
-        overall_fits.append(avg)
+        avg = float(np.mean(fitnesses)) if fitnesses else 0.0
         print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {avg:6.4f}")
         app.run_log(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {avg:6.4f}")
+        overall_fits.append(avg) # For plotting fitness over trial
 
     final = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
     print(f"\nFitness after {args.trials} trials: {final:8.4f}")
@@ -376,5 +394,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python hunter_vs_runner.py run --root ../../results_sim/hopper/250425/farp/6 --cy 2000 --trials 10 --trial_seed 42 --plot_fit
+# python hunter_vs_runner_wtp_2.py run --root ~/neuromorphic/turtwig/results_sim/hopper/250525/farp/6-wtp/ --cy 3000 -T 10 --trial_seed 42 --plot_fit
 # python hunter_vs_runner.py train --root out/ --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 410 --eons_seed 20

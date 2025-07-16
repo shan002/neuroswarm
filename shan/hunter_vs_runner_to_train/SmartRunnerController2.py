@@ -1,21 +1,13 @@
-import random
-from functools import cached_property
-
 import numpy as np
+from functools import cached_property
 from swarmsim.agent.control.AbstractController import AbstractController
 
-
-class SmartRunnerController(AbstractController):
+class SmartRunnerController2(AbstractController):
     """
-    When no hunter is in sight → head toward the goal.
-    When a hunter is spotted → pick one of:
-      • freeze
-      • dodge-left
-      • dodge-right
-    and stick with that action until either:
-      1) the hunter disappears, or
-      2) the hunter has been in sight for `sight_threshold` timesteps,
-         in which case we pick a new random maneuver.
+    Runner that:
+      • heads toward the goal when no hunter is seen
+      • when a hunter is in view, splits its FOV in half, finds the closest hunter,
+        and turns away: if hunter is on its left, turns right; if on its right, turns left.
     """
 
     def __init__(
@@ -23,79 +15,37 @@ class SmartRunnerController(AbstractController):
         agent=None,
         parent=None,
         target_name="goal",
-        speed=0.1,
-        turn_rate=5.0,
-        # evasion probabilities (must sum to 1)
-        freeze_prob=0.2,
-        dodge_left_prob=0.4,
-        dodge_right_prob=0.4,
-        # how many consecutive timesteps of “hunter in sight” triggers a new pick
-        sight_threshold=200,
+        speed=0.276,
+        turn_rate=0.602
     ):
         super().__init__(agent=agent, parent=parent)
-
-        # goal-seeking params
         self.target_name = (
             target_name.lower() if isinstance(target_name, str) else target_name
         )
         self.speed = speed
         self.turn_rate = turn_rate
 
-        # evasion probabilities
-        assert abs(freeze_prob + dodge_left_prob + dodge_right_prob - 1.0) < 1e-6
-        self.freeze_prob = freeze_prob
-        self.dodge_left_prob = dodge_left_prob
-        self.dodge_right_prob = dodge_right_prob
-
-        # sight-based re-pick params
-        self.sight_threshold = sight_threshold
-        self._sight_counter = 0
-
-        # current evasion action: None | "freeze" | "left" | "right"
-        self._evasion_action = None
-
     def get_actions(self, agent):
+        # 1) Sense
         sensor = agent.sensors[0]
         sensor.checkForLOSCollisions(agent.world)
         seen = sensor.agent_in_sight
 
-        # if hunter still in view, either pick or continue evasion
+        # 2) If hunter in view, compute evasion direction
         if seen is not None and getattr(seen, "team", None) != "runner":
-            # first detection?
-            if self._evasion_action is None:
-                self._pick_new_evasion_action()
-                self._sight_counter = 1
-            else:
-                # still evading—increment counter
-                self._sight_counter += 1
-                if self._sight_counter >= self.sight_threshold:
-                    # re-pick a different maneuver
-                    self._pick_new_evasion_action()
-                    self._sight_counter = 1
+            # vector from runner → hunter
+            vec = np.asarray(seen.pos) - agent.pos
+            angle_to_hunter = np.arctan2(vec[1], vec[0])
+            # relative bearing in [-π, +π]
+            rel = self._angle_diff(angle_to_hunter - agent.angle)
 
-            return self._do_evasion(self._evasion_action)
+            # rel > 0 ⇒ hunter is on runner's left ⇒ turn RIGHT (negative ω)
+            # rel < 0 ⇒ hunter on runner's right ⇒ turn LEFT (positive ω)
+            omega = -self.turn_rate if rel > 0 else +self.turn_rate
+            return self.speed, omega
 
-        # no hunter in sight → clear evasion and head to goal
-        self._evasion_action = None
-        self._sight_counter = 0
+        # 3) Otherwise, go to goal
         return self._go_to_goal(agent)
-
-    def _pick_new_evasion_action(self):
-        r = random.random()
-        if r < self.freeze_prob:
-            self._evasion_action = "freeze"
-        elif r < self.freeze_prob + self.dodge_left_prob:
-            self._evasion_action = "left"
-        else:
-            self._evasion_action = "right"
-
-    def _do_evasion(self, action):
-        if action == "freeze":
-            return 0.0, 0.0
-        elif action == "left":
-            return self.speed, +self.turn_rate
-        else:  # "right"
-            return self.speed, -self.turn_rate
 
     def _go_to_goal(self, agent):
         goal = np.asarray(self.goal_object.pos)
@@ -105,9 +55,10 @@ class SmartRunnerController(AbstractController):
             return 0.0, 0.0
 
         desired_angle = np.arctan2(diff[1], diff[0])
-        v = self.speed
-        omega = self.turn_rate if agent.angle < desired_angle else -self.turn_rate
-        return v, omega
+        # turn toward desired_angle
+        rel = self._angle_diff(desired_angle - agent.angle)
+        omega = self.turn_rate if rel > 0 else -self.turn_rate
+        return self.speed, omega
 
     @cached_property
     def goal_object(self):
@@ -116,11 +67,7 @@ class SmartRunnerController(AbstractController):
                 return obj
         raise RuntimeError(f"Goal '{self.target_name}' not found")
 
-
-
-    # @override
-    # def __str__(self):
-    #     return "SmartRunnerController"
-
-    # def as_config_dict(self):
-    #     return {'controller': self._config_controller}
+    @staticmethod
+    def _angle_diff(a):
+        """Normalize angle to [-π, +π]."""
+        return (a + np.pi) % (2 * np.pi) - np.pi

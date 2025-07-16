@@ -1,6 +1,7 @@
 import sys
 import os
 import numpy as np
+import time
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if parent_dir not in sys.path:
@@ -15,9 +16,11 @@ from common.experiment import TennExperiment, train, get_parsers as common_get_p
 from common.utils import make_template
 from common import env_tools as envt
 from common.argparse import ArgumentError
+from common.project import Logger
 
 from rss.TernaryFOVSensor import TernaryFOVSensor
 from rss.CaspianTernaryController import CaspianTernaryController
+from rss.CaspianTernaryRemappedController import CaspianTernaryRemappedController
 from rss.gui import TennlabGUI
 import rss.graphing as graphing
 from swarmsim.world.RectangularWorld import RectangularWorld
@@ -49,8 +52,17 @@ class HunterVsRunnerExperiment(TennExperiment):
         self.trials = 10
         rng = np.random.RandomState(args.trial_seed)
         self.trial_seeds = rng.randint(low=0, high=np.iinfo(np.uint32).max, size=self.trials).tolist()
-        self.log("Initialized Hunter vs RunnerExperiment")
-        self.log(f"Using trial_seed={args.trial_seed} → trial_seeds={self.trial_seeds}")
+        self.runlogfile = Logger(args.root / self.p.name / 'run.log')
+        if args.action == 'train':
+            self.log("Initialized Hunter vs RunnerExperiment training...")
+            self.log(f"Using trial_seed={args.trial_seed} → trial_seeds={self.trial_seeds}")
+        elif args.action == 'run':
+            self.run_log(f"Running Hunter_vs_RunnerExperiment with network: {self.p.name}")
+
+    def run_log(self, msg, timestamp="%Y%m%d %H:%M:%S", prompt=' >>> ', end='\n'):
+        if isinstance(timestamp, str) and '%' in timestamp:
+            timestamp: str = time.strftime(timestamp)
+        self.runlogfile += (f"{timestamp}{prompt}{msg}{end}")
 
     def get_rand_pos_within_region(self, region):
         region = np.array(region)
@@ -86,6 +98,7 @@ class HunterVsRunnerExperiment(TennExperiment):
         # Register controller types
         register_dictlike_type('sensors', "TernaryFOVSensor", TernaryFOVSensor)
         register_dictlike_type('controller', "CaspianTernaryController", CaspianTernaryController)
+        register_dictlike_type('controller', "CaspianTernaryRemappedController", CaspianTernaryRemappedController)
         register_dictlike_type('controller', "RunnerController", RunnerController)
 
         # Load the world configuration from YAML
@@ -109,7 +122,6 @@ class HunterVsRunnerExperiment(TennExperiment):
         n_agents = getattr(self.args, 'agents', None)
         if n_agents is not None:
             config.spawners[0]['n'] = n_agents
-            self.log(f"Overriding number of agents to {n_agents}")
 
         agent_config['track_io'] = self.track_history
         controller_config = agent_config['controller']
@@ -272,12 +284,14 @@ def run(app, args):
         f     = app.extract_fitness(world)
         fitnesses.append(f)
 
-        avg = sum(fitnesses) / len(fitnesses)
+        avg = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
         overall_fits.append(avg)
         print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {avg:6.4f}")
+        app.run_log(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {avg:6.4f}")
 
     final = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
     print(f"\nFitness after {args.trials} trials: {final:8.4f}")
+    app.run_log(f"Fitness after {args.trials} trials: {final:8.4f}")
 
     if getattr(args, 'plot_fit', False):
         plt.figure()
@@ -350,7 +364,7 @@ def main():
     args = parser.parse_args()
     args.environment = getattr(args, "environment", "connorsim_snn_eons-v01")
     if getattr(args, "project", None) is None and getattr(args, "logfile", None) is None:
-        args.logfile = "tenn2_train.log"
+        args.logfile = "hunter_vs_runner_train.log"
     app = HunterVsRunnerExperiment(args)
     if args.action == "train":
         train(app, args)
@@ -364,5 +378,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python hunter_vs_runner_ternary.py run --root ../../results_sim/hopper/250425/farp/6 --cy 2000 --trials 10 --trial_seed 42 --plot_fit
-# python hunter_vs_runner_ternary.py train --root out/ --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 410 --eons_seed 20
+# python hunter_vs_runner_2.py run --root ~/neuromorphic/turtwig/results_sim/hopper/250525/farp/6/ --cy 3000 -T 10 --trial_seed 42 --plot_fit
+# python hunter_vs_runner.py train --root out/ --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 410 --eons_seed 20

@@ -1,6 +1,7 @@
 import sys
 import os
 import numpy as np
+import time
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if parent_dir not in sys.path:
@@ -15,6 +16,7 @@ from common.experiment import TennExperiment, train, get_parsers as common_get_p
 from common.utils import make_template
 from common import env_tools as envt
 from common.argparse import ArgumentError
+from common.project import Logger
 
 from rss.CaspianBinaryController import CaspianBinaryController
 from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
@@ -29,6 +31,7 @@ from swarmsim.world.subscribers.WorldSubscriber import WorldSubscriber
 from swarmsim.world.simulate import main as simulator
 from swarmsim import metrics
 from CatchRunnerMetricWTP import CatchRunnerMetricWTP
+import matplotlib.pyplot as plt
 
 class HunterVsRunnerExperiment(TennExperiment):
     def __init__(self, args):
@@ -45,7 +48,20 @@ class HunterVsRunnerExperiment(TennExperiment):
         self.start_paused = getattr(args, "start_paused", False)
         # self.runner_position = None
         # self.runner_position = getattr(args, "runner_position", (7, 8))
-        self.log("initialized HunterVsRunnerExperiment")
+        self.trials = 10
+        rng = np.random.RandomState(args.trial_seed)
+        self.trial_seeds = rng.randint(low=0, high=np.iinfo(np.uint32).max, size=self.trials).tolist()
+        self.runlogfile = Logger(args.root / self.p.name / 'run.log')
+        if args.action == 'train':
+            self.log("Initialized Hunter vs RunnerExperiment training...")
+            self.log(f"Using trial_seed={args.trial_seed} → trial_seeds={self.trial_seeds}")
+        elif args.action == 'run':
+            self.run_log(f"Running Hunter_vs_RunnerExperiment with network: {self.p.name}")
+
+    def run_log(self, msg, timestamp="%Y%m%d %H:%M:%S", prompt=' >>> ', end='\n'):
+        if isinstance(timestamp, str) and '%' in timestamp:
+            timestamp: str = time.strftime(timestamp)
+        self.runlogfile += (f"{timestamp}{prompt}{msg}{end}")
 
     def get_rand_pos_within_region(self, region):
         region = np.array(region)
@@ -104,7 +120,6 @@ class HunterVsRunnerExperiment(TennExperiment):
         n_agents = getattr(self.args, 'agents', None)
         if n_agents is not None:
             config.spawners[0]['n'] = n_agents
-            self.log(f"Overriding number of agents to {n_agents}")
 
         agent_config['track_io'] = self.track_history
         controller_config = agent_config['controller']
@@ -119,7 +134,6 @@ class HunterVsRunnerExperiment(TennExperiment):
 
         agent_cls, runner_config = get_agent_class(base_agent_config)
 
-        # Update runner configuration from YAML experiment settings
         # runner_config.position = self.runner_position
         runner_config.team = "runner"  # tag as runner
         runner_config.body_color = runner_color
@@ -176,23 +190,22 @@ class HunterVsRunnerExperiment(TennExperiment):
         return world_output.metrics[0].out_current()[1] if world_output.metrics else 0.0
 
 
-    # def fitness(self, processor, network, init_callback=lambda config: config):
-    #     world_final_state = self.simulate(processor, network, init_callback)
-    #     return self.extract_fitness(world_final_state)
     def fitness(self, processor, network, init_callback=lambda config: config):
-        trials = 10
         fitnesses = []
-        for i in range(trials):
-            np.random.seed()
-            world_final_state = self.simulate(processor, network, init_callback)
-            fitness = self.extract_fitness(world_final_state)
-            # print(f"trial - {i+1}: fitness = {fitness}")
-            # print(f"[Trial {i+1}] Runner position: {self.runner_position}")
-            if fitness is not None:
-                fitnesses.append(fitness)
-        # print(fitnesses, np.mean(fitnesses))
-        return np.mean(fitnesses) if fitnesses else 0.0
+        # print(f"During training: {self.trial_seeds}")
+        for i, seed in enumerate(self.trial_seeds):
+            np.random.seed(seed)
 
+            # print(f"trial - {i+1}: fitness = {fitness}")
+            # print(f"[Trial {i+1}] Runner position: {self.runner_position}"
+            world_final_state = self.simulate(processor, network, init_callback)
+            f = self.extract_fitness(world_final_state)
+            if f is not None:
+                fitnesses.append(f)
+
+        avg = float(np.mean(fitnesses)) if fitnesses else 0.0
+        print(f"Fitnesses: {fitnesses} → mean = {avg}")
+        return avg
 
     def as_config_dict(self):
         d = super().as_config_dict()
@@ -257,28 +270,43 @@ def run(app, args):
             app.net = make_template(proc, app.n_inputs, app.n_outputs)
         net = app.net
 
-    # world = app.simulate(proc, net)
-    # fitness = app.extract_fitness(world)
-    # if fitness is not None:
-    #     print(f"Fitness: {fitness:8.4f}")
-
-# run-and-average over args.trials
     fitnesses = []
-    for i in range(args.trials):
-        world = app.simulate(proc, net)
-        f = app.extract_fitness(world)
-        fitnesses.append(f)
-        fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
-        print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {fitness:6.4f}")
+    overall_fits = []
+    rng = np.random.RandomState(args.trial_seed)
+    trial_seeds = rng.randint(low=0, high=np.iinfo(np.uint32).max, size=args.trials).tolist()
+    # print(f"During running: {trial_seeds}")
+    for i, seed in enumerate(trial_seeds):
+        np.random.seed(seed)
 
-    fitness = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
-    print(f"\nFitness after {args.trials} trials: {fitness:8.4f}")
+        world = app.simulate(proc, net)
+        f     = app.extract_fitness(world)
+        fitnesses.append(f)
+
+        avg = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
+        overall_fits.append(avg)
+        print(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {avg:6.4f}")
+        app.run_log(f"[run] trial {i+1}/{args.trials}: {f:6.4f} | Overall Fitness: {avg:6.4f}")
+
+    final = sum(fitnesses) / len(fitnesses) if fitnesses else 0.0
+    print(f"\nFitness after {args.trials} trials: {final:8.4f}")
+    app.run_log(f"Fitness after {args.trials} trials: {final:8.4f}")
+
+    if getattr(args, 'plot_fit', False):
+        plt.figure()
+        plt.plot(range(1, len(overall_fits)+1), overall_fits, marker='o')
+        plt.xlabel('Trial #')
+        plt.ylabel('Fitness')
+        plt.title('Fitness over Trials')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.ylim(0, 1.1)
+        plt.show()
 
 
     if args.log_trajectories:
         graphing.plot_multiple(world)
         graphing.export(world, output_file=app.p.ensure_file_parents("agent_trajectories.xlsx"))
-    return fitness
+    return final
 
 
 def test(app, args):
@@ -312,11 +340,13 @@ def get_parsers(parser, subpar):
         sub.add_argument('-N', '--agents', type=int, help="# of agents to run with.", default=None)
         sub.add_argument('--world_yaml', default="./world.yaml",
                          type=str, help="path to yaml config for sim")
+        sub.add_argument('--trial_seed', '-S', type=int, default=12345, help="[train] seed for generating 10 trial-seeds")
+        sub.add_argument('-T','--trials', type=int, default=1, help="number of independent runs to average over")
     sp['train'].add_argument('--label', help="[train] label to put into network JSON (key = label).")
     sp['run'].add_argument('--track_history', action='store_true',
                            help="pass this to enable sensor vs. output plotting.")
-    sp['run'].add_argument('-T','--trials', type=int, default=1,
-                           help="number of independent runs to average over")
+    sp['run'].add_argument('--plot_fit', action='store_true',
+                           help="after running all trials, plot fitness vs. trial number")
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")
     sp['run'].add_argument('--start_paused', action='store_true',
@@ -332,7 +362,7 @@ def main():
     args = parser.parse_args()
     args.environment = getattr(args, "environment", "connorsim_snn_eons-v01")
     if getattr(args, "project", None) is None and getattr(args, "logfile", None) is None:
-        args.logfile = "tenn2_train.log"
+        args.logfile = "hunter_vs_runner_train.log"
     app = HunterVsRunnerExperiment(args)
     if args.action == "train":
         train(app, args)
@@ -346,5 +376,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python hunter_vs_runner.py run --log_t --root ../out_best --cy -1
-# python hunter_vs_runner.py train --root out/ --cy 2000 --save_best --epochs 500 --eons_seed 20
+# python hunter_vs_runner_wtp_2.py run --root ~/neuromorphic/turtwig/results_sim/hopper/250525/farp/6-wtp/ --cy 3000 -T 10 --trial_seed 42 --plot_fit
+# python hunter_vs_runner.py train --root out/ --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 410 --eons_seed 20
