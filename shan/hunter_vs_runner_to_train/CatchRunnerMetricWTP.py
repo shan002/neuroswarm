@@ -49,7 +49,7 @@ class CatchRunnerMetricWTP(AbstractMetric):
         elif result == "Failure":
             self.set_value(0.0)
         else:
-            self.set_value(None)
+            self.set_value(0.1) # the runner couldn't reach the goal within the given time so it's kind of a win in some way
 
 
 
