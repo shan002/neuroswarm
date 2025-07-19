@@ -41,8 +41,8 @@ export MAKE_PARENTS=true
 # srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 24
 
 # Took 17:13:30 on last run
-echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 73 --eons_seed 26
-echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 74 --eons_seed 27
-echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 75 --eons_seed 28
-echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 76 --eons_seed 29
-echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 77 --eons_seed 30
+echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 78 --eons_seed 20
+echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 79 --eons_seed 21
+echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 80 --eons_seed 22
+echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 81 --eons_seed 23
+echo y | python hunter_vs_runner_wtp_ternary_srunner.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 82 --eons_seed 24

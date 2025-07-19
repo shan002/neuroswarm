@@ -25,7 +25,7 @@ from rss.gui import TennlabGUI
 import rss.graphing as graphing
 from swarmsim.world.RectangularWorld import RectangularWorld
 
-from SmartRunnerController2 import SmartRunnerController2
+from SRunnerController import SRunnerController
 from swarmsim.config import register_dictlike_type, get_agent_class
 from swarmsim.world.RectangularWorld import RectangularWorldConfig
 from swarmsim.world.subscribers.WorldSubscriber import WorldSubscriber
@@ -99,7 +99,7 @@ class HunterVsRunnerExperiment(TennExperiment):
         register_dictlike_type('sensors', "TernaryFOVSensor", TernaryFOVSensor)
         register_dictlike_type('controller', "CaspianTernaryController", CaspianTernaryController)
         register_dictlike_type('controller', "CaspianTernaryRemappedController", CaspianTernaryRemappedController)
-        register_dictlike_type('controller', "SmartRunnerController2", SmartRunnerController2)
+        register_dictlike_type('controller', "SRunnerController", SRunnerController)
 
         # Load the world configuration from YAML
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
@@ -152,8 +152,8 @@ class HunterVsRunnerExperiment(TennExperiment):
 
         # self.runner_position = self.get_rand_pos_outside_goal(config)
 
-        # Override the controller to use SmartRunnerController2.
-        runner_config.controller = {"type": "SmartRunnerController2", "speed": runner_speed, "turn_rate": runner_turn_rate}
+        # Override the controller to use SRunnerController.
+        runner_config.controller = {"type": "SRunnerController", "speed": runner_speed, "turn_rate": runner_turn_rate}
 
         # Add the runner agent to the standalone agents list
         if not hasattr(config, "agents"):
