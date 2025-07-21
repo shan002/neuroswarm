@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Give your job a name to distinguish it from other jobs you run.
-#SBATCH --job-name=hunter-runner-n-6-wtp
+#SBATCH --job-name=hunter-runner-n-6-wtp-ic
 
 ## General partitions: all-HiPri, bigmem-HiPri   --   (12 hour limit)
 ##                     all-LoPri, bigmem-LoPri, gpuq  (5 days limit)
@@ -41,8 +41,8 @@ export MAKE_PARENTS=true
 # srun python hunter_vs_runner_wtp.py train --root out/farp/6-wtp -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 24
 
 # Took 17:13:30 on last run
-echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 11 --eons_seed 20
-echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 12 --eons_seed 21
-echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 13 --eons_seed 22
-echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 14 --eons_seed 23
-echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 15 --eons_seed 24
+echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc-ic --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 11 --eons_seed 20
+echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc-ic --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 12 --eons_seed 21
+echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc-ic --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 13 --eons_seed 22
+echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc-ic --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 14 --eons_seed 23
+echo y | python hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py train --root ~/neuromorphic/turtwig/out/farp/6-wtp-vs-dpc-ic --save_best -p 48 -T 10 --cy 3000 --epochs 500 --trial_seed 15 --eons_seed 24
