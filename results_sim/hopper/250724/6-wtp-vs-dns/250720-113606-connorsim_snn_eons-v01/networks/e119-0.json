@@ -1,0 +1,283 @@
+{
+  "Associated_Data": {
+    "application": {
+      "encoder_ticks": 1
+    },
+    "processor": {
+      "Leak_Enable": true,
+      "Max_Axon_Delay": 0,
+      "Max_Leak": 4,
+      "Max_Synapse_Delay": 255,
+      "Max_Threshold": 127,
+      "Max_Weight": 127,
+      "Min_Axon_Delay": 0,
+      "Min_Leak": -1,
+      "Min_Synapse_Delay": 0,
+      "Min_Threshold": 0,
+      "Min_Weight": -127
+    }
+  },
+  "Edges": [
+    {
+      "from": 14,
+      "to": 1,
+      "values": [
+        55.0,
+        76.0
+      ]
+    },
+    {
+      "from": 3,
+      "to": 0,
+      "values": [
+        106.0,
+        186.0
+      ]
+    },
+    {
+      "from": 1,
+      "to": 11,
+      "values": [
+        88.0,
+        248.0
+      ]
+    },
+    {
+      "from": 11,
+      "to": 3,
+      "values": [
+        88.0,
+        234.0
+      ]
+    },
+    {
+      "from": 2,
+      "to": 4,
+      "values": [
+        70.0,
+        75.0
+      ]
+    },
+    {
+      "from": 3,
+      "to": 1,
+      "values": [
+        50.0,
+        252.0
+      ]
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "values": [
+        -107.0,
+        33.0
+      ]
+    },
+    {
+      "from": 12,
+      "to": 14,
+      "values": [
+        68.0,
+        21.0
+      ]
+    },
+    {
+      "from": 14,
+      "to": 14,
+      "values": [
+        122.0,
+        162.0
+      ]
+    },
+    {
+      "from": 6,
+      "to": 14,
+      "values": [
+        -90.0,
+        167.0
+      ]
+    },
+    {
+      "from": 0,
+      "to": 14,
+      "values": [
+        51.0,
+        200.0
+      ]
+    },
+    {
+      "from": 11,
+      "to": 12,
+      "values": [
+        46.0,
+        227.0
+      ]
+    },
+    {
+      "from": 3,
+      "to": 3,
+      "values": [
+        44.0,
+        240.0
+      ]
+    },
+    {
+      "from": 4,
+      "to": 4,
+      "values": [
+        116.0,
+        11.0
+      ]
+    },
+    {
+      "from": 12,
+      "to": 12,
+      "values": [
+        114.0,
+        155.0
+      ]
+    }
+  ],
+  "Inputs": [
+    0,
+    1,
+    2
+  ],
+  "Network_Values": [],
+  "Nodes": [
+    {
+      "id": 0,
+      "values": [
+        77.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 6,
+      "values": [
+        116.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 12,
+      "values": [
+        68.0,
+        3.0,
+        0.0
+      ]
+    },
+    {
+      "id": 11,
+      "values": [
+        90.0,
+        4.0,
+        0.0
+      ]
+    },
+    {
+      "id": 2,
+      "values": [
+        96.0,
+        2.0,
+        0.0
+      ]
+    },
+    {
+      "id": 3,
+      "values": [
+        64.0,
+        2.0,
+        0.0
+      ]
+    },
+    {
+      "id": 4,
+      "values": [
+        62.0,
+        3.0,
+        0.0
+      ]
+    },
+    {
+      "id": 1,
+      "values": [
+        21.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": 14,
+      "values": [
+        35.0,
+        2.0,
+        0.0
+      ]
+    },
+    {
+      "id": 5,
+      "values": [
+        100.0,
+        -1.0,
+        0.0
+      ]
+    }
+  ],
+  "Outputs": [
+    3,
+    4,
+    5,
+    6
+  ],
+  "Properties": {
+    "edge_properties": [
+      {
+        "index": 1,
+        "max_value": 255.0,
+        "min_value": 0.0,
+        "name": "Delay",
+        "size": 1,
+        "type": 73
+      },
+      {
+        "index": 0,
+        "max_value": 127.0,
+        "min_value": -127.0,
+        "name": "Weight",
+        "size": 1,
+        "type": 73
+      }
+    ],
+    "network_properties": [],
+    "node_properties": [
+      {
+        "index": 2,
+        "max_value": 0.0,
+        "min_value": 0.0,
+        "name": "Delay",
+        "size": 1,
+        "type": 73
+      },
+      {
+        "index": 1,
+        "max_value": 4.0,
+        "min_value": -1.0,
+        "name": "Leak",
+        "size": 1,
+        "type": 73
+      },
+      {
+        "index": 0,
+        "max_value": 127.0,
+        "min_value": 0.0,
+        "name": "Threshold",
+        "size": 1,
+        "type": 73
+      }
+    ]
+  }
+}

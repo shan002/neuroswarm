@@ -1,3 +1,0 @@
-implemented ternary fov sensor and kept v = 0.276 and w = 0.602 and keeping runner velocity constant at 0.276
-
-for 2000 cycles and 500 epochs of 5 batches.

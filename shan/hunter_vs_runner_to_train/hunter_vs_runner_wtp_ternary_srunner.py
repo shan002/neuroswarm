@@ -394,5 +394,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python hunter_vs_runner_wtp_2.py run --root ~/neuromorphic/turtwig/results_sim/hopper/250525/farp/6-wtp/ --cy 3000 -T 10 --trial_seed 42 --plot_fit
+# python hunter_vs_runner_wtp_ternary_srunner.py run --root ~/neuromorphic/turtwig/results_sim/hopper/250724/6-wtp-1/ --cy 3000 -T 2 --trial_seed 42 --plot_fit
 # python hunter_vs_runner.py train --root out/ --save_best -p 48 -T 10 --cy 2000 --epochs 500 --trial_seed 410 --eons_seed 20

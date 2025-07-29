@@ -22,7 +22,7 @@ metadata:
   hash: _hash
 
 experiment:
-  runner_speed: 0.276  # 0.276 m/s Same as of hunters
+  runner_speed: 0  # 0.276 m/s Same as of hunters
   runner_turn_rate: 0.602 # 0.602 rad/s Same as of hunters
   runner_color: [255, 255, 0]       # Runner's color (RGB)
   window_size: [300, 300]         # GUI window size in pixels (width, height)
