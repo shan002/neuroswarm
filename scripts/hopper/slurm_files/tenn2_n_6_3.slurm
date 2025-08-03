@@ -32,7 +32,7 @@ cd turtwig/
 
 export MAKE_PARENTS=true
 
-## Run your program or script | Takes approximately 1 min / epoch
+### Run your program or script | Takes approximately 1 min / epoch
 echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/n-6d -p 48 --save_best --epochs 500 --eons_seed 36 -N 6
 echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/n-6d -p 48 --save_best --epochs 500 --eons_seed 37 -N 6
 echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/n-6d -p 48 --save_best --epochs 500 --eons_seed 38 -N 6
