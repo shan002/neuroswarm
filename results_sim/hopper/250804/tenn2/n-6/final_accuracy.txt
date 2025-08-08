@@ -25,3 +25,15 @@
 250803-042630-connorsim_snn_eons-v01 --> 0.6652
 
 
+
+## To plot the results_sim
+===========================
+results_sim/hopper/250804/tenn2/n-6/250729-085053-connorsim_snn_eons-v01/best.json
+
+cd ~/neuromorphic/turtwig
+python experiment_tenn2.py run --cy 1000 -N 6 --network results_sim/hopper/250804/tenn2/n-6/250729-085053-connorsim_snn_eons-v01/best.json --all_counts_stream '{"source":"serve","port":8100}'
+
+
+love . -n ../../turtwig/results_sim/hopper/250804/tenn2/n-6/250729-085104-connorsim_snn_eons-v01/best.json --show_input_id --show_output_id -i '{"source":"request","port":"8100", "host": "localhost"}' --remove_unnecessary_neuron
+
+love ~/neuromorphic/framework/viz --config ~/neuromorphic/framework/viz/config/config.json -n ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-085104-connorsim_snn_eons-v01/best.json --show_input_id --show_output_id -i '{"source":"request","port":"8100", "host": "localhost"}' --remove_unnecessary_neuron
