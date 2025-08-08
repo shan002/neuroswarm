@@ -97,8 +97,8 @@ class ConnorMillingExperiment(TennExperiment):
             a = world.selected
             if a and self.iostream:
                 self.iostream.write_json({
-                    "Neuron Alias": a.neuron_ids,
-                    "Event Counts": a.neuron_counts
+                    "Neuron Alias": a.controller.neuron_ids,
+                    "Event Counts": a.controller.neuron_counts
                 })
 
         gui = TennlabGUI(x=0, y=0, h=0, w=300)
