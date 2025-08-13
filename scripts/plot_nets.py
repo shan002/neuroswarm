@@ -19,9 +19,9 @@ def main():
     os.chdir(os.path.expanduser('~/neuromorphic/turtwig'))
     sim_cmd = [
         sys.executable, 'experiment_tenn2.py',
-        'run', '--cy', '1000', '-N', '6',
+        'run', '--cy', '-1', '-N', '6',
         '--network', target_network,
-        '--all_counts_stream', '{"source":"serve","port":8100}', '--sta'
+        '--all_counts_stream', '{"source":"serve","port":8100}', '--sta', '--caspian'
     ]
     print("Starting simulation:", " ".join(sim_cmd))
     sim_proc = subprocess.Popen(sim_cmd)
@@ -37,12 +37,13 @@ def main():
         '--show_input_id',
         '--show_output_id',
         '-i', '{"source":"request","port":"8100","host":"localhost"}',
-        '--remove_unnecessary_neuron'
     ]
+
+    # '--remove_unnecessary_neuron'
     print("Starting viz:", " ".join(viz_cmd))
     viz_proc = subprocess.Popen(viz_cmd)
 
-    # 4) Wait for viz to finish, then tear down sim
+    # Wait for viz to finish, then tear down sim
     try:
         retcode = viz_proc.wait()
     except KeyboardInterrupt:
@@ -56,17 +57,28 @@ def main():
         sim_proc.terminate()
         sim_proc.wait()
 
+    print(target_network.replace('best.json', 'training.log'))
+
+    fit_cmd = [
+        sys.executable, 'scripts/plot_fit.py',
+        target_network.replace('best.json', 'training.log')
+    ]
+    print("Starting fitness plotting:", " ".join(fit_cmd))
+    fit_proc = subprocess.Popen(fit_cmd)
+    fit_proc.wait()
+    print("Plotting fitness done")
+
     sys.exit(retcode)
 
 if __name__ == "__main__":
     main()
 
 
-
+## To simulate and visuzalize I need to run the following commands
 # cd ~/neuromorphic/turtwig
+# python experiment_tenn2.py run --cy 1000 -N 6 --network ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01/best.json --all_counts_stream '{"source":"serve","port":8100}'
+# love ~/neuromorphic/framework/viz --config ~/neuromorphic/framework/viz/config/config.json -n ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01/best.json --show_input_id --show_output_id -i '{"source":"request","port":"8100", "host": "localhost"}' --remove_unnecessary_neuron
+# python ~/neuromorphic/turtwig/scripts/plot_fit.py ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01/training.log
 
-# python experiment_tenn2.py run --cy 1000 -N 6 --network ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-085053-connorsim_snn_eons-v01/best.json --all_counts_stream '{"source":"serve","port":8100}'
-
-# love ~/neuromorphic/framework/viz --config ~/neuromorphic/framework/viz/config/config.json -n ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-085104-connorsim_snn_eons-v01/best.json --show_input_id --show_output_id -i '{"source":"request","port":"8100", "host": "localhost"}' --remove_unnecessary_neuron
-
-# python plot_nets.py ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-085104-connorsim_snn_eons-v01/best.json
+## With this script I can do the same with the following single command
+# python ~/neuromorphic/turtwig/scripts/plot_nets.py ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01/best.json

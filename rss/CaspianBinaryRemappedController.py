@@ -20,12 +20,14 @@ class CaspianBinaryRemappedController(CaspianBinaryController):
         spikes = self.encoder.get_spikes(input_vector)
         self.processor.apply_spikes(spikes)
         self.processor.run(5)
+        
         self.processor.run(self.neuro_tpc)
         # action: bool = bool(proc.output_vectors())  # old. don't use.
         if self.neuro_track_all:
             self.neuron_counts = self.processor.neuron_counts()
         data = self.decoder.get_data_from_processor(self.processor)
         data = [int(round(x)) for x in data]
+        print(data)
         # three bins. One for +v, -v, omega.
         v = self.scale_v * (data[1] - data[0])
         w = self.scale_w * (data[3] - data[2])
@@ -33,6 +35,7 @@ class CaspianBinaryRemappedController(CaspianBinaryController):
         # from measurements of Turbopis 1, 2, 3, 4 @ (100, 90, +-0.5)
         v_mapping = [0.0, 0.276,]
         w_mapping = [0.0, 0.602,]
+        
         v = v_mapping[data[1]] - v_mapping[data[0]]
         w = w_mapping[data[3]] - w_mapping[data[2]]
         if v == 0.0:

@@ -21,7 +21,7 @@
             "request": "launch",
             // "cwd": "/home/videblu/neuromorphic/RobotSwarmSimulator/demo/configs/conftest",
             "program": "experiment_tenn2.py",
-            "args": ["run"],
+            "args": ["run", "~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01", "--cy", "-1"],
             "justMyCode": false,
         },
 
