@@ -116,9 +116,12 @@ class CasPyanBinaryController(AbstractController):
         # run processor
         self.processor.apply_spikes(spikes)
         self.processor.run(self.extra_ticks)
+        if self.neuro_track_all:
+            neuron_counts = np.asarray(self.processor.neuron_counts())
         self.processor.run(self.neuro_tpc)
         if self.neuro_track_all:
-            self.neuron_counts = self.processor.neuron_counts()
+            neuron_counts += self.processor.neuron_counts()
+            self.neuron_counts = neuron_counts.tolist()
         data = [dec.decode(node.history) for dec, node in zip(self.decoder, self.processor.outputs)]
         """  old wheelspeed code.
             # four bins. Two for each wheel, one for positive, one for negative.
