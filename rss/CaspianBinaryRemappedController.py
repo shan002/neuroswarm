@@ -17,7 +17,10 @@ class CaspianBinaryRemappedController(CaspianBinaryController):
 
         spikes = self.encoder.get_spikes(input_vector)
         self.processor.apply_spikes(spikes)
-        self.processor.run(5)
+        self.processor.run(self.extra_ticks)
+        if self.neuro_track_all:
+            neuron_counts = np.asarray(self.processor.neuron_counts())
+        
         self.processor.run(self.neuro_tpc)
         if self.neuro_track_all:
             neuron_counts += self.processor.neuron_counts()
