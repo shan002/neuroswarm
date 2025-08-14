@@ -1,10 +1,8 @@
+import numpy as np
 from .CaspianBinaryController import CaspianBinaryController
 
 # typing
 from typing import Any, override
-
-import neuro
-import caspian
 
 
 class CaspianBinaryRemappedController(CaspianBinaryController):
@@ -20,11 +18,11 @@ class CaspianBinaryRemappedController(CaspianBinaryController):
         spikes = self.encoder.get_spikes(input_vector)
         self.processor.apply_spikes(spikes)
         self.processor.run(5)
-        
         self.processor.run(self.neuro_tpc)
-        # action: bool = bool(proc.output_vectors())  # old. don't use.
         if self.neuro_track_all:
-            self.neuron_counts = self.processor.neuron_counts()
+            neuron_counts += self.processor.neuron_counts()
+            self.neuron_counts = neuron_counts.tolist()
+        # action: bool = bool(proc.output_vectors())  # old. don't use.
         data = self.decoder.get_data_from_processor(self.processor)
         data = [int(round(x)) for x in data]
         print(data)

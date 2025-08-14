@@ -1,3 +1,4 @@
+import numpy as np
 from .CasPyanBinaryController import CasPyanBinaryController
 
 # typing
@@ -19,11 +20,14 @@ class CasPyanBinaryRemappedController(CasPyanBinaryController):
         spikes = [enc.get_spikes(x) for enc, x in zip(self.encoder, input_slice)]
         # run processor
         self.processor.apply_spikes(spikes)
-        self.processor.run(5)
-        self.processor.run(self.neuro_tpc)
-        # action: bool = bool(proc.output_vectors())  # old. don't use.
+        self.processor.run(self.extra_ticks)
         if self.neuro_track_all:
-            self.neuron_counts = self.processor.neuron_counts()
+            neuron_counts = np.asarray(self.processor.neuron_counts())
+        self.processor.run(self.neuro_tpc)
+        if self.neuro_track_all:
+            neuron_counts += self.processor.neuron_counts()
+            self.neuron_counts = neuron_counts.tolist()
+        # action: bool = bool(proc.output_vectors())  # old. don't use.
         data = [dec.decode(node.history) for dec, node in zip(self.decoder, self.processor.outputs)]
         data = [int(round(x)) for x in data]
         # three bins. One for +v, -v, omega.

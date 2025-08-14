@@ -195,10 +195,13 @@ class CaspianBinaryController(AbstractController):
         spikes = self.encoder.get_spikes(input_vector)
         self.processor.apply_spikes(spikes)
         self.processor.run(self.extra_ticks)
-        self.processor.run(self.neuro_tpc)
-        # action: bool = bool(proc.output_vectors())  # old. don't use.
         if self.neuro_track_all:
-            self.neuron_counts = self.processor.neuron_counts()
+            neuron_counts = np.asarray(self.processor.neuron_counts())
+        self.processor.run(self.neuro_tpc)
+        if self.neuro_track_all:
+            neuron_counts += self.processor.neuron_counts()
+            self.neuron_counts = neuron_counts.tolist()
+        # action: bool = bool(proc.output_vectors())  # old. don't use.
         data = self.decoder.get_data_from_processor(self.processor)
         """  old wheelspeed code.
             # four bins. Two for each wheel, one for positive, one for negative.
