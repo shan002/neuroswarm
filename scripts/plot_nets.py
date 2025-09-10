@@ -13,7 +13,8 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python plot_nets.py <network.json>")
         sys.exit(1)
-    target_network = os.path.expanduser(sys.argv[1])
+    target_dir = os.path.expanduser(sys.argv[1])
+    target_network = os.path.join(target_dir, 'best.json')
 
     # Start simulation process
     os.chdir(os.path.expanduser('~/neuromorphic/turtwig'))
@@ -61,7 +62,7 @@ def main():
 
     fit_cmd = [
         sys.executable, 'scripts/plot_fit.py',
-        target_network.replace('best.json', 'training.log')
+        os.path.join(target_dir, 'training.log'),
     ]
     print("Starting fitness plotting:", " ".join(fit_cmd))
     fit_proc = subprocess.Popen(fit_cmd)
@@ -81,4 +82,4 @@ if __name__ == "__main__":
 # python ~/neuromorphic/turtwig/scripts/plot_fit.py ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01/training.log
 
 ## With this script I can do the same with the following single command
-# python ~/neuromorphic/turtwig/scripts/plot_nets.py ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01/best.json
+# python ~/neuromorphic/turtwig/scripts/plot_nets.py ~/neuromorphic/turtwig/results_sim/hopper/250804/tenn2/n-6/250729-132733-connorsim_snn_eons-v01
