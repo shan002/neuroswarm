@@ -2,7 +2,9 @@
 
 __version__ = "0.0.1"
 
-import pathlib
+import pathlib as pl
+import tempfile
+import zipfile
 import shutil
 import sys
 import time
@@ -15,7 +17,7 @@ from typing import override
 
 
 # required for training
-DEFAULT_PROJECT_BASEPATH = pathlib.Path("results")
+DEFAULT_PROJECT_BASEPATH = pl.Path("results")
 LOGFILE_NAME = "training.log"
 BESTNET_NAME = "best.json"
 POPULATION_FITNESS_NAME = "population_fitnesses.log"
@@ -35,7 +37,7 @@ def is_project_dir(path):
 
 
 def find_lastmodified_dir(basepath):
-    basepath = pathlib.Path(basepath)
+    basepath = pl.Path(basepath)
     projectdirs = [(child, os.path.getmtime(child)) for child in basepath.iterdir() if is_project_dir(child)]
     return max(projectdirs, key=lambda x: x[1])[0]
 
@@ -60,7 +62,7 @@ def inquire_project(root=None):
     return inquirer.fuzzy(choices=projects, message="Select a project").execute()
 
 
-def inquire_size(file: pathlib.Path, limit=300e6):  # 300 MB
+def inquire_size(file: pl.Path, limit=300e6):  # 300 MB
     size = file.stat().st_size
     if size < limit:
         return
@@ -98,7 +100,7 @@ def get_config_dict(obj):
 cache = {}
 def ensure_dir_exists(path: os.PathLike, parents=True, exist_ok=True, **kwargs):
     global cache
-    path = pathlib.Path(path)
+    path = pl.Path(path)
     fullpath = path.resolve()
     key = str(fullpath)
     if not cache.get(key, False):
@@ -108,7 +110,7 @@ def ensure_dir_exists(path: os.PathLike, parents=True, exist_ok=True, **kwargs):
 
 class File:
     def __init__(self, path: os.PathLike):
-        self.path = pathlib.Path(path)
+        self.path = pl.Path(path)
 
     def write(self, s):
         with open(self.path, 'w') as f:
@@ -186,7 +188,7 @@ class FolderlessProject:
 
     def check_bestnet_writable(self):
         # check that the best network path is writable
-        path = pathlib.Path(self.bestnet_file.path)
+        path = pl.Path(self.bestnet_file.path)
         if path.is_file():
             check_if_writable(path)
             print(f"WARNING: The output network file\n    {path}\nexists and will be overwritten!")
@@ -219,13 +221,13 @@ class Project(FolderlessProject):
 
     def __init__(self, name=None, path=None, overwrite=False):
         self.name = name
-        self.root = pathlib.Path(path) if path is not None else None
-        if name is None and isinstance(path, pathlib.Path):
+        self.root = pl.Path(path) if path is not None else None
+        if name is None and isinstance(self.root, pl.Path):
             # determine name from path
             self.name = self.root.name
         elif name is not None and path is None:
             # if name is given, use as project directory name
-            self.root = pathlib.Path(DEFAULT_PROJECT_BASEPATH / name)
+            self.root = pl.Path(DEFAULT_PROJECT_BASEPATH / name)
         self.allow_overwrite = overwrite
         self.bestnet_file = File(self.root / BESTNET_NAME)
         self.networks = Networks(self, NETWORKS_DIR_NAME)
@@ -301,7 +303,7 @@ class Project(FolderlessProject):
         return path
 
     def save_yaml_artifact(self, name, obj):
-        artifacts = pathlib.Path(ARTIFACTS_DIR_NAME)
+        artifacts = pl.Path(ARTIFACTS_DIR_NAME)
         with open(self.ensure_file_parents(artifacts / name), "w") as f:
             yaml.dump(get_config_dict(obj), f)
 
@@ -315,3 +317,76 @@ class Networks:
         return File(self.path / f"e{epoch}-{population_id}.json")
 
 
+class UnzippedProject(Project):
+    def __init__(self, path, name=None, overwrite=False):
+        self._original_path = pl.Path(path)
+        self._tempdir = None
+        if self._original_path.is_dir():
+            self._opened = True
+            super().__init__(name=name, path=path, overwrite=overwrite)
+        else:
+            self._opened = False
+            self.name = self._original_path.stem
+            self.allow_overwrite = overwrite
+
+    @property
+    def original_path(self):
+        return self._original_path
+
+    def check_valid_zip(self):
+        if not self._original_path.is_file():
+            return False
+        return zipfile.is_zipfile(self._original_path)
+
+    def unzip(self):
+        if self._opened:
+            return
+        if self._tempdir:
+            raise RuntimeError("Project is already unzipped.")
+        self._tempdir = tempfile.TemporaryDirectory(self.name)
+        with zipfile.ZipFile(self._original_path, "r") as d:
+            d.extractall(self._tempdir.name)
+        super().__init__(name=self.name, path=self._tempdir.name, overwrite=self.allow_overwrite)
+        self._opened = True
+
+    def open(self):
+        if self._opened:
+            return
+        if not self._tempdir:
+            self.unzip()
+
+    def __enter__(self):
+        self.unzip()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
+        if self._tempdir:
+            self._tempdir.cleanup()
+        self._tempdir = None
+        self._opened = False
+
+
+if __name__ == "__main__":
+    # if a user runs this file as a script, unzip the project, then print some info
+    # and
+    import argparse
+    import shutil
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filenames", help="path to project directories or zips", nargs="+")
+    args = parser.parse_args()
+    for filename in args.filenames:
+        with UnzippedProject(filename) as proj:
+            print(f"Name: {proj.name}" '' if proj.root.exists() else " (missing)")
+            if hasattr(proj, "original_path"):
+                print(f" -Original root: {proj.original_path.parent}")
+            print(f"  logfile: {proj.logfile_path}" + ('' if proj.logfile_path.exists() else " (missing)"))
+            print(f"  runinfo: {proj.popfit_path}" + ('' if proj.popfit_path.exists() else " (missing)"))
+            print(f"  bestnet: {proj.bestnet_file.path}" + ('' if proj.bestnet_file.path.exists() else " (missing)"))
+            print(f"  networks: {proj.networks.path}" + ('' if proj.networks.path.exists() else " (missing)"))
+            print(f"  artifacts: {proj.root / ARTIFACTS_DIR_NAME}" + ('' if (proj.root / ARTIFACTS_DIR_NAME).exists() else " (missing)"))
+            if proj.bestnet_file.path.exists():
+                dest = (proj.original_path.parent / proj.name).with_suffix(".json")
+                shutil.copy(proj.bestnet_file.path, dest)
