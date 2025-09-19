@@ -4,11 +4,16 @@ import matplotlib
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from ast import literal_eval
 import seaborn as sns
 import tomllib
-import re
+import pathlib as pl
+import dataclasses
 
 import colorsys
+
+from common.evolver import EpochInfo
+from common.project import UnzippedProject
 
 
 def hr(h, s, l):  # noqa: E741
@@ -16,6 +21,7 @@ def hr(h, s, l):  # noqa: E741
 
 
 def load_data(data_path):
+    # very old.
     df = pd.read_csv(data_path)
     df["turning_radius_0"] = [min(abs(i / j), 250) for i, j in zip(df["forward_rate_0"], df["turning_rate_0"])]
     df["turning_radius_1"] = [min(abs(i / j), 250) for i, j in zip(df["forward_rate_1"], df["turning_rate_1"])]
@@ -23,6 +29,7 @@ def load_data(data_path):
 
 
 def plot_evolution(data):
+    # very old.
     x = data["time"]
     min_time = min(x)
     x = [elem - min_time for elem in x]
@@ -35,6 +42,7 @@ def plot_evolution(data):
 
 
 def load_tsv_file(path):
+    # this function is no longer used. Instead, use UnzippedProject(path).logfile.read_lines() from common/project.py
     import csv
     out = []
     with open(path, 'r') as f:
@@ -50,6 +58,7 @@ def load_txt(
     start: int = 0,
     end: int | None = None
 ) -> list[str]:
+    # At time of writing, this function has zero usages. I don't remember why I wrote it.
     with open(path, 'r') as f:
         for _ in range(start):
             next(f)  # skip `start` lines
@@ -57,6 +66,8 @@ def load_txt(
 
 
 def extract_tenn2_data(lines: list[str]):
+    # this function is no longer used. Instead, use EpochInfo.from_str() or EpochInfo.RE_EPOCH in common/evolver.py
+    import re
     RE_EPOCH = re.compile(r'[1-2]\d{7}\s?[\d:]{0,8}\s?>>>\s?Epoch\s*(?P<epoch>\d+):\s*(?P<score>[\d.]+):\s*(?P<fit>[\d.]+)\s\|\sNeurons:\s*(?P<neur>\d+)\sSynapses:\s*(?P<syn>\d+)\s\|\sTime:\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)')
     matches = [RE_EPOCH.search(line) for line in lines]
     data = [match.groups() for match in matches if match]
@@ -65,7 +76,7 @@ def extract_tenn2_data(lines: list[str]):
 
 
 def scatter_time(fig, ax, data, label, colors, shape, epoch_vline=None, annotate_last=False):
-    d, l, c, s = data, label, colors, shape  # noqa
+    d, l, c, s = data, label, colors, shape  # noqa: E741
     time_start = float(d[1][0])
     x = []
     y = []
@@ -85,6 +96,16 @@ def scatter_time(fig, ax, data, label, colors, shape, epoch_vline=None, annotate
     plt.annotate(f'({int(t)}, {best:0.4})', (t, best), textcoords="offset points", xytext=(0, 3), ha='right', color=c)
 
     ax.scatter(x, y, c=c, s=2, label=l, alpha=0.8)
+
+
+def plot_population_fitnesses(proj: UnzippedProject, size=3, label=None, colors=None, marker='.', alpha=0.2):
+    with proj as p:
+        _t, _e, fitnesses, *_ = p.read_popfit()
+    fig, ax = plt.subplots()
+    arr = np.array([li for li in fitnesses if li])
+    epoch_idxs = np.indices(arr.shape)[0]
+    ax.scatter(epoch_idxs, arr, c=colors, s=size, marker=marker, label=label, alpha=alpha)
+    return fig, ax
 
 
 def plot_epochs(fig, ax, data, label, colors, shape, epochs=None):
@@ -137,25 +158,35 @@ def plot_compare2():
     plt.show()
 
 
-def plot_netsize():
+def plot_netsize(proj):
+    def ei_dict(epochinfo: EpochInfo):
+        d = dataclasses.asdict(epochinfo)
+        d.update({
+            "t_total": epochinfo.t_total,
+            "num_neurons": epochinfo.num_neurons,
+            "num_synapses": epochinfo.num_synapses,
+        })
+        return d
 
-    lines = load_txt('20240422_tenn2_train.log')
-    data = extract_tenn2_data(lines)
+    # lines = load_txt('20240422_tenn2_train.log')
+    with proj as p:
+        lines = p.logfile.read_lines()
+    epochinfos = [x for line in lines for x in [EpochInfo.from_str(line, error=False)] if x]
 
-    epochs, score, fit, neurons_, synapses, *_ = zip(*data)
+    epochs = pd.DataFrame([ei_dict(ei) for ei in epochinfos])
 
-    epochs, neurons_, synapses = [[float(x) for x in vec] for vec in (epochs, neurons_, synapses)]
+    gen, neurons_, synapses = epochs["i"], epochs["num_neurons"], epochs["num_synapses"]
 
     fig, ax = plt.subplots()
 
     c_nrn = hr(0.35, 0.6, 0.45)
     c_syn = hr(0.7, 0.8, 0.4)
 
-    ax.plot(epochs, neurons_, c=c_nrn, label='# of Neurons', alpha=0.9)
-    ax.plot(epochs, synapses, c=c_syn, label='# of Synapses', alpha=0.9)
+    ax.plot(gen, neurons_, c=c_nrn, label='# of Neurons', alpha=0.9)
+    ax.plot(gen, synapses, c=c_syn, label='# of Synapses', alpha=0.9)
 
-    plt.annotate(f'{int(neurons_[-1])} ', (epochs[-1], neurons_[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_nrn)
-    plt.annotate(f'{int(synapses[-1])} ', (epochs[-1], synapses[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_syn)
+    plt.annotate(f'{int(neurons_.iloc[-1])} ', (gen.iloc[-1], neurons_.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_nrn)
+    plt.annotate(f'{int(synapses.iloc[-1])} ', (gen.iloc[-1], synapses.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_syn)
 
     ax.legend(loc='upper right')
     # plt.xlabel("Time (seconds)")
@@ -167,7 +198,7 @@ def plot_netsize():
     plt.subplots_adjust(bottom=0.24)
 
     plt.subplots_adjust(left=0.11, right=0.95)
-    plt.show()
+    return plt
 
 
 def plot_shadowplot():
@@ -281,6 +312,7 @@ def plot_heatmap(data):
 
 
 def plot_initialization_boxplot():
+    # THIS FUNCTION HAS NOT BEEN UPGRADED TO WORK WITH THE NEW PROJECTS
 
     def import_test_data(fpath):
         with open(fpath, 'rb') as f:
@@ -350,11 +382,39 @@ matplotlib.rcParams['axes.labelsize'] = 12
 # matplotlib.rcParams['figure.dpi'] = 300
 matplotlib.rcParams['savefig.dpi'] = 300
 
+
+def choose_path(path):
+    path = pl.Path(path)
+    with UnzippedProject(path) as proj:
+        if proj.possibly_valid():
+            return [proj]
+    projs = []
+    if path.is_dir():
+        for p in path.iterdir():
+            with UnzippedProject(p) as proj:
+                if proj.possibly_valid():
+                    projs.append(proj)
+    return projs
+
+
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("paths", help="Path to project directory or zip file", nargs="+")
+    args = parser.parse_args()
+
+
+    projs = []
+
+    for path in args.paths:
+        projs.extend(choose_path(path))
+
     # data = load_data("../out/comp_w_kevin/CMAES/genomes.csv")
     # aggregate_data(data, "P50_T1000_N10.tsv")
-    plot_compare2()
+    # plot_compare2()
     # plot_compare_multi()
-    plot_shadowplot()
-    # plot_netsize()
+    # plot_shadowplot()
+    # plot_netsize(projs[0])
+    plot_population_fitnesses(projs[0])
     # plot_initialization_boxplot()
+    plt.show()

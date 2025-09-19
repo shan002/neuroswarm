@@ -2,12 +2,14 @@
 
 __version__ = "0.0.1"
 
+from ast import literal_eval
 import pathlib as pl
 import tempfile
 import zipfile
 import shutil
-import sys
 import time
+import csv
+import sys
 import os
 from swarmsim import yaml
 from . import jsontools as jst
@@ -34,6 +36,22 @@ def _NONE1(x):
 
 def is_project_dir(path):
     return path.is_dir() and (path / RUNINFO_NAME).is_file()
+
+
+def contains_single_dir(path: pl.Path | None):
+    if path is None or not path.is_dir():
+        return False
+    it = path.iterdir()
+    try:
+        d = next(it)
+    except StopIteration:
+        return False
+    if not d.is_dir():
+        return False
+    try:
+        next(it)
+    except StopIteration:
+        return d if d.is_dir() else False
 
 
 def find_lastmodified_dir(basepath):
@@ -76,6 +94,12 @@ def inquire_size(file: pl.Path, limit=300e6):  # 300 MB
         input("Press enter to continue, ctrl-c to cancel.")
 
 
+def read_tsv(path):
+    with open(path, 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        return list(reader)
+
+
 def get_dict(obj):
     if hasattr(obj, "as_dict"):
         return obj.as_dict()
@@ -98,7 +122,7 @@ def get_config_dict(obj):
 
 
 cache = {}
-def ensure_dir_exists(path: os.PathLike, parents=True, exist_ok=True, **kwargs):
+def ensure_dir_exists(path: os.PathLike, parents=True, exist_ok=True, **kwargs):  # noqa: E302
     global cache
     path = pl.Path(path)
     fullpath = path.resolve()
@@ -133,6 +157,9 @@ class File:
     def as_dict(self):
         return {'path': str(self)}
 
+    def exists(self):
+        return self.path.exists()
+
 
 class Logger(File):
     def __init__(self, path, firstcall=None):
@@ -151,6 +178,12 @@ class Logger(File):
         d = super().as_dict()
         d.update({'firstcall': repr(self.firstcall)})
         return d
+
+    def read_text(self):
+        return self.path.read_text()
+
+    def read_lines(self):
+        return self.path.read_text().splitlines()
 
 
 class FolderlessProject:
@@ -234,6 +267,67 @@ class Project(FolderlessProject):
         self.logfile = Logger(self.root / LOGFILE_NAME)
         self.popfit_file = Logger(self.root / POPULATION_FITNESS_NAME)
         self.popfit_file.firstcall = self._default_firstcall
+        self._opened = True
+
+    def possibly_valid(self):
+        checks = [
+            self.logfile.exists(),
+            self.networks.exists(),
+            self.bestnet_file.exists(),
+            self.popfit_file.exists(),
+        ]
+        return self.root.exists() and any(checks)
+
+    @staticmethod
+    def _check_relpath(relpath):
+        path = pl.PurePath(relpath)
+        if path.is_absolute():
+            msg = f"Expected a relative path, got {relpath}"
+            raise ValueError(msg)
+
+    def pathrel(self, relpath: str | bytes | os.PathLike):
+        """Get a path relative to the project root.
+
+        Parameters
+        ----------
+        relpath : str | bytes | os.PathLike
+            The path relative to the project root.
+
+        Returns
+        -------
+        pathlib.Path
+            The joined path, relative to the project root.
+        """
+        self._check_relpath(relpath)
+        return self.root / relpath
+
+    def pathabs(self, relpath: str | bytes | os.PathLike):
+        """Get a path relative to the project root.
+
+        Parameters
+        ----------
+        relpath : str | bytes | os.PathLike
+            The path relative to the project root.
+
+        Returns
+        -------
+        pathlib.Path
+            The joined path, relative to the absolute path to the project root.
+        """
+        self._check_relpath(relpath)
+        return self.root.resolve() / relpath
+
+    __div__ = pathrel
+
+    def __truediv__(self, relpath):
+        return self.pathrel(relpath)
+
+    __getitem__ = pathrel
+
+    def __fspath__(self):
+        if self.root is None:
+            raise RuntimeError("Project has no path.")
+        return str(self.root)
 
     def load_bestnet(self,
         path_or_jsonstr: None | str | os.PathLike | File | dict = None,
@@ -292,6 +386,18 @@ class Project(FolderlessProject):
     def log_popfit(self, info):
         self.popfit_file += f"{time.time()}\t{info.i}\t{repr(info.fitnesses)}\n"
 
+    def read_popfit(self, error=True):
+        if not self._opened:
+            raise RuntimeError("Project is not open.")
+        try:
+            data = read_tsv(self.popfit_path)
+        except FileNotFoundError as err:
+            if not error:
+                return []
+            msg = f"Could not read population fitness of project {self.name} "
+            msg += f"because it has no recorded {POPULATION_FITNESS_NAME} file."
+        return list(zip(*([literal_eval(x) for x in line] for line in data)))
+
     def ensure_dir(self, relpath, parents=True, exist_ok=True, **kwargs):
         path = self.root / relpath
         ensure_dir_exists(path, parents=parents, exist_ok=exist_ok, **kwargs)
@@ -307,6 +413,14 @@ class Project(FolderlessProject):
         with open(self.ensure_file_parents(artifacts / name), "w") as f:
             yaml.dump(get_config_dict(obj), f)
 
+    def load_yaml(self, name):
+        with open(self.root / name, "r") as f:
+            return yaml.load(f)
+
+    def safe_load_yaml(self, name):
+        with open(self.root / name, "r") as f:
+            return yaml.load(f)
+
 
 class Networks:
     def __init__(self, project, relpath):
@@ -316,16 +430,23 @@ class Networks:
         ensure_dir_exists(self.path, parents=False)
         return File(self.path / f"e{epoch}-{population_id}.json")
 
+    __call__ = get_file
+
+    def exists(self):
+        return self.path.exists()
+
+    def any(self):
+        return any(self.path.iterdir())
+
 
 class UnzippedProject(Project):
     def __init__(self, path, name=None, overwrite=False):
         self._original_path = pl.Path(path)
         self._tempdir = None
+        self._opened = False
         if self._original_path.is_dir():
-            self._opened = True
             super().__init__(name=name, path=path, overwrite=overwrite)
         else:
-            self._opened = False
             self.name = self._original_path.stem
             self.allow_overwrite = overwrite
 
@@ -346,23 +467,19 @@ class UnzippedProject(Project):
         self._tempdir = tempfile.TemporaryDirectory(self.name)
         with zipfile.ZipFile(self._original_path, "r") as d:
             d.extractall(self._tempdir.name)
-        super().__init__(name=self.name, path=self._tempdir.name, overwrite=self.allow_overwrite)
-        self._opened = True
-
-    def open(self):
-        if self._opened:
-            return
-        if not self._tempdir:
-            self.unzip()
+        super().__init__(path=self._tempdir.name, name=self.name, overwrite=self.allow_overwrite)
+        if not self.possibly_valid() and (d := contains_single_dir(self.root)):
+            if UnzippedProject(path=d, name=d.name).possibly_valid():
+                super().__init__(path=d, name=d.name, overwrite=self.allow_overwrite)
 
     def __enter__(self):
         self.unzip()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+        self.cleanup()
 
-    def close(self):
+    def cleanup(self):
         if self._tempdir:
             self._tempdir.cleanup()
         self._tempdir = None
