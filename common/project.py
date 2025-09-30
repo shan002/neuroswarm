@@ -387,6 +387,7 @@ class Project(FolderlessProject):
         self.popfit_file += f"{time.time()}\t{info.i}\t{repr(info.fitnesses)}\n"
 
     def read_popfit(self, error=True):
+        from swarmsim.yaml.mathexpr import safe_eval
         if not self._opened:
             raise RuntimeError("Project is not open.")
         try:
@@ -396,7 +397,7 @@ class Project(FolderlessProject):
                 return []
             msg = f"Could not read population fitness of project {self.name} "
             msg += f"because it has no recorded {POPULATION_FITNESS_NAME} file."
-        return list(zip(*([literal_eval(x) for x in line] for line in data)))
+        return list(zip(*([safe_eval(x) for x in line] for line in data)))
 
     def ensure_dir(self, relpath, parents=True, exist_ok=True, **kwargs):
         path = self.root / relpath
@@ -482,8 +483,8 @@ class UnzippedProject(Project):
     def cleanup(self):
         if self._tempdir:
             self._tempdir.cleanup()
+            self._opened = False
         self._tempdir = None
-        self._opened = False
 
 
 if __name__ == "__main__":
