@@ -98,14 +98,16 @@ def scatter_time(fig, ax, data, label, colors, shape, epoch_vline=None, annotate
     ax.scatter(x, y, c=c, s=2, label=l, alpha=0.8)
 
 
-def plot_population_fitnesses(proj: UnzippedProject, size=3, label=None, colors=None, marker='.', alpha=0.2):
+def plot_population_fitnesses(fig, ax, proj: UnzippedProject, size=3, label=None, colors=None, marker='.', alpha=0.2,
+                              xlabel='Epochs', ylabel=None, title='Population Fitnesses'):
     with proj as p:
         _t, _e, fitnesses, *_ = p.read_popfit()
-    fig, ax = plt.subplots()
     arr = np.array([li for li in fitnesses if li])
     epoch_idxs = np.indices(arr.shape)[0]
     ax.scatter(epoch_idxs, arr, c=colors, s=size, marker=marker, label=label, alpha=alpha)
-    return fig, ax
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
 
 
 def plot_epochs(fig, ax, data, label, colors, shape, epochs=None):
@@ -158,7 +160,7 @@ def plot_compare2():
     plt.show()
 
 
-def plot_netsize(proj):
+def plot_netsize(fig, ax, proj):
     def ei_dict(epochinfo: EpochInfo):
         d = dataclasses.asdict(epochinfo)
         d.update({
@@ -177,28 +179,25 @@ def plot_netsize(proj):
 
     gen, neurons_, synapses = epochs["i"], epochs["num_neurons"], epochs["num_synapses"]
 
-    fig, ax = plt.subplots()
-
     c_nrn = hr(0.35, 0.6, 0.45)
     c_syn = hr(0.7, 0.8, 0.4)
 
     ax.plot(gen, neurons_, c=c_nrn, label='# of Neurons', alpha=0.9)
     ax.plot(gen, synapses, c=c_syn, label='# of Synapses', alpha=0.9)
 
-    plt.annotate(f'{int(neurons_.iloc[-1])} ', (gen.iloc[-1], neurons_.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_nrn)
-    plt.annotate(f'{int(synapses.iloc[-1])} ', (gen.iloc[-1], synapses.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_syn)
+    ax.annotate(f'{int(neurons_.iloc[-1])} ', (gen.iloc[-1], neurons_.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_nrn)
+    ax.annotate(f'{int(synapses.iloc[-1])} ', (gen.iloc[-1], synapses.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_syn)
 
     ax.legend(loc='upper right')
-    # plt.xlabel("Time (seconds)")
-    plt.xlabel("Epochs")
-    plt.ylabel(" ")
-    plt.title("SNN Network Size")
+    # ax.xlabel("Time (seconds)")
+    ax.set_xlabel("Epochs")
+    ax.set_ylabel(" ")
+    ax.set_title("SNN Network Size")
 
     fig.set_figheight(2)
-    plt.subplots_adjust(bottom=0.24)
+    fig.subplots_adjust(bottom=0.24)
 
-    plt.subplots_adjust(left=0.11, right=0.95)
-    return plt
+    fig.subplots_adjust(left=0.11, right=0.95)
 
 
 def plot_shadowplot():
@@ -409,12 +408,18 @@ if __name__ == "__main__":
     for path in args.paths:
         projs.extend(choose_path(path))
 
+    fig, axs = plt.subplots(len(projs))
+    if 'Axes' in type(axs).__name__:
+        axs = [axs]
+    for ax, proj in zip(axs, projs):
+        plot_population_fitnesses(fig, ax, proj)
+        # plot_netsize(fig, ax, proj)
+
     # data = load_data("../out/comp_w_kevin/CMAES/genomes.csv")
     # aggregate_data(data, "P50_T1000_N10.tsv")
     # plot_compare2()
     # plot_compare_multi()
     # plot_shadowplot()
     # plot_netsize(projs[0])
-    plot_population_fitnesses(projs[0])
     # plot_initialization_boxplot()
     plt.show()
