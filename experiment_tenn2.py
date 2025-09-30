@@ -206,6 +206,7 @@ def run(app, args):
 
     if args.log_trajectories:
         graphing.plot_multiple(world)
+        graphing.plot_fitness(world)
         graphing.export(world, output_file=app.p.ensure_file_parents("agent_trajectories.xlsx"))
         # TODO: handle when no project
 

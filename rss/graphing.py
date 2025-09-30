@@ -7,6 +7,17 @@ def hr(h, s, l):  # noqa: E741
     return colorsys.hls_to_rgb(h, l, s)
 
 
+def plot_fitness(world):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    metric = world.metrics[0]
+    ax.plot(metric.value_history)
+    ax.set_title(f"Instantaneous {metric.name}: {metric.average:0.4f}")
+    ax.set_xlabel("Time Steps")
+    ax.set_ylabel(metric.name)
+    plt.show()
+
+
 def extract_history(a):
     t = list(range(len(a.history)))  # time
     state, sense, out = list(zip(*a.history))
