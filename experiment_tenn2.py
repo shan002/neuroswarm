@@ -209,8 +209,13 @@ def run(app, args):
         graphing.plot_multiple(world)
         graphing.plot_fitness(world)
         graphing.export(world, output_file=app.p.ensure_file_parents("agent_trajectories.xlsx"))
+        if args.explore:
+            app.p.explore()
         plt.show(block=True)
         # TODO: handle when no project
+    else:
+        if args.explore:
+            app.p.explore()
 
     return fitness
 

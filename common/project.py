@@ -422,6 +422,11 @@ class Project(FolderlessProject):
         with open(self.root / name, "r") as f:
             return yaml.load(f)
 
+    def explore(self):
+        from showinfm import show_in_file_manager
+        assert self.root
+        show_in_file_manager(str(self.root))
+
 
 class Networks:
     def __init__(self, project, relpath):
@@ -441,11 +446,12 @@ class Networks:
 
 
 class UnzippedProject(Project):
-    def __init__(self, path, name=None, overwrite=False):
+    def __init__(self, path, name=None, overwrite=False, temp_path=None):
         self._original_path = pl.Path(path)
         self._tempdir = None
         self._opened = False
-        if self._original_path.is_dir():
+        self.temp_path = temp_path
+        if self._original_path.is_dir() and not temp_path:
             super().__init__(name=name, path=path, overwrite=overwrite)
         else:
             self.name = self._original_path.stem
@@ -465,9 +471,12 @@ class UnzippedProject(Project):
             return
         if self._tempdir:
             raise RuntimeError("Project is already unzipped.")
-        self._tempdir = tempfile.TemporaryDirectory(self.name)
-        with zipfile.ZipFile(self._original_path, "r") as d:
-            d.extractall(self._tempdir.name)
+        self._tempdir = tempfile.TemporaryDirectory(self.name, dir=self.temp_path)
+        if self._original_path.is_file():
+            with zipfile.ZipFile(self._original_path, "r") as d:
+                d.extractall(self._tempdir.name)
+        elif self._original_path.is_dir():
+            shutil.copytree(self._original_path, self._tempdir.name)
         super().__init__(path=self._tempdir.name, name=self.name, overwrite=self.allow_overwrite)
         if not self.possibly_valid() and (d := contains_single_dir(self.root)):
             if UnzippedProject(path=d, name=d.name).possibly_valid():

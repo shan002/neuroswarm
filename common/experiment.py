@@ -71,7 +71,8 @@ class TennExperiment(Application):
             elif args.project is None:
                 # no project name specified; ask user
                 path = project.inquire_project(root=args.root)
-                self.p = project.Project(path=path, name=path.name)
+                self.p = project.UnzippedProject(path=path, name=path.name)
+                self.p.unzip()  # no effect if not a zip file
             elif RE_CONTAINS_SEP.search(args.project):  # project name contains a path separator
                 project_name = pathlib.Path(args.project).name
                 if args.root is not DEFAULT_PROJECT_BASEPATH:
@@ -343,6 +344,8 @@ def get_parsers(conflict_handler='resolve'):
             info to iostream for network visualization.
             e.g. '{"source":"serve","port":8100}'
         """)
+        sub.add_argument('--explore', action='store_true',
+                         help="Show the Project Folder after the run.")
 
     # Training args
     sub_train.add_argument('--network', default=None,
