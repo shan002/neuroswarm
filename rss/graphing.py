@@ -1,6 +1,9 @@
 import pandas as pd
 import colorsys
 import itertools
+import matplotlib.pyplot as plt
+import matplotlib
+from typing import cast
 
 
 def hr(h, s, l):  # noqa: E741
@@ -8,14 +11,16 @@ def hr(h, s, l):  # noqa: E741
 
 
 def plot_fitness(world):
-    import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     metric = world.metrics[0]
     ax.plot(metric.value_history)
-    ax.set_title(f"Instantaneous {metric.name}: {metric.average:0.4f}")
+    if metric.instantaneous:
+        ax.set_title(f"Average {metric.name}: {metric.average:0.4f}")
+    else:
+        ax.set_title(f"Instantaneous {metric.name}: {metric.value:0.4f}")
     ax.set_xlabel("Time Steps")
     ax.set_ylabel(metric.name)
-    plt.show()
+    return fig, ax
 
 
 def extract_history(a):
@@ -26,12 +31,15 @@ def extract_history(a):
     return t, x, y, theta, sense, v, w
 
 
-def plot_single(a, fig, ax, plot_state=False):
+def plot_single_artists(a, fig, axs, plot_state=False):
     cr = hr(0.0, 0.9, 0.4)
     cb = hr(0.6, 0.9, 0.4)
     cg = hr(0.3, 0.9, 0.4)
+    ax, axw = axs
+    ax = cast(plt.Axes, axs[0])
+    axw = cast(plt.Axes, axs[1])
 
-    x, px, py, theta, sense, v, w = extract_history(a)
+    x, _px, _py, _theta, sense, v, w = extract_history(a)
 
     # create green vertical spanning regions for sensors
     xsen = [1] if sense and sense[0] else []
@@ -45,25 +53,37 @@ def plot_single(a, fig, ax, plot_state=False):
         xnot.append(len(sense) - 1)
 
     # breakpoint()
+    artists = {}
     ax.cla()
-    ax.plot(x, sense, c=cg, label="heck", alpha=0.1)
+    axw.cla()
+    artists['lineplot_sense'] = ax.plot(x, sense, c=cg, label="heck", alpha=0.1)
     # if plot_state:
     #     ax.subplot(111, aspect='equal')
-    for xa, xb in zip(xsen, xnot):
+    artists['axvspans_sense'] = [
         ax.axvspan(xa, xb, ymin=0.0, ymax=1.0, alpha=0.15, color='green')
-    ax.plot(x, v, c=cb, label="v", alpha=0.5)
-    ax.plot(x, w, c=cr, label=r"\omega", alpha=0.5)
+        for xa, xb in zip(xsen, xnot)
+    ]
+    artists['lineplot_v'] = ax.plot(x, v, c=cb, label="Velocity v", alpha=0.5)
+    artists['lineplot_w'] = axw.plot(x, w, c=cr, label="Turn Rate \\omega", alpha=0.5)
 
-    return fig, ax
+    return fig, (ax, axw), artists
+
+
+def plot_single(a, fig, axs, plot_state=False):
+    fig, axs, _artists = plot_single_artists(a, fig, axs, plot_state)
+    return fig, axs
 
 
 def plot_multiple(world):
-    import matplotlib.pyplot as plt
-    fig = plt.gcf()  # get current figure
+    fig = plt.figure()
+    ax0 = None
     for i, agent in enumerate(world.population):
-        ax = fig.add_subplot(len(world.population), 1, i + 1)
-        plot_single(agent, fig, ax)
-    plt.show()
+        ax = fig.add_subplot(len(world.population), 1, i + 1, sharex=ax0)
+        ax0 = ax0 or ax
+        axw = ax.twinx()
+        plot_single(agent, fig, (ax, axw))
+    fig.suptitle(f"Agent Sensors vs. Control Inputs")
+    return fig
 
 
 def export(world, output_file):

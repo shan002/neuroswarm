@@ -205,9 +205,11 @@ def run(app, args):
     print(f"Fitness: {fitness:8.4f}")
 
     if args.log_trajectories:
+        import matplotlib.pyplot as plt
         graphing.plot_multiple(world)
         graphing.plot_fitness(world)
         graphing.export(world, output_file=app.p.ensure_file_parents("agent_trajectories.xlsx"))
+        plt.show(block=True)
         # TODO: handle when no project
 
     return fitness
