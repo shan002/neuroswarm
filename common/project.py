@@ -2,6 +2,7 @@
 
 __version__ = "0.0.1"
 
+from functools import cached_property
 from ast import literal_eval
 import pathlib as pl
 import tempfile
@@ -98,6 +99,11 @@ def read_tsv(path):
     with open(path, 'r') as f:
         reader = csv.reader(f, delimiter='\t')
         return list(reader)
+
+
+def yaml_safe_load(path):
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
 
 
 def get_dict(obj):
@@ -267,6 +273,7 @@ class Project(FolderlessProject):
         self.logfile = Logger(self.root / LOGFILE_NAME)
         self.popfit_file = Logger(self.root / POPULATION_FITNESS_NAME)
         self.popfit_file.firstcall = self._default_firstcall
+        self.artifacts = self.root / 'artifacts'
         self._opened = True
 
     def possibly_valid(self):
@@ -427,6 +434,18 @@ class Project(FolderlessProject):
         assert self.root
         show_in_file_manager(str(self.root))
 
+    @cached_property
+    def env(self):
+        return yaml_safe_load(self.artifacts / 'env.yaml')
+
+    @cached_property
+    def experiment(self):
+        return yaml_safe_load(self.artifacts / 'experiment.yaml')
+
+    @cached_property
+    def evolver(self):
+        return yaml_safe_load(self.artifacts / 'evolver.yaml')
+
 
 class Networks:
     def __init__(self, project, relpath):
@@ -468,7 +487,7 @@ class UnzippedProject(Project):
 
     def unzip(self):
         if self._opened:
-            return
+            return self
         if self._tempdir:
             raise RuntimeError("Project is already unzipped.")
         self._tempdir = tempfile.TemporaryDirectory(self.name, dir=self.temp_path)
@@ -481,6 +500,7 @@ class UnzippedProject(Project):
         if not self.possibly_valid() and (d := contains_single_dir(self.root)):
             if UnzippedProject(path=d, name=d.name).possibly_valid():
                 super().__init__(path=d, name=d.name, overwrite=self.allow_overwrite)
+        return self
 
     def __enter__(self):
         self.unzip()

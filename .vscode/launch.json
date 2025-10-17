@@ -19,7 +19,7 @@
             "request": "launch",
             // "cwd": "/home/videblu/neuromorphic/RobotSwarmSimulator/demo/configs/conftest",
             "program": "experiment_tenn2.py",
-            "args": ["run"],
+            "args": "run --log --sta",
             "justMyCode": false,
         },
 
