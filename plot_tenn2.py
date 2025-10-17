@@ -33,7 +33,7 @@ def graph_each(world):
     return bundles
 
 
-def run(app, args):
+def run(app: ConnorMillingExperiment, args):
 
     # Set up simulator and network
 
