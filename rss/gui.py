@@ -6,7 +6,7 @@ from math import pi as PI
 
 from swarmsim.gui.agentGUI import DifferentialDriveGUI
 
-from rss.graphing import plot_single_artists, extract_history, hr
+from rss.graphing import plot_single_artists, extract_history, hr, label_vwx
 
 # typing
 from typing import override
@@ -181,27 +181,5 @@ class TennlabGUI(DifferentialDriveGUI):
         return self.fig, self.axs
 
     def update_legend(self):
-        # grab the artists and labels from the primary axis
-        handles, labels = self.axs[0].get_legend_handles_labels()
-        # add the artists and labels from the twinx (red plot, right side)
-        a, b = self.axs[1].get_legend_handles_labels()
-        handles.insert(-1, *a)
-        labels.insert(-1, *b)
-
-        self.axs[0].set_xlabel("Time since start (seconds)", loc='center')
-        self.axs[0].set_ylabel("Forward Velocity (m/s)")
-        self.axs[1].yaxis.label_position = 'right'
-        self.axs[1].yaxis.labelpad = 10.0
-        self.axs[1].set_ylabel("Angular Velocity (rad/s)")
-        self.axs[0].set_title(f"Agent {self.selected[0].name} Sensor State and Speeds")
-        self.fig.subplots_adjust(right=(1 - self.fig.subplotpars.left))
-
-        # show the legend
-        legend = self.axs[1].legend(handles=handles, loc='lower center', ncol=3, fancybox=True, shadow=True)
-
-        # set the linewidth of each legend object
-        for obj in legend.legend_handles:
-            obj.set_linewidth(3.0)  # pyright: ignore[reportAttributeAccessIssue]
-        s = legend.legend_handles[-1]  # the last column should be the vertical lines.
-        s.set_linewidth(10.0)  # Draw that thicker in the legend   # pyright: ignore[reportAttributeAccessIssue]
-        s.set_alpha(0.25)
+        label_vwx((self.fig, self.axs),
+                  title=f"Agent {self.selected[0].name} Sensor State and Speeds")
