@@ -3,28 +3,55 @@ import random
 import neuro
 import json
 
-# Takes a string.  If the string has "{", it loads it as json.
-# Otherwise, if the string has ".", then it treats it as a filename,
-# and loads the json from the file.
-# Otherwise, it simply returns the string to use as simply json.
-
 
 def load_json_string_file(sorf):
+    """Load json from a json string or path to json. DEPRECATED!
+
+    Parameters
+    ----------
+    sorf : str | Any
+        Valid json string or path to json file containing a `.` in the filename
+
+    Returns
+    -------
+    dict | Any
+        If the string has "{" or "[", the input is evaluated as a json string.
+        Otherwise, if the string has ".", then it treats it as a filename,
+        and loads the json from the file.
+        Otherwise, it simply returns the string to use as simply json.
+    """
     if (sorf.find("{") != -1): return json.loads(sorf)  # noqa: E701
     if (sorf.find("[") != -1): return json.loads(sorf)  # noqa: E701
     if (sorf.find(".") == -1): return sorf  # noqa: E701
     with open(sorf, 'r') as f: return json.loads(f.read())  # noqa: E701
 
 
-# Creates a template network given inputs, outputs, and a Processor
-def make_template(dev, n_inputs, n_outputs, moa=None):
+def make_template(dev, n_inputs, n_outputs, moa):
+    """Make a template network for EONS.
+
+    Parameters
+    ----------
+    dev : Processor
+        The processor device instance, which is used to get the network properties
+    n_inputs : int
+        The number of inputs to the network
+    n_outputs : int
+        The number of outputs to the network
+    moa : MOA | Ellipsis
+        The MOA instance to use for randomization. Pass EONS.rng if unsure.
+        Pass Ellipsis to create a MOA instance initialized with ``random.randint``.
+
+    Returns
+    -------
+    neuro.Network
+    """
     # Create a network suitable for the given processor
     net = neuro.Network()
     props = dev.get_network_properties()
     net.set_properties(props)
     tprop = net.get_node_property("Threshold")
 
-    if moa is None:
+    if moa is Ellipsis:
         moa = neuro.MOA()
         moa.seed(random.randint(0, (2**32) - 1), "")
 
@@ -45,14 +72,14 @@ def make_template(dev, n_inputs, n_outputs, moa=None):
     return net
 
 
-def make_random_net(net, moa=None):
+def make_random_net(net, moa):
 
     # Ensure we have a template graph
     if net.num_inputs() == 0 or net.num_outputs() == 0:
         raise ValueError("random_network requires a template graph to be given")
 
     # Get an RNG if one isn't given
-    if moa is None:
+    if moa is Ellipsis:
         moa = neuro.MOA()
         moa.seed(random.randint(0, (2**32) - 1), "")
 
