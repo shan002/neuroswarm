@@ -19,6 +19,14 @@ from . import project
 from . import env_tools as envt
 
 
+# typing
+from typing import TYPE_CHECKING, Any
+if TYPE_CHECKING:
+    from .evolver import Evolver, EpochInfo
+else:
+    Evolver = EpochInfo = None
+
+
 RE_CONTAINS_SEP = re.compile(r"[/\\]")
 DEFAULT_PROJECT_BASEPATH = pathlib.Path("out")
 
@@ -138,14 +146,17 @@ class TennExperiment(Application):
     def run(self, processor, network):
         return None
 
-    def pre_epoch(self, eons):
-        if self.save_strategy == "all":
-            for nid, net in enumerate(eons.pop.networks):
-                self.save_network(net.network, self.p.networks.get_file(eons.i, nid))  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+    def pre_epoch(self, eons: Evolver):
+        pass
 
-    def post_epoch(self, eons, info, new_best):  # eons calls this after each epoch
-        if self.save_strategy == "best_per_epoch":
-            self.save_network(info.best_network, self.p.networks.get_file(info.i, info.best_net_id)) # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+    def post_epoch(self, eons: Evolver, info: EpochInfo, new_best: bool | Any):  # eons calls this after each epoch
+        if self.save_strategy == "all":
+            # save all networks to networks/e{epoch}-{network_id}.json
+            for nid, net in enumerate(eons.pop.networks):
+                self.save_network(net.network, self.p.networks.get_file(info.i, nid))
+        elif self.save_strategy == "best_per_epoch":
+            # save only the best network as networks/e{epoch}-{network_id}.json
+            self.save_network(info.best_network, self.p.networks.get_file(info.i, info.best_net_id))
         if new_best:  # save best network to its own file regardless of save_strategy
             self.save_best_network(info, safe_overwrite=True)
         self.log_status(info)  # print and log epoch info
@@ -156,11 +167,11 @@ class TennExperiment(Application):
             net.set_data("label", self.label)
         net.set_data("processor", self.processor_params)
         net.set_data("application", self.app_params)
-        self.p.bestnet = net
         path.write(str(net))
 
     def save_best_network(self, info, safe_overwrite=True):
         self.p.backup_bestnet()
+        self.p.bestnet = info.best_network
         self.save_network(info.best_network, self.p.bestnet_file)
         self.log(f"wrote best network to {str(self.p.bestnet_file)}.")
 
