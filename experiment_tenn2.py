@@ -152,7 +152,7 @@ class ConnorMillingExperiment(TennExperiment):
         cycles = self.cycles
         self.cycles = 0
         proc = caspian.Processor(self.processor_params)
-        template_net = make_template(proc, self.n_inputs, self.n_outputs)
+        template_net = make_template(proc, self.n_inputs, self.n_outputs, ...)
         world = self.simulate(proc, template_net)
         self.cycles = cycles
         if delete_rss:

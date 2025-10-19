@@ -3,28 +3,57 @@ import random
 import neuro
 import json
 
-# Takes a string.  If the string has "{", it loads it as json.
-# Otherwise, if the string has ".", then it treats it as a filename,
-# and loads the json from the file.
-# Otherwise, it simply returns the string to use as simply json.
 
 def load_json_string_file(sorf):
-    if (sorf.find("{") != -1): return json.loads(sorf)
-    if (sorf.find("[") != -1): return json.loads(sorf)
-    if (sorf.find(".") == -1): return sorf
-    with open(sorf, 'r') as f: return json.loads(f.read())
+    """Load json from a json string or path to json. DEPRECATED!
 
-# Creates a template network given inputs, outputs, and a Processor
-def make_template(dev, n_inputs, n_outputs, moa = None):
+    Parameters
+    ----------
+    sorf : str | Any
+        Valid json string or path to json file containing a `.` in the filename
+
+    Returns
+    -------
+    dict | Any
+        If the string has "{" or "[", the input is evaluated as a json string.
+        Otherwise, if the string has ".", then it treats it as a filename,
+        and loads the json from the file.
+        Otherwise, it simply returns the string to use as simply json.
+    """
+    if (sorf.find("{") != -1): return json.loads(sorf)  # noqa: E701
+    if (sorf.find("[") != -1): return json.loads(sorf)  # noqa: E701
+    if (sorf.find(".") == -1): return sorf  # noqa: E701
+    with open(sorf, 'r') as f: return json.loads(f.read())  # noqa: E701
+
+
+def make_template(dev, n_inputs, n_outputs, moa):
+    """Make a template network for EONS.
+
+    Parameters
+    ----------
+    dev : Processor
+        The processor device instance, which is used to get the network properties
+    n_inputs : int
+        The number of inputs to the network
+    n_outputs : int
+        The number of outputs to the network
+    moa : MOA | Ellipsis
+        The MOA instance to use for randomization. Pass EONS.rng if unsure.
+        Pass Ellipsis to create a MOA instance initialized with ``random.randint``.
+
+    Returns
+    -------
+    neuro.Network
+    """
     # Create a network suitable for the given processor
     net = neuro.Network()
     props = dev.get_network_properties()
     net.set_properties(props)
     tprop = net.get_node_property("Threshold")
 
-    if moa is None:
+    if moa is Ellipsis:
         moa = neuro.MOA()
-        moa.seed(random.randint(0, (2**32)-1), "")
+        moa.seed(random.randint(0, (2**32) - 1), "")
 
     # Add inputs
     for i in range(n_inputs):
@@ -35,23 +64,24 @@ def make_template(dev, n_inputs, n_outputs, moa = None):
 
     # Add outputs
     for i in range(n_outputs):
-        node = net.add_node(n_inputs+i)
-        net.add_output(n_inputs+i)
+        node = net.add_node(n_inputs + i)
+        net.add_output(n_inputs + i)
         net.randomize_node_properties(moa, node)
         node.set(tprop.index, tprop.min_value)
 
     return net
 
-def make_random_net(net, moa = None):
+
+def make_random_net(net, moa):
 
     # Ensure we have a template graph
     if net.num_inputs() == 0 or net.num_outputs() == 0:
-        raise ValueError("random_network requires a template graph to be given") 
+        raise ValueError("random_network requires a template graph to be given")
 
     # Get an RNG if one isn't given
-    if moa is None:
+    if moa is Ellipsis:
         moa = neuro.MOA()
-        moa.seed(random.randint(0, (2**32)-1), "")
+        moa.seed(random.randint(0, (2**32) - 1), "")
 
     # Determine how many hidden nodes
     num_hidden = min(100, max(net.num_inputs(), net.num_outputs()))
@@ -64,47 +94,69 @@ def make_random_net(net, moa = None):
     # Generate a list of ids corresponding to the new hidden nodes
     hidden_nodes = [n for n in range(net.num_nodes(), net.num_nodes() + num_hidden)]
 
-    #print("hidden: {} i->h: {} h->h: {} h->o: {}".format(num_hidden, i_to_h, h_to_h, h_to_o))
+    # print("hidden: {} i->h: {} h->h: {} h->o: {}".format(num_hidden, i_to_h, h_to_h, h_to_o))
 
     # Add hidden nodes
     for nh in hidden_nodes:
         net.randomize_node_properties(moa, net.add_node(nh))
 
-    ## Input -> Hidden
+    # Input -> Hidden
     for ni in range(net.num_inputs()):
         input_node = net.get_input(ni)
         net.randomize_node_properties(moa, input_node)
 
-        #ih = random.randint(i_to_h // 2, 3 * i_to_h // 2)
+        # ih = random.randint(i_to_h // 2, 3 * i_to_h // 2)
         ih = i_to_h
 
         for _ in range(ih):
-            h = random.randint(0, len(hidden_nodes)-1)
+            h = random.randint(0, len(hidden_nodes) - 1)
             edge = net.add_or_get_edge(input_node.id, hidden_nodes[h])
             net.randomize_edge_properties(moa, edge)
 
-    ## Hidden -> Hidden
+    # Hidden -> Hidden
     for _ in range(h_to_h):
         random.shuffle(hidden_nodes)
         for a, b in zip(hidden_nodes, hidden_nodes[::-1]):
             edge = net.add_or_get_edge(a, b)
             net.randomize_edge_properties(moa, edge)
 
-    ## Hidden -> Output
+    # Hidden -> Output
     for no in range(net.num_outputs()):
         output_node = net.get_node(no)
         net.randomize_node_properties(moa, output_node)
 
-        #ih = random.randint(h_to_o // 2, 3 * h_to_o // 2)
+        # ih = random.randint(h_to_o // 2, 3 * h_to_o // 2)
         ih = h_to_o
 
         for _ in range(ih):
-            h = random.randint(0, len(hidden_nodes)-1)
+            h = random.randint(0, len(hidden_nodes) - 1)
             edge = net.add_or_get_edge(output_node.id, hidden_nodes[h])
             net.randomize_edge_properties(moa, edge)
 
-# Create a feed-forward network, given the processor, an array describing the size of the layers, and the random number generator 
+
+# , given the processor, an array describing the size of the layers, and the random number generator
 def make_feed_forward(dev, layer_size, moa):
+    """Create a feed-forward network
+
+    Parameters
+    ----------
+    dev : Processor
+        The processor device instance, which is used to get the network properties
+    layer_size : list[int]
+        An array describing the number of nodes in each layer
+    moa : MOA
+        The MOA instance to use for randomization. Pass EONS.rng if unsure.
+
+    Returns
+    -------
+    _type_
+        _description_
+
+    Raises
+    ------
+    ValueError
+        _description_
+    """
     net = neuro.Network()
     props = dev.get_properties()
     net.set_properties(props)
@@ -123,11 +175,11 @@ def make_feed_forward(dev, layer_size, moa):
         net.add_input(i)
         layers[0].append(i)
 
-    current_index = num_inputs+num_outputs
+    current_index = num_inputs + num_outputs
 
-    for i in range(1,len(layer_size)-1):
+    for i in range(1, len(layer_size) - 1):
         layers.append([])
-        for j in range(layer_size[i]):
+        for _j in range(layer_size[i]):
             node = net.add_node(current_index)
             net.randomize_node_properties(moa, node)
             layers[-1].append(current_index)
@@ -135,15 +187,14 @@ def make_feed_forward(dev, layer_size, moa):
 
     layers.append([])
     for i in range(num_outputs):
-        node = net.add_node(num_inputs+i)
+        node = net.add_node(num_inputs + i)
         net.randomize_node_properties(moa, node)
-        net.add_output(num_inputs+i)
-        layers[-1].append(num_inputs+i)
+        net.add_output(num_inputs + i)
+        layers[-1].append(num_inputs + i)
 
-    for i in range(len(layers)-1):
+    for i in range(len(layers) - 1):
         for j in range(len(layers[i])):
-            for k in range(len(layers[i+1])):
-                edge = net.add_edge(layers[i][j], layers[i+1][k])
+            for k in range(len(layers[i + 1])):
+                edge = net.add_edge(layers[i][j], layers[i + 1][k])
                 net.randomize_edge_properties(moa, edge)
-    return net   
-
+    return net
