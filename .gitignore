@@ -5,3 +5,4 @@
 !/results/scatterplots.py
 /logs/*
 /out/*
+.vscode/settings.json
