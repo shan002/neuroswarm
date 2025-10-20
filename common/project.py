@@ -404,6 +404,7 @@ class Project(FolderlessProject):
                 return []
             msg = f"Could not read population fitness of project {self.name} "
             msg += f"because it has no recorded {POPULATION_FITNESS_NAME} file."
+            raise FileNotFoundError(msg) from err
         return list(zip(*([safe_eval(x) for x in line] for line in data)))
 
     def ensure_dir(self, relpath, parents=True, exist_ok=True, **kwargs):
