@@ -130,7 +130,7 @@ class TennExperiment(Application):
             import subprocess
             args.all_counts_stream = '{"source": "serve", "port": 8100}'
             framework_root = envt.framework_root()
-            net_path = self.p.bestnet_file.path
+            net_path = self.p.bestnet_file.path.absolute()
             viz_cmd = [
                 'love', '.',
                 # '--config', CONFIG_FILE,
@@ -138,6 +138,7 @@ class TennExperiment(Application):
                 '--show_input_id',
                 '--show_output_id',
                 '-i', '{"source":"request","port":"8100","host":"localhost"}',
+                '--remove_unnecessary_neuron'
             ]
             subprocess.Popen(viz_cmd, cwd=framework_root / 'viz')
 
