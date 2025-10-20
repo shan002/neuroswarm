@@ -89,7 +89,7 @@ class TennlabGUI(DifferentialDriveGUI):
         axw.cla()
         ar['lineplot_v'] = ax.plot(x, v, c=cb, label="Velocity v", alpha=0.5)
         ar['lineplot_w'] = axw.plot(x, w, c=cr, label="Turn Rate $\\omega$", alpha=0.5)
-        ar['lineplot_sense'] = ax.plot(x, sense, c=cg, label="heck", alpha=0.1)
+        ar['lineplot_sense'] = ax.plot(x, sense, c=cg, label="Detection", alpha=0.1)
         # if plot_state:
         #     ax.subplot(111, aspect='equal')
         ar['axvspans_sense'] = [
