@@ -126,6 +126,21 @@ class TennExperiment(Application):
             self.p.make_root_interactive()
             self.p.check_bestnet_writable()
 
+        if args.live_netviz:
+            import subprocess
+            args.all_counts_stream = '{"source": "serve", "port": 8100}'
+            framework_root = envt.framework_root()
+            net_path = self.p.bestnet_file.path
+            viz_cmd = [
+                'love', '.',
+                # '--config', CONFIG_FILE,
+                '-n', net_path,
+                '--show_input_id',
+                '--show_output_id',
+                '-i', '{"source":"request","port":"8100","host":"localhost"}',
+            ]
+            subprocess.Popen(viz_cmd, cwd=framework_root / 'viz')
+
         if args.all_counts_stream is not None:
             self.iostream = neuro.IO_Stream()
             j = jst.smartload(args.all_counts_stream)
@@ -360,6 +375,10 @@ def get_parsers(conflict_handler='resolve'):
         """)
         sub.add_argument('--explore', action='store_true',
                          help="Show the Project Folder after the run.")
+
+    # Run-only args
+    sub_run.add_argument('--live_netviz', action='store_true',
+                         help="Show a visualization of the network in the lua app.")
 
     # Training args
     sub_train.add_argument('--network', default=None,
