@@ -160,7 +160,7 @@ def plot_compare2():
     plt.show()
 
 
-def plot_netsize(fig, ax, proj):
+def ei_df_from_proj(proj: UnzippedProject):
     def ei_dict(epochinfo: EpochInfo):
         d = dataclasses.asdict(epochinfo)
         d.update({
@@ -175,8 +175,16 @@ def plot_netsize(fig, ax, proj):
         lines = p.logfile.read_lines()
     epochinfos = [x for line in lines for x in [EpochInfo.from_str(line, error=False)] if x]
 
-    epochs = pd.DataFrame([ei_dict(ei) for ei in epochinfos])
+    return pd.DataFrame([ei_dict(ei) for ei in epochinfos])
 
+
+
+def plot_netsize(fig, ax, proj):
+    epochs = ei_df_from_proj(proj)
+    plot_netsize_from_epochs(fig, ax, epochs)
+
+
+def plot_netsize_from_epochs(fig, ax, epochs):
     gen, neurons_, synapses = epochs["i"], epochs["num_neurons"], epochs["num_synapses"]
 
     c_nrn = hr(0.35, 0.6, 0.45)
@@ -194,7 +202,10 @@ def plot_netsize(fig, ax, proj):
     ax.set_ylabel(" ")
     ax.set_title("SNN Network Size")
 
-    fig.set_figheight(2)
+    try:
+        fig.set_figheight(2)
+    except AttributeError:
+        pass
     fig.subplots_adjust(bottom=0.24)
 
     fig.subplots_adjust(left=0.11, right=0.95)
