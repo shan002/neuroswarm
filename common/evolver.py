@@ -41,7 +41,7 @@ class EpochInfo:
     fitnesses: Tuple[float, ...] = ()
 
     # regex for parsing str, not a field
-    RE_EPOCH: ClassVar = re.compile(r'(?P<ts>[1-2]\d{7}\s?[\d:]{0,8}\s?)>>>\s?Epoch\s*(?P<epoch>\d+):\s*(?P<score>[\d.]+):\s*(?P<fit>[\d.]+)\s\|\sNeurons:\s*(?P<neur>\d+)\sSynapses:\s*(?P<syn>\d+)\s\|\sTime:\s*([\d.]+)s?\s+(?:(?P<eonsms>[\d.]+)ms|(?P<eonsec>[\d.]+s?))\s+([\d.]+)s?')  # noqa: E501
+    RE_EPOCH: ClassVar = re.compile(r'(?P<ts>[1-2]\d{7}\s?[\d:]{0,8}\s?)>>>\s?Epoch\s*(?P<epoch>\d+):\s*(?P<score>-?[\d.]+):\s*(?P<fit>-?[\d.]+)\s\|\sNeurons:\s*(?P<neur>\d+)\sSynapses:\s*(?P<syn>\d+)\s\|\sTime:\s*([\d.]+)s?\s+(?:(?P<eonsms>[\d.]+)ms|(?P<eonsec>[\d.]+s?))\s+([\d.]+)s?')  # noqa: E501
 
     @property
     def t_total(self) -> float:
