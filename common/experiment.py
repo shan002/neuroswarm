@@ -75,22 +75,25 @@ class TennExperiment(Application):
                 # no project name specified, so use the experiment name and timestamp
                 suffix = args.environment if args.pname_suffix is None else args.pname_suffix
                 project_name = f"{time.strftime('%y%m%d-%H%M%S')}{'-' + suffix if suffix else ''}"
-                self.p = project.Project(path=args.root / project_name, name=project_name)
+                self.p = project.UnzippedProject(path=args.root / project_name, name=project_name)
             elif args.project is None:
                 # no project name specified; ask user
                 path = project.inquire_project(root=args.root)
                 self.p = project.UnzippedProject(path=path, name=path.name)
-                self.p.unzip()  # no effect if not a zip file
             elif RE_CONTAINS_SEP.search(args.project):  # project name contains a path separator
                 project_name = pathlib.Path(args.project).name
                 if args.root is not DEFAULT_PROJECT_BASEPATH:
                     print("WARNING: You seem to have specified a root path AND a full project path.")
                     print(f"The root path will be ignored; path={args.project}")
-                self.p = project.Project(path=args.project, name=project_name)
+                self.p = project.UnzippedProject(path=args.project, name=project_name)
             else:
                 project_name = args.project
-                self.p = project.Project(path=args.root / project_name, name=project_name, overwrite=args.overwrite_project)
-            self.log_fitnesses = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+                self.p = project.UnzippedProject(path=args.root / project_name, name=project_name, overwrite=args.overwrite_project)
+            if not self.p._original_path.exists():
+                msg = f"Project path {self.p._original_path} does not exist."
+                raise FileNotFoundError(msg)
+            self.p.unzip()  # no effect if not a zip file
+            self.log_fitnesses = self.p.log_popfit
 
         # app_params = ['encoder_ticks', ]
         self.app_params = dict()
