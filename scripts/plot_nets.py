@@ -6,7 +6,6 @@ import subprocess
 import signal
 
 def main():
-    # Expand ~
     VIZ_DIR     = os.path.expanduser('~/neuromorphic/framework/viz')
     CONFIG_FILE = os.path.expanduser('~/neuromorphic/framework/viz/config/config.json')
 
@@ -27,7 +26,7 @@ def main():
     print("Starting simulation:", " ".join(sim_cmd))
     sim_proc = subprocess.Popen(sim_cmd)
 
-    # Give the sim a moment to bind port 8100
+    # Give the sim a moment to bind. I am using 1 here.
     time.sleep(1)
 
     # Start viz process
@@ -52,8 +51,8 @@ def main():
         viz_proc.send_signal(signal.SIGINT)
         retcode = 1
 
-    # Make sure we clean up the sim process
-    if sim_proc.poll() is None:  # still running?
+    # Clean up the sim process
+    if sim_proc.poll() is None:  # Checking if it's still running...
         print("Stopping simulation process")
         sim_proc.terminate()
         sim_proc.wait()
