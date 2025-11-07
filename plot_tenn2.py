@@ -48,8 +48,9 @@ def run(app: ConnorMillingExperiment, args):
     import matplotlib.pyplot as plt
     # fig = graphing.plot_multiple(world)
     # fig.suptitle('')
+    fig.savefig(app.p.ensure_file_parents(f"/mnt/c/Users/sbhatt28/Downloads/250910-143127/zip_files/plots/agent_trajectories_all.pdf"))
     for fig, _axs in graph_each(world):
-        fig.savefig(app.p.ensure_file_parents(f"plots/agent_trajectories_{fig.number}.pdf"))
+        fig.savefig(app.p.ensure_file_parents(f"/mnt/c/Users/sbhatt28/Downloads/250910-143127/zip_files/plots/agent_trajectories_{fig.number}.pdf"))
 
     fig, _ax = graphing.plot_fitness(world)
     # fig.suptitle('')
