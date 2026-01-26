@@ -28,7 +28,6 @@ class CaspianBinaryRemappedController(CaspianBinaryController):
         # action: bool = bool(proc.output_vectors())  # old. don't use.
         data = self.decoder.get_data_from_processor(self.processor)
         data = [int(round(x)) for x in data]
-        print(data)
         # three bins. One for +v, -v, omega.
         v = self.scale_v * (data[1] - data[0])
         w = self.scale_w * (data[3] - data[2])
