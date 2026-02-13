@@ -178,7 +178,6 @@ def ei_df_from_proj(proj: UnzippedProject):
     return pd.DataFrame([ei_dict(ei) for ei in epochinfos])
 
 
-
 def plot_netsize(fig, ax, proj):
     epochs = ei_df_from_proj(proj)
     plot_netsize_from_epochs(fig, ax, epochs)
@@ -193,10 +192,10 @@ def plot_netsize_from_epochs(fig, ax, epochs):
     ax.plot(gen, neurons_, c=c_nrn, label='# of Neurons', alpha=0.9)
     ax.plot(gen, synapses, c=c_syn, label='# of Synapses', alpha=0.9)
 
-    ax.annotate(f'{int(neurons_.iloc[-1])} ', (gen.iloc[-1], neurons_.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_nrn)
-    ax.annotate(f'{int(synapses.iloc[-1])} ', (gen.iloc[-1], synapses.iloc[-1]), textcoords="offset points", xytext=(2, -8), ha='left', color=c_syn)
+    ax.annotate(f'{int(neurons_.iloc[-1])} ', (gen.iloc[-1], neurons_.iloc[-1]), textcoords="offset points", xytext=(2, -5), ha='left', color=c_nrn)
+    ax.annotate(f'{int(synapses.iloc[-1])} ', (gen.iloc[-1], synapses.iloc[-1]), textcoords="offset points", xytext=(2, -5), ha='left', color=c_syn)
 
-    ax.legend(loc='upper right')
+    ax.legend(loc='upper right', ncols=2)
     # ax.xlabel("Time (seconds)")
     ax.set_xlabel("Epochs")
     ax.set_ylabel(" ")

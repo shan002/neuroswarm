@@ -18,6 +18,7 @@ import rss.graphing as graphing
 # typing:
 from typing import override
 from swarmsim.world.RectangularWorld import RectangularWorld
+from swarmsim.metrics.AbstractMetric import AbstractMetric
 
 from common.argparse import ArgumentError
 
@@ -37,6 +38,12 @@ class ConnorMillingExperiment(TennExperiment):
         self.log_trajectories = args.log_trajectories
         self.use_caspian = getattr(args, 'caspian', True)
 
+        if self.agents is None and self.args.action != 'train':
+            try:
+                self.agents = self.p.experiment['agents']
+            except (KeyError, IndexError, FileNotFoundError, AttributeError):
+                pass
+
         # register controller type with RSS
         if self.use_caspian:
             from rss.CaspianBinaryController import CaspianBinaryController
@@ -53,10 +60,23 @@ class ConnorMillingExperiment(TennExperiment):
 
         self.log("initialized experiment_tenn2")
 
-    def simulate(self, processor, network, init_callback=lambda x: x):
-        # import rss.rss2 as rss
-        from swarmsim.config import register_dictlike_type
+    def fetch_world_config(self):
         from swarmsim.world.RectangularWorld import RectangularWorldConfig
+        from swarmsim import yaml
+        if self.args.action != 'train':
+            # try:
+            #     with open(self.p.artifacts / 'env.yaml', 'r') as f:
+            #         d = yaml.load(f)
+            # except FileNotFoundError:
+            #     pass
+            # config = RectangularWorldConfig.from_dict(d)
+            config = RectangularWorldConfig.from_yaml(self.world_yaml)
+        else:
+            config = RectangularWorldConfig.from_yaml(self.world_yaml)
+        return config
+
+    def simulate(self, processor, network, init_callback=None):
+        from swarmsim.config import register_dictlike_type
         from swarmsim.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
         from swarmsim.world.simulate import main as simulator
         from swarmsim import metrics
@@ -77,7 +97,7 @@ class ConnorMillingExperiment(TennExperiment):
             register_dictlike_type('controller', "CaspianBinaryRemappedController", CasPyanBinaryRemappedController)
 
         # setup world
-        config = RectangularWorldConfig.from_yaml(self.world_yaml)
+        config = self.fetch_world_config()
         config.stop_at = self.cycles
         agent_config = config.spawners[0]['agent']
         agent_config['track_io'] = self.track_history
@@ -89,8 +109,9 @@ class ConnorMillingExperiment(TennExperiment):
 
         config.metrics = [
             metrics.Circliness(history=max(self.cycles, 1), avg_history_max=450),
-            # metrics.Aggregation(history=max(self.cycles, 1)),
-            # metrics.DistanceSizeRatio(history=max(self.cycles, 1)),
+            metrics.DelaunayDiffusion(history=max(self.cycles, 1)),
+            metrics.Aggregation(history=max(self.cycles, 1)),
+            metrics.DistanceSizeRatio(history=max(self.cycles, 1)),
         ]
 
         def callback(world, screen):
@@ -108,29 +129,63 @@ class ConnorMillingExperiment(TennExperiment):
 
         world_subscriber = WorldSubscriber(func=callback)
 
-        # allow for callback to modify config
-        config = init_callback(config)
-
-        world = simulator(  # type:ignore[reportPrivateLocalImportUsage]  # run simulator
+        simargs = dict(
             world_config=config,
             subscribers=[world_subscriber],
             gui=gui,
             show_gui=bool(gui),
             start_paused=self.start_paused,
         )
+
+        # allow for callback to modify config
+        if (callable(init_callback)
+            or hasattr(self, 'init_callback') and (init_callback := self.init_callback)):
+            simargs = init_callback(self, simargs)
+
+        world = simulator(**simargs)  # run simulator
         return world
 
-    def extract_fitness(self, world_output: RectangularWorld):
-        self.run_info = world_output.metrics[0].value_history if world_output.metrics else None
+    @staticmethod
+    def init_callback(self, simargs):
+        return simargs
+
+    def pick_metric(self, world, behavior: int | str | type[AbstractMetric] = 0):
+        if behavior in world.metrics:
+            return behavior
+        if isinstance(behavior, type):
+            behavior = behavior.name
+        if isinstance(behavior, int):
+            return world.metrics[behavior]
+        elif isinstance(behavior, str) and behavior:
+            # set metric to the first metric with the given name, or raise an error
+            for metric in world.metrics:
+                if metric.name and metric.name == behavior:
+                    return metric
+            for metric in world.metrics:
+                if type(metric).__name__ == behavior:
+                    return metric
+            else:
+                msg = f"Could not find metric '{behavior}' in world metrics"
+                raise IndexError(msg)
+        msg = f"behavior must be int, str, or type[AbstractMetric]. Got {type(behavior)}"
+        raise TypeError(msg)
+
+    def extract_fitness(self, world_output: RectangularWorld, behavior: int | str | type[AbstractMetric] = 0):
+        metric: AbstractMetric = self.pick_metric(world_output, behavior)
+        self.run_info = metric.value_history if world_output.metrics else None
         if not world_output.metrics:
             return 0.0
-        metric = world_output.metrics[0]
         return metric.average if metric.instantaneous else metric.value
 
     @override
-    def fitness(self, processor, network, init_callback=lambda x: x):
+    def fitness(self, processor, network, init_callback=None, return_multi=False):
         world_final_state = self.simulate(processor, network, init_callback)
-        return self.extract_fitness(world_final_state)
+
+        if return_multi:
+            metric = self.pick_metric(world_final_state, self.args.behavior)
+            return world_final_state, metric, self.extract_fitness(world_final_state, metric)
+
+        return self.extract_fitness(world_final_state, self.args.behavior)
 
     def as_config_dict(self):
         d = super().as_config_dict()
@@ -200,9 +255,8 @@ def run(app, args):
         net = app.net
 
     # Run app and print fitness
-    world = app.simulate(proc, net)
-    fitness = app.extract_fitness(world)
-    print(f"Fitness: {fitness:8.4f}")
+    world, metric, fitness = app.fitness(proc, net, return_multi=True)
+    print(f"Fitness ({metric.name}): {fitness:8.4f}")
 
     if args.log_trajectories:
         import matplotlib.pyplot as plt
@@ -270,6 +324,7 @@ def get_parsers(parser, subpar):
                          type=int, help="# of agents to run with.",)
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for sim")
+        sub.add_argument('--behavior', default=0, help="behavior to run. Either int or string matching a behavior name.")
 
     # for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
     #     pass  # sp[key].add_argument()
@@ -295,24 +350,26 @@ def get_parsers(parser, subpar):
     return parser, subpar
 
 
-def main():
+def main(name="connorsim_snn_eons-v01", cls=ConnorMillingExperiment, parser_callback=None):
     parser, subpar = common.experiment.get_parsers()
     parser, subpar = get_parsers(parser, subpar)  # modify parser
+    if callable(parser_callback):
+        parser, subpar = parser_callback(parser, subpar)
 
     args = parser.parse_args()
 
-    args.environment = "connorsim_snn_eons-v01"  # type: ignore[reportAttributeAccessIssue]
+    args.environment = name
     if args.project is None and args.logfile is None:
         args.logfile = "tenn2_train.log"
 
-    app = ConnorMillingExperiment(args)
+    app = cls(args)
 
     # Do the appropriate action
-    if args.action == "train":  # type: ignore[reportAttributeAccessIssue]
+    if args.action == "train":
         common.experiment.train(app, args)
-    elif args.action == "test":  # type: ignore[reportAttributeAccessIssue]
+    elif args.action == "test":
         test(app, args)
-    elif args.action == "run":  # type: ignore[reportAttributeAccessIssue]
+    elif args.action == "run":
         run(app, args)
     else:
         raise RuntimeError("No action selected")

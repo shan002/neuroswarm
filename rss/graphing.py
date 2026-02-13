@@ -62,12 +62,17 @@ def supyrlabel(self, t, **kwargs):
     return _suplabels(self, t, info, **kwargs)
 
 
-def plot_fitness(world):
-    fig, ax = plt.subplots()
+def plot_fitness(world, fig=None, ax=None):
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+    elif ax is None:
+        ax = fig.subplots()
     metric = world.metrics[0]
     ax.plot(metric.value_history)
     if metric.instantaneous:
-        ax.set_title(f"Average {metric.name}: {metric.average:0.4f}")
+        # ax.set_title(f"Final Instantaneous{metric.name}: {metric.average:0.4f}, "
+        #              f"averaged over {metric.history_size} time steps")
+        ax.set_title(f"Instantaneous {metric.name}")
     else:
         ax.set_title(f"Instantaneous {metric.name}: {metric.value:0.4f}")
     ax.set_xlabel("Time Steps")
