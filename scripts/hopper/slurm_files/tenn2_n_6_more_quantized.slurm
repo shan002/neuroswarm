@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Give your job a name to distinguish it from other jobs you run.
-#SBATCH --job-name=tenn2_n_6_mq
+#SBATCH --job-name=tenn2_n_6_mq_real_values
 
 ## General partitions: all-HiPri, bigmem-HiPri   --   (12 hour limit)
 ##                     all-LoPri, bigmem-LoPri, gpuq  (5 days limit)
@@ -21,7 +21,7 @@
 #SBATCH --mem=8G        # Total memory needed per task (units: K,M,G,T)
 
 ## Specify how much time your job needs. (default: see partition above)
-#SBATCH --time=0-22:00  # Total time needed for job: Days-Hours:Minutes
+#SBATCH --time=0-10:00  # Total time needed for job: Days-Hours:Minutes
 
 #SBATCH --cpus-per-task 48
 
@@ -33,11 +33,11 @@ cd turtwig/
 export MAKE_PARENTS=true
 
 ## Run your program or script | Takes approximately 1 min / epoch
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 40 -N 6
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 41 -N 6
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 42 -N 6
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 43 -N 6
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 44 -N 6
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 45 -N 6
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 46 -N 6
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq -p 48 --save_best --epochs 500 --eons_seed 47 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 40 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 41 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 42 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 43 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 44 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 45 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 46 -N 6
+echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/mq-rv -p 48 --save_best --epochs 500 --eons_seed 47 -N 6
