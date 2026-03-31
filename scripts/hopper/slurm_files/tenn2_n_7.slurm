@@ -33,13 +33,13 @@ cd turtwig/
 export MAKE_PARENTS=true
 
 ## Run your program or script | Takes approximately 1 min / epoch
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 40 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 41 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 42 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 43 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 44 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 45 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 46 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 47 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 48 -N 7
-echo y | python experiment_tenn2_plus.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 49 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 40 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 41 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 42 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 43 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 44 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 45 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 46 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 47 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 48 -N 7
+echo y | python experiment_tenn2.py train --root ~/neuromorphic/turtwig/out/tenn2/bc-n-7 -p 48 --save_best --epochs 500 --eons_seed 49 -N 7
