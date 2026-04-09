@@ -66,11 +66,11 @@ class CasPyanBinaryController(AbstractController):
         self.decoder: list
         self.processor: casPYan.Processor
 
-    @staticmethod  # to get encoder structure/#neurons for external network generation (EONS)
-    def get_default_encoders(neuro_tpc=1):
+    # to get encoder structure/#neurons for external network generation (EONS)
+    def get_default_encoders(self, neuro_tpc):
         encoder_neurons, decoder_neurons = 2, 4
-        encoders = [ende.RateEncoder(neuro_tpc, [0.0, 1.0]) for _ in range(encoder_neurons)]
-        decoders = [ende.RateDecoder(neuro_tpc, [0.0, 1.0]) for _ in range(decoder_neurons)]
+        encoders = [ende.RateEncoder(neuro_tpc, (0.0, 1.0)) for _ in range(encoder_neurons)]
+        decoders = [ende.RateDecoder(neuro_tpc, (0.0, 1.0)) for _ in range(decoder_neurons)]
 
         return (
             len(encoders),
@@ -137,6 +137,15 @@ class CasPyanBinaryController(AbstractController):
         sensor: BinaryFOVSensor = self.parent.sensors[0]
         self.parent.set_color_by_id(sensor.detection_id)
 
-        v, omega = self.run_processor(sensor.current_state)
+        try:
+            v, omega = self.run_processor(sensor.current_state)
+        except Exception:
+            v, omega = 0, 0
         self.requested = v, omega
         return self.requested
+
+    def draw(self, screen, offset):
+        """Visualization"""
+        pan, zoom = np.asarray(offset[0]), offset[1]
+        super().draw(screen, offset)
+        # self.parent.set_color_by_id(sensor.detection_id)

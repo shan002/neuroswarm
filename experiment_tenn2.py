@@ -53,10 +53,11 @@ class ConnorMillingExperiment(TennExperiment):
             from rss.CasPyanBinaryController import CasPyanBinaryController
             from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
             self.controller, self.controller_remapped = CasPyanBinaryController, CasPyanBinaryRemappedController
-
-        self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
-
         self.start_paused = getattr(args, 'start_paused', False)
+
+
+        # self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
+        self.n_inputs, self.n_outputs, _, _ = self.bootstrap_controller_encoders()
 
         self.log("initialized experiment_tenn2")
 
@@ -214,6 +215,11 @@ class ConnorMillingExperiment(TennExperiment):
             self.delete_rss()
         return world
 
+    def bootstrap_controller_encoders(self):
+        world = self.get_sample_world(delete_rss=True)
+        controller = world.population[1].controller
+        return controller.n_inputs, controller.n_outputs, controller.encoder, controller.decoder
+
     def delete_rss(self):
         if 'rss' in globals():
             del rss  # noqa
@@ -350,7 +356,7 @@ def get_parsers(parser, subpar):
     return parser, subpar
 
 
-def main(name="connorsim_snn_eons-v01", cls=ConnorMillingExperiment, parser_callback=None):
+def main(name="connorsim_snn_eons-v01", cls=ConnorMillingExperiment, parser_callback=None, run=run, test=test):
     parser, subpar = common.experiment.get_parsers()
     parser, subpar = get_parsers(parser, subpar)  # modify parser
     if callable(parser_callback):

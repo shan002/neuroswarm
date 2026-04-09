@@ -120,8 +120,9 @@ class CaspianBinaryController(AbstractController):
 
         self.extra_ticks = extra_ticks
 
-        self.processor_params = self.network.get_data("processor")
-        self.setup_processor(self.processor_params)
+        if self.network:
+            self.processor_params = self.network.get_data("processor")
+            self.setup_processor(self.processor_params)
 
         self.sensor_id = sensor_id
 
@@ -132,8 +133,8 @@ class CaspianBinaryController(AbstractController):
         self.decoder: neuro.DecoderArray
         self.processor: caspian.Processor
 
-    @staticmethod  # to get encoder structure/#neurons for external network generation (EONS)
-    def get_default_encoders(neuro_tpc=1):
+    # to get encoder structure/#neurons for external network generation (EONS)
+    def get_default_encoders(self, neuro_tpc=1):
         encoder_neurons, decoder_neurons = 2, 4
         encoder_params = {
             "dmin": [0] * encoder_neurons,  # two bins for each binary input + random
@@ -213,9 +214,16 @@ class CaspianBinaryController(AbstractController):
         return v, w
 
     def get_actions(self, agent) -> tuple[float, float]:
-        sensor: BinaryFOVSensor = self.parent.sensors[0]
-        self.parent.set_color_by_id(sensor.detection_id)
-
-        v, omega = self.run_processor(sensor.current_state)
+        self.latest_observation = self.parent.sensors[self.sensor_id].current_state
+        try:
+            v, omega = self.run_processor(self.latest_observation)
+        except Exception:
+            v, omega = 0, 0
         self.requested = v, omega
         return self.requested
+
+    def draw(self, screen, offset):
+        """Visualization"""
+        pan, zoom = np.asarray(offset[0]), offset[1]
+        super().draw(screen, offset)
+        # self.parent.set_color_by_id(sensor.detection_id)
