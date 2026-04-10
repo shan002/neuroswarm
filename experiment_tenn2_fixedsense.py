@@ -425,3 +425,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# python experiment_tenn2_fixedsense.py run --network ./results/best.json --cy 1000 --start_paused --plot --log_trajectories --track_history
