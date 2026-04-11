@@ -1,6 +1,8 @@
 import os
+import re
 import time
 import datetime
+import numbers
 import numpy as np
 from multiprocessing import Pool
 from tqdm.contrib.concurrent import process_map
@@ -9,13 +11,17 @@ import tqdm
 import neuro
 import eons
 
-from .utils import make_template
+from .tennnetwork import make_template
 from .application import Application
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 # typing
 from typing import Tuple, override
+
+
+DEFAULT_MOA_STATE = [1, 1, 1, 1, 1]
 
 
 @dataclass
@@ -34,6 +40,9 @@ class EpochInfo:
     validation: float | None = None
     fitnesses: Tuple[float, ...] = ()
 
+    # regex for parsing str, not a field
+    RE_EPOCH: ClassVar = re.compile(r'(?P<ts>[1-2]\d{7}\s?[\d:]{0,8}\s?)>>>\s?Epoch\s*(?P<epoch>\d+):\s*(?P<score>-?[\d.]+):\s*(?P<fit>-?[\d.]+)\s\|\sNeurons:\s*(?P<neur>\d+)\sSynapses:\s*(?P<syn>\d+)\s\|\sTime:\s*([\d.]+)s?\s+(?:(?P<eonsms>[\d.]+)ms|(?P<eonsec>[\d.]+s?))\s+([\d.]+)s?')  # noqa: E501
+
     @property
     def t_total(self) -> float:
         return self.t_end - self.t_start
@@ -51,6 +60,42 @@ class EpochInfo:
         eons_ms = self.t_eons * 1000
         out += f" | Time: {self.t_fitness:7.4f}s {eons_ms:5.1f}ms {self.t_total:6.4f}"
         return out
+
+    @property
+    def num_neurons(self):
+        return self.best_network.num_nodes() if self.best_network else self._num_nodes
+
+    @property
+    def num_synapses(self):
+        return self.best_network.num_edges() if self.best_network else self._num_edges
+
+    @classmethod
+    def from_str(cls, s, error=True):
+        match = cls.RE_EPOCH.search(s)
+        if not match:
+            if error:
+                msg = f"Could not parse string {s}"
+                raise ValueError(msg)
+            return None
+        (t_end, epoch, score, fit, neur, syn,
+         t_fitness, eonsms, eonsec, t_total) = match.groups()
+        t_end = datetime.datetime.strptime(t_end.strip(), "%Y%m%d %H:%M:%S").timestamp()
+        new = cls(
+            i=int(epoch),
+            t_start=t_end - float(t_total),
+            t_fitness=float(t_fitness),
+            t_eons=float(eonsms) / 1000 if eonsms else float(eonsec),
+            t_end=t_end,
+            t_elapsed=float(t_total),
+            best_net_id=None,
+            best_network=None,
+            best_fitness=float(fit),
+            best_score=float(score),
+            validation=None,
+        )
+        new._num_nodes = int(neur)
+        new._num_edges = int(syn)
+        return new
 
 
 class Evolver:
@@ -101,20 +146,31 @@ class Evolver:
 
         self.net_callback = lambda net: net
 
-    def initialize_population(self, moa_state=1):
+    def initialize_population(self, moa_state: list[int] | None = DEFAULT_MOA_STATE):
         if self.do_print:
             t0 = time.time()
 
         # Create a template network with the right number of inputs & outputs
-        template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs)  # type: ignore[reportAttributeAccessIssue]
+        template_net = make_template(self.sim, self.app.n_inputs, self.app.n_outputs, self.eo.rng)
         self.eo.set_template_network(template_net)
 
         # Generate a new initial population for this EONS instance
-        self.pop = self.eo.generate_population(self.eons_params, moa_state)
+        self.pop = self.generate_population(self.eons_params, moa_state)
 
         if self.do_print:
             print("Initialized population of {} networks in {:8.5f} seconds".format(
                 len(self.pop.networks), time.time() - t0))
+
+    def generate_population(self, eons_params, moa_state: list[int] | None = None):
+        if moa_state is None:
+            return self.eo.generate_population(eons_params)
+        elif moa_state == DEFAULT_MOA_STATE:
+            try:
+                return self.eo.generate_population(eons_params, moa_state)
+            except TypeError:
+                return self.eo.generate_population(eons_params, 1)
+        else:
+            return self.eo.generate_population(self.eons_params, moa_state)
 
     def pre_epoch(self):
         f = getattr(self.app, 'pre_epoch', None)

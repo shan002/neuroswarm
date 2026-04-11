@@ -48,7 +48,6 @@ def get_module_version(module):
         return version(module.__version__)
 
 
-
 def search_git_root(path, max_recursions=10):
     path = pl.Path(path)
     return _search_git_root(path, 0, max_recursions=max_recursions)
@@ -93,3 +92,15 @@ def git_porcelain(path='.'):
 def git_hash(path='.'):
     ret = sp.run(['git', 'rev-parse', 'HEAD'], stdout=sp.PIPE, stderr=sp.PIPE, cwd=path)
     return ret.stdout.decode('utf-8').strip()
+
+
+def framework_root():
+    try:
+        import neuro
+    except ImportError:
+        return
+    framework = pl.Path(neuro.__file__).parents[4]
+    if framework.name == 'framework':
+        return framework
+    else:
+        raise FileNotFoundError("Could not find framework folder.")

@@ -1,4 +1,6 @@
 class Application:
+    n_inputs: int
+    n_outputs: int
 
     def __init__(self):  # type:ignore[reportMissingSuperCall]
         pass

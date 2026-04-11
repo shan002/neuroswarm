@@ -1,11 +1,11 @@
 import numpy as np
-from .CaspianBinaryController import CaspianBinaryController
+from .CasPyanBinaryController import CasPyanBinaryController
 
 # typing
 from typing import Any, override
 
 
-class CaspianBinaryRemappedController(CaspianBinaryController):
+class CasPyanBinaryRemappedController(CasPyanBinaryController):
 
     @override
     def run_processor(self, observation):
@@ -15,7 +15,10 @@ class CaspianBinaryRemappedController(CaspianBinaryController):
         input_vector = b2oh(observation)
         # input_vector += (1,)  # add 1 as constant on input to 4th input neuron
 
-        spikes = self.encoder.get_spikes(input_vector)
+        # encode to spikes
+        input_slice = input_vector[:len(self.encoder)]
+        spikes = [enc.get_spikes(x) for enc, x in zip(self.encoder, input_slice)]
+        # run processor
         self.processor.apply_spikes(spikes)
         self.processor.run(self.extra_ticks)
         if self.neuro_track_all:
@@ -25,11 +28,11 @@ class CaspianBinaryRemappedController(CaspianBinaryController):
             neuron_counts += self.processor.neuron_counts()
             self.neuron_counts = neuron_counts.tolist()
         # action: bool = bool(proc.output_vectors())  # old. don't use.
-        data = self.decoder.get_data_from_processor(self.processor)
+        data = [dec.decode(node.history) for dec, node in zip(self.decoder, self.processor.outputs)]
         data = [int(round(x)) for x in data]
         # three bins. One for +v, -v, omega.
-        v = self.scale_v * (data[1] - data[0])
-        w = self.scale_w * (data[3] - data[2])
+        # v = self.scale_v * (data[1] - data[0])
+        # w = self.scale_w * (data[3] - data[2])
         # these values were taken from an average of speeds/turning rates
         # from measurements of Turbopis 1, 2, 3, 4 @ (100, 90, +-0.5)
         v_mapping = [0.0, 0.276,]

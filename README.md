@@ -1,5 +1,27 @@
 # Kevin's Neuromorphic Stuff
 
+## What is this?
+
+This is a collection of scripts and utilities for creating emergent swarm behaviors.
+Specifically, it contains code for training and running Spiking Neural Networks (SNNs) for a homogenous swarm of 2D ground robots,
+where each robot has an SNN which chooses the next action to take. Each robot has a simple sensor (i.e. binary infrared sensor),
+unicycle dynamics, and no communication capabilities.
+
+## How do I use it?
+
+Training requires access to the Tennlab framework, but running a pre-trained SNN does not.
+
+### Running a pre-trained SNN
+
+Follow our [installation instructions](https://github.com/GMU-ASRC/neuroswarm/wiki/Getting-started-without-Tennlab) for how to run a pre-trained SNN.
+The last step will show you how to run the included test SNN, which should show a swarm of robots performing the milling behavior.
+
+### Training (requires Tennlab)
+
+Because we use [EONS](https://www.osti.gov/biblio/1649325) to train, you will need access to the private EONS source code, which is part of the closed-source portion of the [Tennlab neuromorphic framework](https://github.com/TENNLab-UTK/framework-open/). If you are part of GMU-ASRC and do not have access, contact Kevin to have a request for access forwarded. If you have access to the Tennlab bitbucket, see our wiki for how to [install with Tennlab](https://github.com/GMU-ASRC/neuroswarm/wiki/Getting-started-with-Tennlab-Framework).
+
+### Requirements
+
 To install, you'll need to have a python virtual environment setup first.
 
 Experiments 1-5 require Tennlab's framework for now, so install that first and use its default environment (`source framework/pyframework/bin/activate`)
