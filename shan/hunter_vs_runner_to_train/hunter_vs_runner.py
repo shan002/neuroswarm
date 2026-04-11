@@ -13,7 +13,7 @@ from tqdm import tqdm
 from copy import deepcopy
 
 from common.experiment import TennExperiment, train, get_parsers as common_get_parsers
-from common.utils import make_template
+from common.tennnetwork import make_template
 from common import env_tools as envt
 from common.argparse import ArgumentError
 from common.project import Logger
@@ -70,7 +70,7 @@ class HunterVsRunnerExperiment(TennExperiment):
         point = np.random.uniform(low=mins, high=maxs)
 
         return point
-        
+
     def get_rand_pos_outside_goal(self, config):
         goal = [object for object in config.objects if object['name'] == 'goal'][0]
         agent_radius = config.spawners[0]['agent']['agent_radius']
@@ -204,7 +204,7 @@ class HunterVsRunnerExperiment(TennExperiment):
                 fitnesses.append(f)
 
         avg = float(np.mean(fitnesses)) if fitnesses else 0.0
-        print(f"Fitnesses: {fitnesses} → mean = {avg}")
+        # print(f"Fitnesses: {fitnesses} → mean = {avg}")
         return avg
 
     def as_config_dict(self):
@@ -224,7 +224,7 @@ class HunterVsRunnerExperiment(TennExperiment):
         cycles = self.cycles
         self.cycles = 0
         proc = caspian.Processor(self.processor_params)
-        template_net = make_template(proc, self.n_inputs, self.n_outputs)
+        template_net = make_template(proc, self.n_inputs, self.n_outputs, ...)
         world = self.simulate(proc, template_net)
         self.cycles = cycles
         if delete_rss:
@@ -266,7 +266,7 @@ def run(app, args):
         proc = caspian.Processor(app.processor_params)
 
         if app.net is None:
-            from common.utils import make_template
+            from common.tennnetwork import make_template
             app.net = make_template(proc, app.n_inputs, app.n_outputs)
         net = app.net
 
@@ -308,7 +308,7 @@ def run(app, args):
             fullpath = os.path.join(out_dir, img_name)
             plt.savefig(fullpath)
             print(f"Saved fitness plot to {fullpath}")
-        
+
         if getattr(args, 'plot_fit', False):
             plt.show()
 
@@ -358,7 +358,7 @@ def get_parsers(parser, subpar):
                            help="pass this to enable sensor vs. output plotting.")
     sp['run'].add_argument('--plot_fit', action='store_true',
                            help="after running all trials, plot fitness vs. trial number")
-    sp['run'].add_argument('--save_plot',   action='store_true', 
+    sp['run'].add_argument('--save_plot',   action='store_true',
                            help="also save the trial‐by‐trial plot_fit plot as PNG")
     sp['run'].add_argument('--log_trajectories', action='store_true',
                            help="pass this to log sensor vs. output to file.")

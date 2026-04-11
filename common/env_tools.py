@@ -85,7 +85,7 @@ def get_branch_name(path) -> str:
 
 
 def git_porcelain(path='.'):
-    ret = sp.run(['git', 'status', '--porcelain'], stdout=sp.PIPE, stderr=sp.PIPE, cwd=path)
+    ret = sp.run(['git', 'status', '--porcelain'], stdout=sp.PIPE, stderr=sp.PIPE, cwd=path, timeout=10)
     return ret.stdout.decode('utf-8').strip()
 
 

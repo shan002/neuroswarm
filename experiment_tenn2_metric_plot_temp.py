@@ -11,7 +11,7 @@ from tqdm import tqdm
 # Provided Python utilities from tennlab framework/examples/common
 from common.experiment import TennExperiment
 import common.experiment
-from common.utils import make_template
+from common.tennnetwork import make_template
 from common import env_tools as envt
 
 from rss.CaspianBinaryController import CaspianBinaryController
@@ -48,7 +48,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.start_paused = getattr(args, 'start_paused', False)
 
         self.log("initialized experiment_tenn2")
-    
+
     def pre_epoch(self, eons):
         if self.n_epoch%50 == 0:
             self.agent_count += 1
@@ -74,10 +74,10 @@ class ConnorMillingExperiment(TennExperiment):
         # setup world
         config = RectangularWorldConfig.from_yaml(self.world_yaml)
 
-        
+
         if hasattr(self, "agent_count"):
             config.spawners[0]['n'] = self.agent_count
-        
+
             # print(config.spawners[0]['n'])
             # Remove the attribute so that it is only used once per epoch.
             # del self.random_agent_count
@@ -157,7 +157,7 @@ class ConnorMillingExperiment(TennExperiment):
         cycles = self.cycles
         self.cycles = 0
         proc = caspian.Processor(self.processor_params)
-        template_net = make_template(proc, self.n_inputs, self.n_outputs)
+        template_net = make_template(proc, self.n_inputs, self.n_outputs, ...)
         world = self.simulate(proc, template_net)
         self.cycles = cycles
         if delete_rss:
