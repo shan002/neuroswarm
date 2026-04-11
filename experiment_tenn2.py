@@ -55,11 +55,10 @@ class ConnorMillingExperiment(TennExperiment):
             self.controller, self.controller_remapped = CasPyanBinaryController, CasPyanBinaryRemappedController
         self.start_paused = getattr(args, 'start_paused', False)
 
-
         # self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
         self.n_inputs, self.n_outputs, _, _ = self.bootstrap_controller_encoders()
 
-        self.log("initialized experiment_tenn2")
+        self.log(f"initialized {self.__class__.__name__} {self.args.action}")
 
     def fetch_world_config(self):
         from swarmsim.world.RectangularWorld import RectangularWorldConfig
@@ -87,15 +86,11 @@ class ConnorMillingExperiment(TennExperiment):
 
         # register controller type with RSS
         if self.use_caspian:
-            from rss.CaspianBinaryController import CaspianBinaryController
-            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
-            register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
-            register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
+            register_dictlike_type('controller', "CaspianBinaryController", self.controller)
+            register_dictlike_type('controller', "CaspianBinaryRemappedController", self.controller_remapped)
         else:
-            from rss.CasPyanBinaryController import CasPyanBinaryController
-            from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
-            register_dictlike_type('controller', "CaspianBinaryController", CasPyanBinaryController)
-            register_dictlike_type('controller', "CaspianBinaryRemappedController", CasPyanBinaryRemappedController)
+            register_dictlike_type('controller', "CaspianBinaryController", self.controller)
+            register_dictlike_type('controller', "CaspianBinaryRemappedController", self.controller_remapped)
 
         # setup world
         config = self.fetch_world_config()
