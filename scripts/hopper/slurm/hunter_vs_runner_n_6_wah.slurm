@@ -15,7 +15,7 @@
 
 ## Slurm can send you updates via email
 #SBATCH --mail-type=BEGIN,END,FAIL         # ALL,NONE,BEGIN,END,FAIL,REQUEUE,..
-#SBATCH --mail-user=sbhatt28@gmu.edu     # Put your GMU email address here
+##SBATCH --mail-user=sbhatt28@gmu.edu     # Put your GMU email address here
 
 ## Specify how much memory your job needs. (2G is the default)
 #SBATCH --mem=8G        # Total memory needed per task (units: K,M,G,T)
@@ -41,8 +41,8 @@ export MAKE_PARENTS=true
 # srun python hunter_vs_runner.py train --root out/farp/6-wah -p 48 --cy 2000 --world_yaml ./world_wah.yaml --save_best --epochs 200 --eons_seed 24
 
 # Took 13:35:23 on last run
-srun echo y | python hunter_vs_runner_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 511 --eons_seed 20
-srun echo y | python hunter_vs_runner_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 512 --eons_seed 21
-srun echo y | python hunter_vs_runner_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 513 --eons_seed 22
-srun echo y | python hunter_vs_runner_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 514 --eons_seed 23
-srun echo y | python hunter_vs_runner_test.py train --root ~/neuromorphic/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 515 --eons_seed 24
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 511 --eons_seed 20
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 512 --eons_seed 21
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 513 --eons_seed 22
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 514 --eons_seed 23
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6-wah --save_best --world_yaml ./world_wah.yaml -p 48 -T 10 --cy 3000 --epochs 200 --trial_seed 515 --eons_seed 24
