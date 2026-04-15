@@ -37,6 +37,7 @@ spawners:
   region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
   agent:
     type: DetectionRegion
-    collides: false
+    collides: Detect
+    name: goal
 metadata:
   hash: _hash
