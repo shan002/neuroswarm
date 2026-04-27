@@ -3,7 +3,7 @@ type: "RectangularWorld"
 size:  # in meters
   - 8
   - 8
-time_step: !np 1 / 40  # 0.025 seconds
+time_step: !np 1 / 20  # 0.05 seconds
 seed: 2023
 spawners:
 - type: UniformAgentSpawner
@@ -39,5 +39,52 @@ spawners:
     type: DetectionRegion
     collides: Detect
     name: goal
+- type: DonutAgentSpawner
+  n: 1
+  center: [5.0, 5.0]
+  inner_radius: 2.0
+  outer_radius: 4.0
+  agent:
+    type: MazeAgent
+    name: intruder
+    sensors:
+    - type: Targeter
+      attribute: position
+      target_name: goal
+      hold: holdfirst
+      store_history: false
+    # - type: BinaryFOVSensor
+    #   theta: 0.45  # Vision Angle / 2 (Radians)
+    #   distance: 1.0  # meters. previously 2.55
+    #   show: true
+    #   bias: 0
+    #   store_history: false
+    #   target_team: blue
+    # controller:
+    #   type: BinaryController
+    #   a: [0.2, 0.2]
+    #   b: [0.2, 0]
+    #   sensor_id: 0
+    controller:
+      type: WaypointPIDController
+      sensor_id: 0
+      speed_pid:
+        p: 1.0
+        i: 0.0
+        d: 0.0
+        max: 0.06
+      steer_pid:
+        p: 1.0
+        i: 0.0
+        d: 0.0
+        min: -0.6
+        max: 0.6
+    team: red
+    agent_radius: !np 0.3 / 2
+    body_color:
+      - 255
+      - 20
+      - 30
+    body_filled: true
 metadata:
   hash: _hash

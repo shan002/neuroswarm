@@ -2,10 +2,13 @@ from pathlib import Path
 
 from swarmsim.config import register_dictlike_type, register_agent_type
 from swarmsim.agent.MazeAgent import MazeAgentConfig
+from swarmsim.world.spawners.DonutSpawner import DonutAgentSpawner
 from swarmsim.world.RectangularWorld import RectangularWorldConfig
 from swarmsim.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
 from swarmsim.world.simulate import main as simulator
 # from ..gui import TennlabGUI
+
+register_dictlike_type('spawners', 'DonutAgentSpawner', DonutAgentSpawner)
 
 cwd = Path(__file__).resolve().parent
 config = RectangularWorldConfig.from_yaml(cwd / "world.yaml")
