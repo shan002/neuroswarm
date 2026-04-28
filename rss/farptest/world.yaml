@@ -39,6 +39,8 @@ spawners:
     type: DetectionRegion
     collides: Detect
     name: goal
+    target_teams:
+    - red
 - type: DonutAgentSpawner
   n: 1
   center: [5.0, 5.0]
@@ -86,5 +88,10 @@ spawners:
       - 20
       - 30
     body_filled: true
+metrics:
+- type: EntityLen
+  history: 100
+  target_name: goal
+  attribute: collided
 metadata:
   hash: _hash

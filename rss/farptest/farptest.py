@@ -23,4 +23,5 @@ simargs = dict(
     show_gui=True,
     start_paused=True,
 )
-world = simulator(**simargs)  # run simulator
+world = simulator(**simargs, stop_detection=lambda w: w.metrics[0].current_value)  # run simulator
+print(world.metrics[0].current_value)
