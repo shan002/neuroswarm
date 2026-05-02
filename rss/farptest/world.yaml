@@ -90,8 +90,14 @@ spawners:
     body_filled: true
 metrics:
 - type: EntityLen
+  name: How many red on goal
   history: 100
   target_name: goal
+  attribute: collided
+- type: EntityLen
+  name: How many collided with red
+  history: 1
+  target_name: intruder
   attribute: collided
 metadata:
   hash: _hash
