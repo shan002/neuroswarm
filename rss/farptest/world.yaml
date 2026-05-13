@@ -67,6 +67,9 @@ spawners:
     #   a: [0.2, 0.2]
     #   b: [0.2, 0]
     #   sensor_id: 0
+    # controller:
+    #   type: HumanController
+    #   joystick: 0
     controller:
       type: WaypointPIDController
       sensor_id: 0
@@ -91,13 +94,17 @@ spawners:
 metrics:
 - type: EntityLen
   name: How many red on goal
-  history: 100
+  # history: 100
   target_name: goal
   attribute: collided
-- type: EntityLen
-  name: How many collided with red
-  history: 1
-  target_name: intruder
-  attribute: collided
+- type: StepsUntil
+  name: Time to capture
+  default: 0
+  metric:
+    type: EntityLen
+    name: How many collided with red
+    history: 1
+    target_name: intruder
+    attribute: collided
 metadata:
   hash: _hash

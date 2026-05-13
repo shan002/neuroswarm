@@ -3,30 +3,110 @@ type: "RectangularWorld"
 size:  # in meters
   - 8
   - 8
-time_step: !np 1 / 40  # 0.025 seconds
+time_step: !np 1 / 20  # 0.05 seconds
 seed: 2023
 spawners:
-  - type: UniformAgentSpawner
-    n: 06  # default number of agents BUT may be overridden by user args
-    facing: away
-    region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
-    agent: !include turbopi.yaml
-  - type: UniformAgentSpawner
-    n: 1
-    region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
-    agent:
-      type: DetectionRegion
-# init_type:
-#   type: "RectRandomInit"  # A starting region where agents will spawn at t=0
-#   bb:
-#     - - 3.4 # X (m) Upper Left Bounding Box Corner
-#       - 3.4 # Y
-#     - - 4.6 # X (m) Lower Right Bounding Box Corner
-#       - 4.6 # Y
-#   seed: 2023 # ADD SEED HERE TO ENSURE SAME INITIALIZATION EVERY TIME
-# padding: 0
-# collide_walls: false  # Use No Environment Walls for this problem
-# show_walls: false  # Hide Default Walls,
+- type: UniformAgentSpawner
+  n: 06  # default number of agents BUT may be overridden by user args
+  facing: away
+  region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
+  agent:
+    type: MazeAgent
+    sensors:
+    - type: BinaryFOVSensor
+      theta: 0.45  # Vision Angle / 2 (Radians)
+      distance: 1.0  # meters. previously 2.55
+      show: true
+      bias: 0
+      store_history: false
+      target_team: blue
+    controller:
+      type: "CaspianMultibitController"
+      neuro_tpc: 10
+      scale_forward_speed: 0.3  # m/s forward speed factor
+      scale_turning_rates: 1.0  # rad/s turning rate factor
+      sensor_ids: [0]
+    team: blue
+    agent_radius: !np 0.2 / 2
+    body_color:
+      - 0
+      - 70
+      - 255
+    body_filled: true
+- type: UniformAgentSpawner
+  n: 1
+  region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
+  agent:
+    type: DetectionRegion
+    collides: Detect
+    name: goal
+    target_teams:
+    - red
+- type: DonutAgentSpawner
+  n: 1
+  center: [5.0, 5.0]
+  inner_radius: 2.0
+  outer_radius: 4.0
+  agent:
+    type: MazeAgent
+    name: intruder
+    sensors:
+    - type: Targeter
+      attribute: position
+      target_name: goal
+      hold: holdfirst
+      store_history: false
+    # - type: BinaryFOVSensor
+    #   theta: 0.45  # Vision Angle / 2 (Radians)
+    #   distance: 1.0  # meters. previously 2.55
+    #   show: true
+    #   bias: 0
+    #   store_history: false
+    #   target_team: blue
+    # controller:
+    #   type: BinaryController
+    #   a: [0.2, 0.2]
+    #   b: [0.2, 0]
+    #   sensor_id: 0
+    # controller:
+    #   type: HumanController
+    #   joystick: 0
+    controller:
+      type: WaypointPIDController
+      sensor_id: 0
+      speed_pid:
+        p: 1.0
+        i: 0.0
+        d: 0.0
+        max: 0.3
+      steer_pid:
+        p: 1.0
+        i: 0.0
+        d: 0.0
+        min: -1.0
+        max: 1.0
+    team: red
+    agent_radius: !np 0.3 / 2
+    body_color:
+      - 255
+      - 20
+      - 30
+    body_filled: true
+metrics:
+- type: StepsUntil
+  name: Time to capture
+  default: 0
+  metric:
+    type: EntityLen
+    name: How many collided with red
+    history: 1
+    target_name: intruder
+    attribute: collided
+- type: EntityLen
+  name: How many red on goal
+  history: 1
+  target_name: goal
+  attribute: collided
 stop_at: world.total_steps > 1000 or world.metrics[0].value
 metadata:
   hash: _hash
