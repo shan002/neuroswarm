@@ -11,7 +11,7 @@ import casPYan
 import casPYan.ende.rate as ende
 
 
-class CasPyanBinaryController(AbstractController):
+class CasPyanMultibitController(AbstractController):
 
     def __init__(
         self,

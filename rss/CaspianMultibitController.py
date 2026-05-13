@@ -11,7 +11,7 @@ import neuro
 import caspian
 
 
-class CaspianBinaryController(AbstractController):
+class CaspianMultibitController(AbstractController):
 
     def __init__(
         self,
@@ -29,6 +29,8 @@ class CaspianBinaryController(AbstractController):
         #     config = MazeAgentCaspianConfig()
 
         super().__init__(agent=agent, parent=parent)
+
+        self.sensor_ids = sensor_ids
 
         self.scale_v = scale_forward_speed  # m/s
         self.scale_w = scale_turning_rates  # rad/s
@@ -56,8 +58,6 @@ class CaspianBinaryController(AbstractController):
 
         self.processor_params = self.network.get_data("processor")
         self.setup_processor(self.processor_params)
-
-        self.sensor_ids = sensor_ids
 
         # typing
         self.n_inputs: int

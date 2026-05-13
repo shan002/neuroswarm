@@ -48,15 +48,22 @@ class ConnorMillingExperiment(TennExperiment):
         if self.use_caspian:
             from rss.CaspianBinaryController import CaspianBinaryController
             from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+            from rss.CaspianMultibitController import CaspianMultibitController
+            # from rss.CaspianMultibitRemappedController import CaspianMultibitRemappedController
             self.controller, self.controller_remapped = CaspianBinaryController, CaspianBinaryRemappedController
+            self.multibit_controller = CaspianMultibitController
         else:
             from rss.CasPyanBinaryController import CasPyanBinaryController
             from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
+            from rss.CasPyanMultibitController import CasPyanMultibitController
+            # from rss.CasPyanMultibitRemappedController import CasPyanMultibitRemappedController
             self.controller, self.controller_remapped = CasPyanBinaryController, CasPyanBinaryRemappedController
+            self.multibit_controller = CasPyanMultibitController
         self.start_paused = getattr(args, 'start_paused', False)
 
         # self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
-        self.n_inputs, self.n_outputs, _, _ = self.bootstrap_controller_encoders()
+        if self.args.action == 'train':
+            self.n_inputs, self.n_outputs, _, _ = self.bootstrap_controller_encoders()
 
         self.log(f"initialized {self.__class__.__name__} {self.args.action}")
 
@@ -85,12 +92,9 @@ class ConnorMillingExperiment(TennExperiment):
         network.set_data("processor", self.processor_params)
 
         # register controller type with RSS
-        if self.use_caspian:
-            register_dictlike_type('controller', "CaspianBinaryController", self.controller)
-            register_dictlike_type('controller', "CaspianBinaryRemappedController", self.controller_remapped)
-        else:
-            register_dictlike_type('controller', "CaspianBinaryController", self.controller)
-            register_dictlike_type('controller', "CaspianBinaryRemappedController", self.controller_remapped)
+        register_dictlike_type('controller', "CaspianBinaryController", self.controller)
+        register_dictlike_type('controller', "CaspianBinaryRemappedController", self.controller_remapped)
+        register_dictlike_type('controller', "CaspianMultibitController", self.multibit_controller)
 
         # setup world
         config = self.fetch_world_config()
@@ -326,6 +330,8 @@ def get_parsers(parser, subpar):
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for sim")
         sub.add_argument('--behavior', default=0, help="behavior to run. Either int or string matching a behavior name.")
+        sub.add_argument('--caspian', type=bool, default=True,
+                           help="pass this to pause the simulation at startup. Press Space to unpause.")
 
     # for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
     #     pass  # sp[key].add_argument()
