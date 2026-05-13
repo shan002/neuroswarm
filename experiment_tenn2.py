@@ -120,13 +120,6 @@ class ConnorMillingExperiment(TennExperiment):
         if self.agents is not None:
             config.spawners[0]['n'] = self.agents
 
-        config.metrics = [
-            metrics.Circliness(history=max(self.cycles, 1), avg_history_max=450),
-            metrics.DelaunayDiffusion(history=max(self.cycles, 1)),
-            metrics.Aggregation(history=max(self.cycles, 1)),
-            metrics.DistanceSizeRatio(history=max(self.cycles, 1)),
-        ]
-
         def callback(world, screen):
             a = world.selected
             if a and self.iostream:
