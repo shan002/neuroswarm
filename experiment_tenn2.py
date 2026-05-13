@@ -111,7 +111,8 @@ class ConnorMillingExperiment(TennExperiment):
 
         # setup world
         config = self.fetch_world_config()
-        config.stop_at = self.cycles
+        if self.cycles is not None:
+            config.stop_at = self.cycles
         agent_config = config.spawners[0]['agent']
         agent_config['track_io'] = self.track_history
         controller_config = agent_config['controller']

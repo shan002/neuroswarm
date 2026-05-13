@@ -30,4 +30,4 @@ metrics:
 # show_walls: false  # Hide Default Walls,
 metadata:
   hash: _hash
-# stop_at: 1000000 # Upper Simulation Limit (timesteps)
+stop_at: 1000 # Upper Simulation Limit (timesteps)
