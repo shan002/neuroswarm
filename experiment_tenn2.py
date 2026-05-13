@@ -1,5 +1,7 @@
 from io import BytesIO
 import os
+import numpy as np
+from functools import partial
 # import matplotlib.pyplot as plt
 
 # import caspian
@@ -44,6 +46,8 @@ class ConnorMillingExperiment(TennExperiment):
             except (KeyError, IndexError, FileNotFoundError, AttributeError):
                 pass
 
+        self.seed_from_yaml()
+
         # register controller type with RSS
         if self.use_caspian:
             from rss.CaspianBinaryController import CaspianBinaryController
@@ -66,6 +70,15 @@ class ConnorMillingExperiment(TennExperiment):
             self.n_inputs, self.n_outputs, _, _ = self.bootstrap_controller_encoders()
 
         self.log(f"initialized {self.__class__.__name__} {self.args.action}")
+
+    def seed_from_yaml(self):
+        if (
+            self.args.trials is None
+            or (seed := self.fetch_world_config().seed) is None
+        ):
+            self.seeds = []
+            return
+        self.seeds = np.random.default_rng(seed).integers(0, 2**32, size=self.args.trials).tolist()
 
     def fetch_world_config(self):
         from swarmsim.world.RectangularWorld import RectangularWorldConfig
@@ -178,14 +191,24 @@ class ConnorMillingExperiment(TennExperiment):
         return metric.average if metric.instantaneous else metric.value
 
     @override
-    def fitness(self, processor, network, init_callback=None, return_multi=False):
-        world_final_state = self.simulate(processor, network, init_callback)
-
-        if return_multi:
-            metric = self.pick_metric(world_final_state, self.args.behavior)
-            return world_final_state, metric, self.extract_fitness(world_final_state, metric)
-
-        return self.extract_fitness(world_final_state, self.args.behavior)
+    def fitness(self, processor, network, init_callback=None, return_multi=False, agg=sum):
+        if self.seeds:
+            def modify_seed(self, simargs, seed):
+                simargs['world_config'].seed = seed
+                return init_callback(self, simargs) if init_callback else simargs
+            worlds = [self.simulate(processor, network, partial(modify_seed, seed=seed))
+                      for seed in self.seeds]
+            if return_multi:
+                metrics = [self.pick_metric(world, self.args.behavior) for world in worlds]
+                fitnesses = [self.extract_fitness(world, metric) for world, metric in zip(worlds, metrics)]
+                return worlds, metrics, fitnesses
+            return agg([self.extract_fitness(world, self.args.behavior) for world in worlds])
+        else:
+            world_final_state = self.simulate(processor, network, init_callback)
+            if return_multi:
+                metric = self.pick_metric(world_final_state, self.args.behavior)
+                return world_final_state, metric, self.extract_fitness(world_final_state, metric)
+            return self.extract_fitness(world_final_state, self.args.behavior)
 
     def as_config_dict(self):
         d = super().as_config_dict()
@@ -261,7 +284,11 @@ def run(app, args):
 
     # Run app and print fitness
     world, metric, fitness = app.fitness(proc, net, return_multi=True)
-    print(f"Fitness ({metric.name}): {fitness:8.4f}")
+    if app.seeds:
+        for w, m, f in zip(world, metric, fitness):
+            print(f"Seed {w.seed}\t\tFitness ({m.name}): {f:8.4f}")
+    else:
+        print(f"Fitness ({metric.name}): {fitness:8.4f}")
 
     if args.log_trajectories:
         import matplotlib.pyplot as plt
@@ -330,6 +357,9 @@ def get_parsers(parser, subpar):
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for sim")
         sub.add_argument('--behavior', default=0, help="behavior to run. Either int or string matching a behavior name.")
+        sub.add_argument('--trials', type=int, default=None,
+                         help="number of trials to run. Set to None to run one trial with world.yaml[seed]."
+                         " Values greater than 0 will use the world.yaml[seed] to generate more seeds.")
         sub.add_argument('--caspian', type=bool, default=True,
                            help="pass this to pause the simulation at startup. Press Space to unpause.")
 
