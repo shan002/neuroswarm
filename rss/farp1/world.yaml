@@ -20,6 +20,13 @@ spawners:
       bias: 0
       store_history: false
       target_team: blue
+    - type: BinaryFOVSensor
+      theta: 0.45  # Vision Angle / 2 (Radians)
+      distance: 1.0  # meters. previously 2.55
+      show: true
+      bias: 0
+      store_history: false
+      target_team: red
     controller:
       type: "CaspianMultibitController"
       neuro_tpc: 10
@@ -93,9 +100,26 @@ spawners:
       - 30
     body_filled: true
 metrics:
+- type: JinjaMetric
+  template: |
+    {% set ttc = world.metrics[1].value %}
+    {% set ttd = world.metrics[2].value %}
+    {% set redwin = world.metrics[3].value %}
+  expression: -world.total_steps if redwin else -1 * ttc
+- type: StepsUntil
+  # name: Time to capture
+  name: Time to detect
+  default: -1
+  metric:
+    type: AnyAgent
+    name: red detected by blue
+    # value_on_found: True
+    include_teams:
+    - blue
+    expression: agent.sensors[1].current_state
 - type: StepsUntil
   name: Time to capture
-  default: 0
+  default: -1
   metric:
     type: EntityLen
     name: How many collided with red
@@ -107,6 +131,6 @@ metrics:
   history: 1
   target_name: goal
   attribute: collided
-stop_at: world.total_steps > 1000 or world.metrics[0].value
+stop_at: world.total_steps > 1000 or world.metrics[3].value or world.metrics[1].value > 0
 metadata:
   hash: _hash

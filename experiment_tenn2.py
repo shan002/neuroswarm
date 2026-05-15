@@ -281,6 +281,8 @@ def run(app, args):
     if app.seeds:
         for w, m, f in zip(world, metric, fitness):
             print(f"Seed {w.seed}\t\tFitness ({m.name}): {f:8.4f}")
+        print(f"Sum: {sum(fitness):8.4f} \t Avg: {sum(fitness) / len(fitness):8.4f} \t Std: {np.std(fitness):8.4f}")
+        print(f"Min: {min(fitness):8.4f} \t Max: {max(fitness):8.4f} \t out of {len(fitness)} trials")
     else:
         print(f"Fitness ({metric.name}): {fitness:8.4f}")
 
