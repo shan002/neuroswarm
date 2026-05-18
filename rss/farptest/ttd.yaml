@@ -20,6 +20,13 @@ spawners:
       bias: 0
       store_history: false
       target_team: blue
+    - type: BinaryFOVSensor
+      theta: 0.45  # Vision Angle / 2 (Radians)
+      distance: 1.0  # meters. previously 2.55
+      show: true
+      bias: 0
+      store_history: false
+      target_team: red
     controller:
       type: BinaryController
       a: [0.2, 0.2]
@@ -77,13 +84,13 @@ spawners:
         p: 1.0
         i: 0.0
         d: 0.0
-        max: 0.06
+        max: 0.3
       steer_pid:
         p: 1.0
         i: 0.0
         d: 0.0
-        min: -0.6
-        max: 0.6
+        min: -1.0
+        max: 1.0
     team: red
     agent_radius: !np 0.3 / 2
     body_color:
@@ -92,19 +99,40 @@ spawners:
       - 30
     body_filled: true
 metrics:
-- type: EntityLen
-  name: How many red on goal
-  # history: 100
-  target_name: goal
-  attribute: collided
+- type: JinjaMetric
+  name: Time to Detect
+  metrics:
+  template: |
+    {% set ttd = world.metrics[1].value %}
+    {% set ttc = world.metrics[2].value %}
+    {% set redwin = world.metrics[3].value %}
+    {% set captured = ttc if ttc > 0 else False %}
+    {% set detected = ttd if ttd > 0 else False %}
+  expression: -1000 if redwin or not detected else -(ttd|abs)
 - type: StepsUntil
-  name: Time to capture
-  default: 0
+  name: Time to Detect sub
+  default: -1
+  metric:
+    type: AnyAgent
+    name: red detected by blue
+    # value_on_found: True
+    include_teams:
+    - blue
+    expression: agent.sensors[1].current_state
+- type: StepsUntil
+  name: Time to Capture sub
+  default: -1
   metric:
     type: EntityLen
     name: How many collided with red
     history: 1
     target_name: intruder
     attribute: collided
+- type: EntityLen
+  name: How many red on goal
+  history: 1
+  target_name: goal
+  attribute: collided
+stop_at: world.total_steps > 1000 or world.metrics[0].module.redwin or world.metrics[0].module.detected
 metadata:
   hash: _hash

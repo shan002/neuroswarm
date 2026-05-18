@@ -16,14 +16,10 @@ from swarmsim.world.simulate import main as simulator
 
 
 cwd = Path(__file__).resolve().parent
-config = RectangularWorldConfig.from_yaml(cwd / "world.yaml")
+config = RectangularWorldConfig.from_yaml(cwd / "ttc.yaml")
 
 # gui = TennlabGUI(x=0, y=0, h=0, w=300)
 # gui.position = "sidebar_right"
-
-
-def stop(world):
-    return any(m.current_value for m in world.metrics) or world.total_steps > 3000
 
 
 def test_single(config):
@@ -36,13 +32,11 @@ def test_single(config):
         # gui=gui,
         show_gui=False,
         start_paused=False,
-        stop_detection=stop,
     )  # run simulator
     for m in world.metrics:
         stats[m.name] += m.value
-        if m.name == "Time to capture":
-            ttc = m.value
-    return stats, ttc
+    out = world.metrics[0].value
+    return stats, out
 
 
 def test_mp(samples=100):
@@ -58,17 +52,53 @@ def test_mp(samples=100):
         ret_arr = process_map(test_single, configs)
         stats, ttcs = zip(*ret_arr)
         print('n: ', n, sum(stats, Counter()))
-        for run in stats:
-            run['Time to capture'] = -1000 if run['Time to capture'] == 0 else run['Time to capture']
+        for stat in stats:
             results.append({
                 'n': n,
-                **run
+                **stat
             })
     # ttcs = np.array(ttcs)
-    # ttcs[ttcs == 0] = -1000
     # sns.histplot(ttcs)
     # plt.show()
     print(results)
+    return results
+
+
+def test_grid(samples=100):
+    seeds = np.random.default_rng(getattr(config, "seed", None)).integers(0, 2**31, size=samples)
+    results = []
+    x, y = np.meshgrid(
+        np.linspace(0.0, 0.3, 12),
+        np.linspace(0.0, 0.6, 7),
+    )
+    configs = []
+    n = 6
+    for v, w in zip(x.flatten(), y.flatten()):
+        for i in range(samples):
+            tempconfig = copy.deepcopy(config)
+            tempconfig.seed = seeds[i]
+            tempconfig.spawners[0]['n'] = n
+            controller = tempconfig.spawners[0]['agent']['controller']
+            controller['a'] = [v, w]
+            controller['b'] = [v, -w]
+            configs.append(tempconfig)
+    ret_arr = process_map(test_single, configs)
+    stats, ttcs = zip(*ret_arr)
+    print('n: ', n, sum(stats, Counter()))
+    for stat, cfg in zip(stats, configs):
+        results.append({
+            'n': n,
+            'v': cfg.spawners[0]['agent']['controller']['a'][0],
+            'w': cfg.spawners[0]['agent']['controller']['a'][1],
+            **stat
+        })
+    # ttcs = np.array(ttcs)
+    # sns.histplot(ttcs)
+    # plt.show()
+    print(results)
+    import pandas as pd
+    df = pd.DataFrame(results)
+    df.to_csv('grid.csv')
     return results
 
 
@@ -79,12 +109,14 @@ def run():
         # gui=gui,
         show_gui=True,
         start_paused=True,
-        stop_detection=stop,
     )  # run simulator
     for m in world.metrics:
         print(f"{m.name}: {m.current_value}")
+    return world
 
 
 if __name__ == "__main__":
-    # test_mp()
-    run()
+    test_mp()
+    # test_grid()
+    # run()
+    # print(*test_single(config))

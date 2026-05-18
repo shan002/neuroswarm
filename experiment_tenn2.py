@@ -182,7 +182,7 @@ class ConnorMillingExperiment(TennExperiment):
         self.run_info = metric.value_history if world_output.metrics else None
         if not world_output.metrics:
             return 0.0
-        return metric.average if metric.instantaneous else metric.value
+        return metric.average if getattr(metric, 'default_aggregation', None) == 'average' else metric.value
 
     @override
     def fitness(self, processor, network, init_callback=None, return_multi=False, agg=sum):

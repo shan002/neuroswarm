@@ -28,11 +28,10 @@ spawners:
       store_history: false
       target_team: red
     controller:
-      type: "CaspianMultibitController"
-      neuro_tpc: 10
-      scale_forward_speed: 0.3  # m/s forward speed factor
-      scale_turning_rates: 1.0  # rad/s turning rate factor
-      sensor_ids: [0]
+      type: BinaryController
+      a: [0.2, 0.2]
+      b: [0.2, 0]
+      sensor_id: 0
     team: blue
     agent_radius: !np 0.2 / 2
     body_color:
@@ -101,39 +100,39 @@ spawners:
     body_filled: true
 metrics:
 - type: JinjaMetric
+  name: Time to Capture
   metrics:
-  - type: StepsUntil
-    # name: Time to capture
-    name: Time to detect
-    default: -1
-    metric:
-      type: AnyAgent
-      name: red detected by blue
-      # value_on_found: True
-      include_teams:
-      - blue
-      expression: agent.sensors[1].current_state
-  - type: StepsUntil
-    name: Time to capture
-    default: -1
-    metric:
-      type: EntityLen
-      name: How many collided with red
-      history: 1
-      target_name: intruder
-      attribute: collided
-  - type: EntityLen
-    name: How many red on goal
-    history: 1
-    target_name: goal
-    attribute: collided
   template: |
-    {% set ttd = metrics[0].value %}
-    {% set ttc = metrics[1].value %}
-    {% set redwin = metrics[2].value %}
+    {% set ttd = world.metrics[1].value %}
+    {% set ttc = world.metrics[2].value %}
+    {% set redwin = world.metrics[3].value %}
     {% set captured = ttc if ttc > 0 else False %}
     {% set detected = ttd if ttd > 0 else False %}
-  expression: -1000 if redwin or not detected else -(ttd|abs)
-stop_at: world.total_steps > 1000 or world.metrics[0].module.redwin or world.metrics[0].module.detected
+  expression: -1000 if redwin or not captured else -(ttc|abs)
+- type: StepsUntil
+  name: Time to Detect sub
+  default: -1
+  metric:
+    type: AnyAgent
+    name: red detected by blue
+    # value_on_found: True
+    include_teams:
+    - blue
+    expression: agent.sensors[1].current_state
+- type: StepsUntil
+  name: Time to Capture sub
+  default: -1
+  metric:
+    type: EntityLen
+    name: How many collided with red
+    history: 1
+    target_name: intruder
+    attribute: collided
+- type: EntityLen
+  name: How many red on goal
+  history: 1
+  target_name: goal
+  attribute: collided
+stop_at: world.total_steps > 1000 or world.metrics[0].module.redwin or world.metrics[0].module.captured
 metadata:
   hash: _hash
