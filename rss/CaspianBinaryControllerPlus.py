@@ -21,8 +21,8 @@ class CaspianBinaryControllerPlus(AbstractController):
 		neuro_tpc: int | None = 10,
 		extra_ticks: int = 5,
 		neuro_track_all: bool = False,
-		scale_forward_speed: float = 0.2,  # m/s forward speed factor
-		scale_turning_rates: float = 2.0,  # rad/s turning rate factor
+		scale_forward_speed: float = 0.276,  # m/s forward speed factor
+		scale_turning_rates: float = 0.602,  # rad/s turning rate factor
 		sensor_id: int = 0,
 	) -> None:
 		super().__init__(agent=agent, parent=parent)
