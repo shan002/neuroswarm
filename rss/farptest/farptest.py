@@ -116,7 +116,7 @@ def run():
 
 
 if __name__ == "__main__":
-    test_mp()
+    # test_mp()
     # test_grid()
-    # run()
+    run()
     # print(*test_single(config))
