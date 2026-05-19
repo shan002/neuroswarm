@@ -100,3 +100,4 @@ spawners:
     body_filled: true
 metadata:
   hash: _hash
+<<: !include ttc.yaml
