@@ -36,6 +36,7 @@ def main():
         '-n', target_network,
         '--show_input_id',
         '--show_output_id',
+        '--remove_unnecessary_neuron',
         '-i', '{"source":"request","port":"8100","host":"localhost"}',
     ]
 
