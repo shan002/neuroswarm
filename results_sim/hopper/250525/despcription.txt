@@ -1,0 +1,1 @@
+Kept initial conditions same from generation to generation but different from one epoch to other epoch.

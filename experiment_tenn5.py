@@ -6,9 +6,9 @@ import math
 from common.experiment import TennExperiment
 import common.experiment
 
-from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspianConfig
-from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspian
-from novel_swarms.metrics import AgentsAtGoal
+from swarmsim.agent.MazeAgentCaspian import MazeAgentCaspianConfig
+from swarmsim.agent.MazeAgentCaspian import MazeAgentCaspian
+from swarmsim.metrics import AgentsAtGoal
 
 
 class ConnorMillingExperiment(TennExperiment):

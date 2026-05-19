@@ -4,8 +4,6 @@ echo "WARNING"
 echo "This script will:"
 echo "* DELETE the contents of ~/neuromorphic"
 echo "* DELETE data stored in turtwig/results and turtwig/out"
-echo "* DELETE your pyenv installation"
-echo "* DELETE files related to libffi and autoconf, even if they're being used by other apps"
 echo "* DELETE this script and the deploy.sh install script (you'll need to redownload it)"
 echo
 echo "Running this script may result in data loss!"
@@ -21,13 +19,25 @@ then
     [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
 fi
 
-echo
-echo "To re-install, you can do: "
-echo
-echo "git clone https://gitlab.orc.gmu.edu/kzhu4/neuromorphic_experiments.git ~/neuromorphic/turtwig"
-echo "~/neuromorphic/turtwig/scripts/hopper/deploy.sh"
-echo
-echo "see also: https://gitlab.orc.gmu.edu/kzhu4/neuromorphic_experiments#cluster-installation"
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd $parent_path
+
+ORIGINURL=$(git remote get-url origin)
+GOT_ORIGINURL=$?
+if [ $GOT_ORIGINURL -ne 0 ]; then
+    echo "Could not get origin url from git remote."
+    echo "To re-download, fork https://github.com/GMU-ASRC/neuroswarm "
+    echo "Clone your fork via ssh to ~/neuromorphic/neuroswarm ,"
+    echo "Then run ~/neuromorphic/neuroswarm/scripts/hopper/deploy.sh"
+else
+    echo
+    echo "To re-install, you can do: "
+    echo
+    echo "git clone $ORIGINURL ~/neuromorphic/neuroswarm"
+    echo "~/neuromorphic/neuroswarm/scripts/hopper/deploy.sh"
+    echo
+fi
+echo "see also: https://github.com/GMU-ASRC/neuroswarm/tree/main/scripts/hopper"
 
 if [ ! -z ${VIRTUAL_ENV+x} ];  # deactivate if we're in a venv
 then
@@ -42,22 +52,6 @@ function removefrom_bashrc {
     grep -v "$LINE" $BASHRC > temp && mv temp $BASHRC
     return
 }
-
-echo "Removing pyenv from ~/.bashrc"
-removefrom_bashrc 'export PYENV_ROOT="$HOME/.pyenv"'
-removefrom_bashrc 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"'
-removefrom_bashrc 'eval "$(pyenv init -)"'
-
-set -x  # print commands
-rm -rf ~/privatemodules/autoconf-2.72
-rm -rf ~/privatemodules/libffi-3.4.6
-
-rm -rf ~/.pyenv
-
-rm -rf ~/.local/autoconf-2.72*  # also removes duplicate downloads
-rm -rf ~/.local/packages/autoconf-2.72
-rm -rf ~/.local/libffi-3.4.6*  # also removes duplicate downloads
-rm -rf ~/.local/packages/libffi-3.4.6
 
 rm -rf ~/neuromorphic
 { set +x; } 2>/dev/null  # stop printing commands  https://stackoverflow.com/a/19226038

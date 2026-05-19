@@ -2,7 +2,7 @@ from functools import cached_property
 
 import numpy as np
 
-from novel_swarms.agent.control.AbstractController import AbstractController
+from swarmsim.agent.control.AbstractController import AbstractController
 
 
 class RunnerController(AbstractController):

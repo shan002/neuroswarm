@@ -2,12 +2,17 @@
 
 __version__ = "0.0.1"
 
-import pathlib
+from functools import cached_property
+from ast import literal_eval
+import pathlib as pl
+import tempfile
+import zipfile
 import shutil
-import sys
 import time
+import csv
+import sys
 import os
-from novel_swarms import yaml
+from swarmsim import yaml
 from . import jsontools as jst
 
 # typing
@@ -15,7 +20,7 @@ from typing import override
 
 
 # required for training
-DEFAULT_PROJECT_BASEPATH = pathlib.Path("results")
+DEFAULT_PROJECT_BASEPATH = pl.Path("results")
 LOGFILE_NAME = "training.log"
 BESTNET_NAME = "best.json"
 POPULATION_FITNESS_NAME = "population_fitnesses.log"
@@ -34,8 +39,24 @@ def is_project_dir(path):
     return path.is_dir() and (path / RUNINFO_NAME).is_file()
 
 
+def contains_single_dir(path: pl.Path | None):
+    if path is None or not path.is_dir():
+        return False
+    it = path.iterdir()
+    try:
+        d = next(it)
+    except StopIteration:
+        return False
+    if not d.is_dir():
+        return False
+    try:
+        next(it)
+    except StopIteration:
+        return d if d.is_dir() else False
+
+
 def find_lastmodified_dir(basepath):
-    basepath = pathlib.Path(basepath)
+    basepath = pl.Path(basepath)
     projectdirs = [(child, os.path.getmtime(child)) for child in basepath.iterdir() if is_project_dir(child)]
     return max(projectdirs, key=lambda x: x[1])[0]
 
@@ -60,7 +81,7 @@ def inquire_project(root=None):
     return inquirer.fuzzy(choices=projects, message="Select a project").execute()
 
 
-def inquire_size(file: pathlib.Path, limit=300e6):  # 300 MB
+def inquire_size(file: pl.Path, limit=300e6):  # 300 MB
     size = file.stat().st_size
     if size < limit:
         return
@@ -72,6 +93,17 @@ def inquire_size(file: pathlib.Path, limit=300e6):  # 300 MB
     except ImportError:
         print(message)
         input("Press enter to continue, ctrl-c to cancel.")
+
+
+def read_tsv(path):
+    with open(path, 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        return list(reader)
+
+
+def yaml_safe_load(path):
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
 
 
 def get_dict(obj):
@@ -96,9 +128,9 @@ def get_config_dict(obj):
 
 
 cache = {}
-def ensure_dir_exists(path: os.PathLike, parents=True, exist_ok=True, **kwargs):
+def ensure_dir_exists(path: os.PathLike, parents=True, exist_ok=True, **kwargs):  # noqa: E302
     global cache
-    path = pathlib.Path(path)
+    path = pl.Path(path)
     fullpath = path.resolve()
     key = str(fullpath)
     if not cache.get(key, False):
@@ -108,7 +140,7 @@ def ensure_dir_exists(path: os.PathLike, parents=True, exist_ok=True, **kwargs):
 
 class File:
     def __init__(self, path: os.PathLike):
-        self.path = pathlib.Path(path)
+        self.path = pl.Path(path)
 
     def write(self, s):
         with open(self.path, 'w') as f:
@@ -131,6 +163,9 @@ class File:
     def as_dict(self):
         return {'path': str(self)}
 
+    def exists(self):
+        return self.path.exists()
+
 
 class Logger(File):
     def __init__(self, path, firstcall=None):
@@ -149,6 +184,12 @@ class Logger(File):
         d = super().as_dict()
         d.update({'firstcall': repr(self.firstcall)})
         return d
+
+    def read_text(self):
+        return self.path.read_text()
+
+    def read_lines(self):
+        return self.path.read_text().splitlines()
 
 
 class FolderlessProject:
@@ -186,7 +227,7 @@ class FolderlessProject:
 
     def check_bestnet_writable(self):
         # check that the best network path is writable
-        path = pathlib.Path(self.bestnet_file.path)
+        path = pl.Path(self.bestnet_file.path)
         if path.is_file():
             check_if_writable(path)
             print(f"WARNING: The output network file\n    {path}\nexists and will be overwritten!")
@@ -215,23 +256,103 @@ class FolderlessProject:
 
 
 class Project(FolderlessProject):
+    """Project class for managing project data.
+
+    Contains Paths to stuff in the project folder.
+
+    Parameters
+    ----------
+    path : str | pathlib.Path
+        Path to the project folder. Does not need to exist.
+    name : str, optional
+        Name of the project. If not specified, the name will be the same as the folder name.
+    overwrite : bool, default=False
+        Whether to overwrite existing files in the project folder. Defaults to False.
+    """
+
     isproj = True
 
     def __init__(self, name=None, path=None, overwrite=False):
         self.name = name
-        self.root = pathlib.Path(path) if path is not None else None
-        if name is None and isinstance(path, pathlib.Path):
+        self.root = pl.Path(path) if path is not None else None
+        if name is None and isinstance(self.root, pl.Path):
             # determine name from path
             self.name = self.root.name
         elif name is not None and path is None:
             # if name is given, use as project directory name
-            self.root = pathlib.Path(DEFAULT_PROJECT_BASEPATH / name)
+            self.root = pl.Path(DEFAULT_PROJECT_BASEPATH / name)
         self.allow_overwrite = overwrite
         self.bestnet_file = File(self.root / BESTNET_NAME)
         self.networks = Networks(self, NETWORKS_DIR_NAME)
         self.logfile = Logger(self.root / LOGFILE_NAME)
         self.popfit_file = Logger(self.root / POPULATION_FITNESS_NAME)
         self.popfit_file.firstcall = self._default_firstcall
+        self.artifacts = self.root / 'artifacts'
+        self._opened = True
+
+    @property
+    def original_path(self):
+        return self.root
+
+    def possibly_valid(self):
+        checks = [
+            self.logfile.exists(),
+            self.networks.exists(),
+            self.bestnet_file.exists(),
+            self.popfit_file.exists(),
+        ]
+        return self.root.exists() and any(checks)
+
+    @staticmethod
+    def _check_relpath(relpath):
+        path = pl.PurePath(relpath)
+        if path.is_absolute():
+            msg = f"Expected a relative path, got {relpath}"
+            raise ValueError(msg)
+
+    def pathrel(self, relpath: str | bytes | os.PathLike):
+        """Get a path relative to the project root.
+
+        Parameters
+        ----------
+        relpath : str | bytes | os.PathLike
+            The path relative to the project root.
+
+        Returns
+        -------
+        pathlib.Path
+            The joined path, relative to the project root.
+        """
+        self._check_relpath(relpath)
+        return self.root / relpath
+
+    def pathabs(self, relpath: str | bytes | os.PathLike):
+        """Get a path relative to the project root.
+
+        Parameters
+        ----------
+        relpath : str | bytes | os.PathLike
+            The path relative to the project root.
+
+        Returns
+        -------
+        pathlib.Path
+            The joined path, relative to the absolute path to the project root.
+        """
+        self._check_relpath(relpath)
+        return self.root.resolve() / relpath
+
+    __div__ = pathrel
+
+    def __truediv__(self, relpath):
+        return self.pathrel(relpath)
+
+    __getitem__ = pathrel
+
+    def __fspath__(self):
+        if self.root is None:
+            raise RuntimeError("Project has no path.")
+        return str(self.root)
 
     def load_bestnet(self,
         path_or_jsonstr: None | str | os.PathLike | File | dict = None,
@@ -258,17 +379,22 @@ class Project(FolderlessProject):
                 shutil.rmtree(self.root)   # type: ignore[reportArgumentType]
                 print(f"Deleted {self.root}.")
         elif not self.root.parent.is_dir():
-            print("WARNING: You're trying to put the project in")
-            print(str(self.root.parent))
-            print("but some part of it does not exist! Would you like to create it?")
-            s = input("Type 'y' to create it, anything else to exit. ")
-            if s.lower() not in ('y', 'yes'):
-                print("Exiting. Your filesystem has not been modified.")
-                sys.exit(1)
+            if 'MAKE_PARENTS' in os.environ and os.environ['MAKE_PARENTS'].lower() in ('true', '1'):
+                env_ask_parents = False
             else:
-                create_parents = True
+                env_ask_parents = True
+            if env_ask_parents:
+                print("WARNING: You're trying to put the project in")
+                print(str(self.root.parent))
+                print("but some part of it does not exist! Would you like to create it?")
+                s = input("Type 'y' to create it, anything else to exit. ")
+                if s.lower() not in ('y', 'yes'):
+                    print("Exiting. Your filesystem has not been modified.")
+                    sys.exit(1)
+            create_parents = True
         print(f"Creating project folder at {self.root}")
         ensure_dir_exists(self.root, parents=create_parents)
+        self._opened = True
 
     @property
     @override
@@ -286,6 +412,20 @@ class Project(FolderlessProject):
     def log_popfit(self, info):
         self.popfit_file += f"{time.time()}\t{info.i}\t{repr(info.fitnesses)}\n"
 
+    def read_popfit(self, error=True):
+        from swarmsim.yaml.mathexpr import safe_eval
+        if not self._opened:
+            raise RuntimeError("Project is not open.")
+        try:
+            data = read_tsv(self.popfit_path)
+        except FileNotFoundError as err:
+            if not error:
+                return []
+            msg = f"Could not read population fitness of project {self.name} "
+            msg += f"because it has no recorded {POPULATION_FITNESS_NAME} file."
+            raise FileNotFoundError(msg) from err
+        return list(zip(*([safe_eval(x) for x in line] for line in data)))
+
     def ensure_dir(self, relpath, parents=True, exist_ok=True, **kwargs):
         path = self.root / relpath
         ensure_dir_exists(path, parents=parents, exist_ok=exist_ok, **kwargs)
@@ -297,9 +437,34 @@ class Project(FolderlessProject):
         return path
 
     def save_yaml_artifact(self, name, obj):
-        artifacts = pathlib.Path(ARTIFACTS_DIR_NAME)
+        artifacts = pl.Path(ARTIFACTS_DIR_NAME)
         with open(self.ensure_file_parents(artifacts / name), "w") as f:
             yaml.dump(get_config_dict(obj), f)
+
+    def load_yaml(self, name):
+        with open(self.root / name, "r") as f:
+            return yaml.load(f)
+
+    def safe_load_yaml(self, name):
+        with open(self.root / name, "r") as f:
+            return yaml.load(f)
+
+    def explore(self):
+        from showinfm import show_in_file_manager
+        assert self.root
+        show_in_file_manager(str(self.root))
+
+    @cached_property
+    def env(self):
+        return yaml_safe_load(self.artifacts / 'env.yaml')
+
+    @cached_property
+    def experiment(self):
+        return yaml_safe_load(self.artifacts / 'experiment.yaml')
+
+    @cached_property
+    def evolver(self):
+        return yaml_safe_load(self.artifacts / 'evolver.yaml')
 
 
 class Networks:
@@ -310,4 +475,108 @@ class Networks:
         ensure_dir_exists(self.path, parents=False)
         return File(self.path / f"e{epoch}-{population_id}.json")
 
+    __call__ = get_file
 
+    def exists(self):
+        return self.path.exists()
+
+    def any(self):
+        return any(self.path.iterdir())
+
+
+class UnzippedProject(Project):
+    """Wrapper around Project which allows for usage of zipped project data.
+
+    The primary use case assumes that it gets initialized with a path to a .zip file.
+    In that case, it will unzip the file to a tmp directory.
+    However, if the path is an existing folder with project data, data won't be moved.
+
+    Parameters
+    ----------
+    path : str | pathlib.Path
+        Path to the project folder or zip file.
+    name : str, optional
+        Name of the project. If not specified, the name will be the same as the folder name.
+    overwrite : bool, default=False
+        Whether to overwrite existing files in the project folder. Defaults to False.
+    temp_path : str | pathlib.Path, optional
+        Path to the temporary directory. If not specified, a random prefix will be used.
+    """
+    def __init__(self, path, name=None, overwrite=False, temp_path=None):
+        self._original_path = pl.Path(path)
+        self._tempdir = None
+        self._opened = False
+        self.temp_path = temp_path
+        if self._original_path.is_dir() and not temp_path:
+            super().__init__(name=name, path=path, overwrite=overwrite)
+        else:
+            self.name = self._original_path.stem
+            self.allow_overwrite = overwrite
+
+    def downgrade(self):
+        super().__init__(name=self.original_path.stem,
+                         path=self.original_path,
+                         overwrite=self.allow_overwrite)
+        self._opened = True
+
+    @property
+    def original_path(self):
+        return self._original_path
+
+    def check_valid_zip(self):
+        if not self._original_path.is_file():
+            return False
+        return zipfile.is_zipfile(self._original_path)
+
+    def unzip(self):
+        if self._opened:
+            return self
+        if self._tempdir:
+            raise RuntimeError("Project is already unzipped.")
+        self._tempdir = tempfile.TemporaryDirectory(self.name, dir=self.temp_path)
+        if self._original_path.is_file():
+            with zipfile.ZipFile(self._original_path, "r") as d:
+                d.extractall(self._tempdir.name)
+        elif self._original_path.is_dir():
+            shutil.copytree(self._original_path, self._tempdir.name)
+        super().__init__(path=self._tempdir.name, name=self.name, overwrite=self.allow_overwrite)
+        if not self.possibly_valid() and (d := contains_single_dir(self.root)):
+            if UnzippedProject(path=d, name=d.name).possibly_valid():
+                super().__init__(path=d, name=d.name, overwrite=self.allow_overwrite)
+        return self
+
+    def __enter__(self):
+        self.unzip()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.cleanup()
+
+    def cleanup(self):
+        if self._tempdir:
+            self._tempdir.cleanup()
+            self._opened = False
+        self._tempdir = None
+
+
+if __name__ == "__main__":
+    # if a user runs this file as a script, unzip the project, then print some info
+    # and
+    import argparse
+    import shutil
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filenames", help="path to project directories or zips", nargs="+")
+    args = parser.parse_args()
+    for filename in args.filenames:
+        with UnzippedProject(filename) as proj:
+            print(f"Name: {proj.name}" '' if proj.root.exists() else " (missing)")
+            if hasattr(proj, "original_path"):
+                print(f" -Original root: {proj.original_path.parent}")
+            print(f"  logfile: {proj.logfile_path}" + ('' if proj.logfile_path.exists() else " (missing)"))
+            print(f"  runinfo: {proj.popfit_path}" + ('' if proj.popfit_path.exists() else " (missing)"))
+            print(f"  bestnet: {proj.bestnet_file.path}" + ('' if proj.bestnet_file.path.exists() else " (missing)"))
+            print(f"  networks: {proj.networks.path}" + ('' if proj.networks.path.exists() else " (missing)"))
+            print(f"  artifacts: {proj.root / ARTIFACTS_DIR_NAME}" + ('' if (proj.root / ARTIFACTS_DIR_NAME).exists() else " (missing)"))
+            if proj.bestnet_file.path.exists():
+                dest = (proj.original_path.parent / proj.name).with_suffix(".json")
+                shutil.copy(proj.bestnet_file.path, dest)

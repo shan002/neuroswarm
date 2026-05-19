@@ -1,15 +1,8 @@
 
-module load automake
-module load autotools
-module load readline
-module load bzip2
-module load sqlite
-module load use.own
-module load autoconf-2.72
-module load libffi-3.4.6
-# pyenv doctor
+module load use.own pyenv
 
-pyenv global 3.12.4
+PYTHON_LATEST="$(pyenv latest 3)"
+pyenv global $PYTHON_LATEST
 
 python --version
 pip --version

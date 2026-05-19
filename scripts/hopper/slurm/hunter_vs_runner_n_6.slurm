@@ -15,13 +15,13 @@
 
 ## Slurm can send you updates via email
 #SBATCH --mail-type=BEGIN,END,FAIL         # ALL,NONE,BEGIN,END,FAIL,REQUEUE,..
-#SBATCH --mail-user=sbhatt28@gmu.edu     # Put your GMU email address here
+##SBATCH --mail-user=sbhatt28@gmu.edu     # Put your GMU email address here
 
 ## Specify how much memory your job needs. (2G is the default)
-#SBATCH --mem=4G        # Total memory needed per task (units: K,M,G,T)
+#SBATCH --mem=8G        # Total memory needed per task (units: K,M,G,T)
 
 ## Specify how much time your job needs. (default: see partition above)
-#SBATCH --time=1-15:00  # Total time needed for job: Days-Hours:Minutes
+#SBATCH --time=1-20:00  # Total time needed for job: Days-Hours:Minutes
 
 #SBATCH --cpus-per-task 48
 
@@ -40,8 +40,9 @@ export MAKE_PARENTS=true
 # srun python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 23
 # srun python hunter_vs_runner.py train --root out/farp/6 -p 48 --cy 2000 --save_best --epochs 200 --eons_seed 24
 
-srun python hunter_vs_runner_test.py train --root out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 411 --eons_seed 20
-srun python hunter_vs_runner_test.py train --root out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 412 --eons_seed 21
-srun python hunter_vs_runner_test.py train --root out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 413 --eons_seed 22
-srun python hunter_vs_runner_test.py train --root out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 414 --eons_seed 23
-srun python hunter_vs_runner_test.py train --root out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 415 --eons_seed 24
+# Took 1-00:59:23 on last run
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 511 --eons_seed 20
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 512 --eons_seed 21
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 513 --eons_seed 22
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 514 --eons_seed 23
+srun echo y | python hunter_vs_runner_test.py train --root /scratch/$USER/turtwig/out/farp/6 --save_best -p 48 -T 10 --cy 2000 --epochs 200 --trial_seed 515 --eons_seed 24

@@ -1,0 +1,161 @@
+app: !!python/object:__main__.HunterVsRunnerExperiment
+  agents: null
+  app_params: {}
+  args: !!python/object:common.argparse.Namespace
+    action: train
+    agents: null
+    all_counts_stream: null
+    cycles: 2000
+    environment: connorsim_snn_eons-v01
+    eons_params: /home/sbhatt28/neuromorphic/turtwig/eons/std.json
+    eons_seed: 29
+    epochs: 500
+    label: null
+    log_trajectories: false
+    logfile: hunter_vs_runner_train.log
+    max_fitness: 9999999999
+    network: null
+    noviz: false
+    overwrite_project: false
+    plot_fit: false
+    pname_suffix: null
+    population_size: null
+    positions: null
+    prnet: null
+    processes: 48
+    project: null
+    root: !!python/object/apply:pathlib._local.PosixPath
+      args:
+      - /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp
+      resolved: /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp
+    runs: 1
+    save_all_nets: false
+    save_best_nets: true
+    snn_params: /home/sbhatt28/neuromorphic/turtwig/config/caspian.json
+    start_paused: false
+    stdin: false
+    track_history: false
+    trial_seed: 76
+    trials: 10
+    viz: false
+    viz_delay: null
+    world_yaml: ./world.yaml
+  cycles: 2000
+  env_name: connorsim_snn_eons-v01
+  eons_params: &id003
+    add_edge_rate: 0.6
+    add_node_rate: 0.55
+    crossover_rate: 0.5
+    delete_edge_rate: 0.4
+    delete_node_rate: 0.45
+    edge_mutations:
+      Delay: 0.35
+      Weight: 0.65
+    merge_rate: 0
+    multi_edges: 0
+    mutation_rate: 0.9
+    net_mutations: {}
+    node_mutations:
+      Threshold: 1.0
+    num_best: 4
+    num_mutations: 3
+    population_size: 100
+    random_factor: 0.1
+    seed_eo: 29
+    selection_type: tournament
+    starting_edges: 20
+    starting_nodes: 10
+    tournament_best_net_factor: 0.9
+    tournament_size_factor: 0.1
+  eons_seed: 29
+  iostream: null
+  label: null
+  log_fitnesses: !!python/object/apply:builtins.getattr
+  - &id001 !!python/object:common.project.Project
+    allow_overwrite: false
+    bestnet_file: !!python/object:common.project.File
+      path: !!python/object/apply:pathlib._local.PosixPath
+        args:
+        - /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/best.json
+        resolved: /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/best.json
+    logfile: !!python/object:common.project.Logger
+      _initialized: true
+      firstcall: &id002 !!python/name:common.project._NONE1 ''
+      path: !!python/object/apply:pathlib._local.PosixPath
+        args:
+        - /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/training.log
+        resolved: /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/training.log
+    name: 250717-170030-connorsim_snn_eons-v01
+    networks: !!python/object:common.project.Networks
+      path: !!python/object/apply:pathlib._local.PosixPath
+        args:
+        - /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/networks
+        resolved: /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/networks
+    popfit_file: !!python/object:common.project.Logger
+      _initialized: false
+      firstcall: !!python/object/apply:builtins.getattr
+      - *id001
+      - _default_firstcall
+      path: !!python/object/apply:pathlib._local.PosixPath
+        args:
+        - /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/population_fitnesses.log
+        resolved: /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/population_fitnesses.log
+    root: !!python/object/apply:pathlib._local.PosixPath
+      args:
+      - /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01
+      resolved: /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01
+  - log_popfit
+  log_trajectories: false
+  max_epochs: 500
+  n_inputs: 3
+  n_outputs: 4
+  noviz: false
+  p: *id001
+  processes: 48
+  processor_params: &id004
+    Leak_Enable: true
+    Max_Axon_Delay: 0
+    Max_Leak: 4
+    Max_Synapse_Delay: 255
+    Max_Threshold: 127
+    Max_Weight: 127
+    Min_Axon_Delay: 0
+    Min_Leak: -1
+    Min_Synapse_Delay: 0
+    Min_Threshold: 0
+    Min_Weight: -127
+  run_info: null
+  runlogfile: !!python/object:common.project.Logger
+    _initialized: false
+    firstcall: *id002
+    path: !!python/object/apply:pathlib._local.PosixPath
+      args:
+      - /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/run.log
+      resolved: /home/sbhatt28/neuromorphic/turtwig/out/farp/6-wtp/250717-170030-connorsim_snn_eons-v01/run.log
+  runs: 1
+  save_strategy: best_per_epoch
+  start_paused: false
+  track_history: false
+  trial_seeds:
+  - 1335003809
+  - 2224762871
+  - 3517523335
+  - 111319424
+  - 1437751578
+  - 3058133034
+  - 831993217
+  - 1542960463
+  - 473792098
+  - 3679436285
+  trials: 10
+  viz: false
+  viz_delay: null
+  world_yaml: ./world.yaml
+do_print: false
+eons_params: *id003
+net_callback: !!python/name:common.evolver.%3Clambda%3E ''
+proc_name: !!python/name:caspian.Processor ''
+proc_params: *id004
+stop_fitness: 9999999999
+t_start: 0
+tqdm: true

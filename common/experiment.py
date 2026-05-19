@@ -1,7 +1,5 @@
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
-import neuro
-import caspian
 import os
 import sys
 import platform
@@ -12,15 +10,21 @@ import yaml
 import re
 
 # import custom cmd parser
-import common.argparse
+from . import argparse
 
 # Provided Python utilities from tennlab framework/examples/common
-from .evolver import Evolver
-from .evolver import MPEvolver
 from . import jsontools as jst
 from .application import Application
 from . import project
 from . import env_tools as envt
+
+
+# typing
+from typing import TYPE_CHECKING, Any
+if TYPE_CHECKING:
+    from .evolver import Evolver, EpochInfo
+else:
+    Evolver = EpochInfo = None
 
 
 RE_CONTAINS_SEP = re.compile(r"[/\\]")
@@ -58,8 +62,10 @@ class TennExperiment(Application):
         else:
             self.save_strategy = "one_best"
 
+        # TODO: re-structure this mess or document it better
+
         # set project mode.
-        self.p: project.Project | project.FolderlessProject
+        self.p: project.UnzippedProject | project.FolderlessProject
         if args.project is None and args.network:
             # don't create a project folder. Some features will be unavailable.
             self.p = project.FolderlessProject(args.network, args.logfile)
@@ -69,31 +75,55 @@ class TennExperiment(Application):
             # first set the project name
             if args.project is None and args.action == "train":
                 # no project name specified, so use the experiment name and timestamp
-                project_name = f"{time.strftime('%y%m%d-%H%M%S')}-{args.environment}"
+                suffix = args.environment if args.pname_suffix is None else args.pname_suffix
+                project_name = f"{time.strftime('%y%m%d-%H%M%S')}{'-' + suffix if suffix else ''}"
                 self.p = project.Project(path=args.root / project_name, name=project_name)
             elif args.project is None:
                 # no project name specified; ask user
                 path = project.inquire_project(root=args.root)
-                self.p = project.Project(path=path, name=path.name)
+                # this could be train or run/test
+                self.p = project.UnzippedProject(path=path, name=path.name)
             elif RE_CONTAINS_SEP.search(args.project):  # project name contains a path separator
                 project_name = pathlib.Path(args.project).name
                 if args.root is not DEFAULT_PROJECT_BASEPATH:
                     print("WARNING: You seem to have specified a root path AND a full project path.")
                     print(f"The root path will be ignored; path={args.project}")
-                self.p = project.Project(path=args.project, name=project_name)
+                self.p = project.UnzippedProject(path=args.project, name=project_name)
             else:
                 project_name = args.project
-                self.p = project.Project(path=args.root / project_name, name=project_name, overwrite=args.overwrite_project)
-            self.log_fitnesses = self.p.log_popfit  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+                self.p = project.UnzippedProject(path=args.root / project_name, name=project_name,
+                                                 overwrite=args.overwrite_project)
+            if args.action == 'train':
+                if isinstance(self.p, project.UnzippedProject) and not hasattr(self.p, 'root'):
+                    self.p.downgrade()
+            else:
+                # for run/test, check that the project folder exists.
+                # for train, it'll be created later.
+                if not self.p.original_path.exists():
+                    msg = f"Project path {self.p.original_path} does not exist."
+                    raise FileNotFoundError(msg)
+                if isinstance(self.p, project.UnzippedProject):
+                    self.p.unzip()  # no effect if not a zip file
+            self.log_fitnesses = self.p.log_popfit
 
         # app_params = ['encoder_ticks', ]
         self.app_params = dict()
 
+        try:
+            import neuro
+        except ImportError:
+            neuro = None
+
+        try:
+            import casPYan as cap
+        except ImportError:
+            cap = None
+
         if args.action in ["test", "run", "validate"]:
             if args.prnet:
                 raise NotImplementedError("TODO: load network from project folder")  # TODO
-            self.net = neuro.Network()
             self.p.load_bestnet(args.network)  # defaults to best.json if not specified via args
+            self.net = neuro.Network() if neuro else cap.network.TennNetProxy()
             self.net.from_json(self.p.bestnet)
             self.processor_params = self.net.get_data("processor")
             self.app_params = self.net.get_data("application")
@@ -106,6 +136,22 @@ class TennExperiment(Application):
             self.runs = args.runs
             self.p.make_root_interactive()
             self.p.check_bestnet_writable()
+
+        if args.live_netviz:
+            import subprocess
+            args.all_counts_stream = '{"source": "serve", "port": 8100}'
+            framework_root = envt.framework_root()
+            net_path = self.p.bestnet_file.path.absolute()
+            viz_cmd = [
+                'love', '.',
+                # '--config', CONFIG_FILE,
+                '-n', net_path,
+                '--show_input_id',
+                '--show_output_id',
+                '-i', '{"source":"request","port":"8100","host":"localhost"}',
+                '--remove_unnecessary_neuron'
+            ]
+            subprocess.Popen(viz_cmd, cwd=framework_root / 'viz')
 
         if args.all_counts_stream is not None:
             self.iostream = neuro.IO_Stream()
@@ -130,14 +176,17 @@ class TennExperiment(Application):
     def run(self, processor, network):
         return None
 
-    def pre_epoch(self, eons):
-        if self.save_strategy == "all":
-            for nid, net in enumerate(eons.pop.networks):
-                self.save_network(net.network, self.p.networks.get_file(eons.i, nid))  # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+    def pre_epoch(self, eons: Evolver):
+        pass
 
-    def post_epoch(self, eons, info, new_best):  # eons calls this after each epoch
-        if self.save_strategy == "best_per_epoch":
-            self.save_network(info.best_network, self.p.networks.get_file(info.i, info.best_net_id)) # type: ignore[reportAttributeAccessIssue] for if project is FolderlessProject
+    def post_epoch(self, eons: Evolver, info: EpochInfo, new_best: bool | Any):  # eons calls this after each epoch
+        if self.save_strategy == "all":
+            # save all networks to networks/e{epoch}-{network_id}.json
+            for nid, net in enumerate(eons.pop.networks):
+                self.save_network(net.network, self.p.networks.get_file(info.i, nid))
+        elif self.save_strategy == "best_per_epoch":
+            # save only the best network as networks/e{epoch}-{network_id}.json
+            self.save_network(info.best_network, self.p.networks.get_file(info.i, info.best_net_id))
         if new_best:  # save best network to its own file regardless of save_strategy
             self.save_best_network(info, safe_overwrite=True)
         self.log_status(info)  # print and log epoch info
@@ -148,11 +197,11 @@ class TennExperiment(Application):
             net.set_data("label", self.label)
         net.set_data("processor", self.processor_params)
         net.set_data("application", self.app_params)
-        self.p.bestnet = net
         path.write(str(net))
 
     def save_best_network(self, info, safe_overwrite=True):
         self.p.backup_bestnet()
+        self.p.bestnet = info.best_network
         self.save_network(info.best_network, self.p.bestnet_file)
         self.log(f"wrote best network to {str(self.p.bestnet_file)}.")
 
@@ -210,7 +259,11 @@ class TennExperiment(Application):
             d.update({"git_repo": None})
         return d
 
+
 def train(app, args):
+    import caspian
+    from .evolver import Evolver
+    from .evolver import MPEvolver
 
     processes = args.processes
     app.max_epochs = args.epochs
@@ -266,6 +319,10 @@ def train(app, args):
 
 
 def run(app, args):
+    try:
+        import caspian
+    except ImportError:
+        caspian = None
 
     # Set up simulator and network
 
@@ -273,20 +330,20 @@ def run(app, args):
         proc = None
         net = None
     else:
-        proc = caspian.Processor(app.processor_params)
+        proc = caspian.Processor(app.processor_params) if caspian else None
         net = app.net
 
     # Run app and print fitness
-    fitness = app.fitness(proc, net)
-    print(f"Fitness: {fitness:8.4f}")
+    _world, metric, fitness = app.fitness(proc, net, return_multi=True)
+    print(f"Fitness ({metric.name}): {fitness:8.4f}")
     return fitness
 
 
 def get_parsers(conflict_handler='resolve'):
     # parse cmd line args and run either `train(...)` or `run(...)`
-    HelpDefaults = common.argparse.ArgumentDefaultsHelpFormatter
+    HelpDefaults = argparse.ArgumentDefaultsHelpFormatter
     ch = conflict_handler
-    parser = common.argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='Script for running an experiment or training an SNN with EONS.',
         formatter_class=HelpDefaults,
         conflict_handler=ch,
@@ -328,6 +385,12 @@ def get_parsers(conflict_handler='resolve'):
             info to iostream for network visualization.
             e.g. '{"source":"serve","port":8100}'
         """)
+        sub.add_argument('--explore', action='store_true',
+                         help="Show the Project Folder after the run.")
+
+    # Run-only args
+    sub_run.add_argument('--live_netviz', action='store_true',
+                         help="Show a visualization of the network in the lua app.")
 
     # Training args
     sub_train.add_argument('--network', default=None,
@@ -336,6 +399,8 @@ def get_parsers(conflict_handler='resolve'):
                            help="running log file path. By default, this is saved to the projectdir/training.log")
     sub_train.add_argument('--overwrite_project', action='store_true',
                            help="overwrite project folder if it already exists.")
+    sub_train.add_argument('--pname_suffix', default=None,
+                           help="Change the project name suffix.")
     savestrat = sub_train.add_mutually_exclusive_group(required=False)
     savestrat.add_argument('--save_best_nets', action='store_true')
     savestrat.add_argument('--save_all_nets', action='store_true')

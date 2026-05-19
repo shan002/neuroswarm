@@ -1,0 +1,77 @@
+implemented ternary fov sensor and smart runner with fov half slit kept v = 0.276 and w = 0.602 for hunter agents and keeping runner velocity constant/varied at 0.276
+
+for 2000 cycles and 500 epochs of 5 batches.
+
+
+1. run more trainings with different seeds with constant runner speed6  --> hunter_vs_runner_n_6_wtp.slurm --> ready
+
+2. run more trainings with (VS) varied speed of the runner --> hunter_vs_runner_n_6_wtp_2.slurm -->  ready
+
+3. run more trainings with the option detect = success option off (DNS) and constant runner speed --> hunter_vs_runner_n_6_wtp_3.slurm --> ready
+
+4. run more trainings with the option detect = success option off (DNS) and (VS) varied runner speed --> hunter_vs_runner_n_6_wtp_4.slurm --> ready
+
+5. run more trainings with the option detect = partial credit (DPC) and constant runner speed --> hunter_vs_runner_n_6_wtp_5.slurm --> ready
+
+6. run more trainings with the option detect = partial credit (DPC) and (VS) varied runner speed --> hunter_vs_runner_n_6_wtp_6.slurm --> ready
+
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp.slurm (hunter_vs_runner_wtp_ternary_srunner.py) (6-wtp-2)
+Submitted batch job 3959468 ended
+
+6-wtp-2/250720-001255-connorsim_snn_eons-v01 - spiral backwards
+6-wtp-1/250716-175116-connorsim_snn_eons-v01 - disperse and circling on own axis
+6-wtp-1/250717-030953-connorsim_snn_eons-v01 - spiral backwards with wobbling
+
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_2.slurm (hunter_vs_runner_wtp_ternary_srunner_vs.py) (6-wtp-vs)
+Submitted batch job 3959469 failed
+
+6-wtp-vs/250719-064626-connorsim_snn_eons-v01 - spiral backwards
+6-wtp-vs/250720-122617-connorsim_snn_eons-v01 - disperse and circling on own axis
+
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_3.slurm (hunter_vs_runner_wtp_ternary_srunner_dns.py) (6-wtp-dns)
+Submitted batch job 3959470 ended
+
+nothing interesting found
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_4.slurm (hunter_vs_runner_wtp_ternary_srunner_vs_dns.py) (6-wtp-vs-dns)
+Submitted batch job 3959471 ended
+
+nothing interesting found
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_5.slurm (hunter_vs_runner_wtp_ternary_srunner_dpc.py) (6-wtp-dpc)
+Submitted batch job 3959472 failed
+
+nothing interesting found
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_6.slurm (hunter_vs_runner_wtp_ternary_srunner_vs_dpc.py) (6-wtp-vs-dpc)
+Submitted batch job 3959473 failed
+
+nothing interesting found
+
+
+7. run more trainings with (VS) varied speed of the runner --> hunter_vs_runner_n_6_wtp_2.slurm -->  ready
+
+8. run more trainings with the option detect = success option off (DNS) and (VS) varied runner speed --> hunter_vs_runner_n_6_wtp_4.slurm --> ready
+
+9. run more trainings with the option detect = partial credit (DPC) and (VS) varied runner speed --> hunter_vs_runner_n_6_wtp_6.slurm --> ready
+
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_2_ic.slurm
+Submitted batch job 3963595
+
+6-wtp-vs-ic/250724-051043-connorsim_snn_eons-v01 --> forward spiraling
+6-wtp-vs-ic/250724-175716-connorsim_snn_eons-v01 --> disperse and backward spiraling
+
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_4_ic.slurm
+Submitted batch job 3963596
+
+nothing interesting
+
+[sbhatt28@hopper2 slurm]$ sbatch hunter_vs_runner_n_6_wtp_6_ic.slurm
+Submitted batch job 3963597
+
+some dispersion and spiraling but other than that --> nothing interesting

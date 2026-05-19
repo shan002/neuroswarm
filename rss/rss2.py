@@ -5,34 +5,34 @@ The SwarmSimulator allows control of the world and agents at every step within t
 # import random
 
 # Import Agent embodiments
-# from novel_swarms.config.AgentConfig import *
-# from novel_swarms.config.HeterogenSwarmConfig import HeterogeneousSwarmConfig
-# from novel_swarms.agent.MazeAgentCaspian import MazeAgentCaspianConfig
-# from novel_swarms.agent.MillingAgentCaspian import MillingAgentCaspianConfig
+# from swarmsim.config.AgentConfig import *
+# from swarmsim.config.HeterogenSwarmConfig import HeterogeneousSwarmConfig
+# from swarmsim.agent.MazeAgentCaspian import MazeAgentCaspianConfig
+# from swarmsim.agent.MillingAgentCaspian import MillingAgentCaspianConfig
 
 # Import FOV binary sensor
-from novel_swarms.sensors.SensorFactory import SensorFactory
+from swarmsim.sensors.SensorFactory import SensorFactory
 
 # Import Rectangular World Data, Starting Region, and Goal Region
-from novel_swarms.config.WorldConfig import WorldYAMLFactory
-# from novel_swarms.config.WorldConfig import RectangularWorldConfig
-# from novel_swarms.world.goals.Goal import CylinderGoal
-# from novel_swarms.world.initialization.RandomInit import RectRandomInitialization
-from novel_swarms.world.initialization.PredefInit import PredefinedInitialization as PredefinedInitialization
+from swarmsim.config.WorldConfig import WorldYAMLFactory
+# from swarmsim.config.WorldConfig import RectangularWorldConfig
+# from swarmsim.world.goals.Goal import CylinderGoal
+# from swarmsim.world.initialization.RandomInit import RectRandomInitialization
+from swarmsim.world.initialization.PredefInit import PredefinedInitialization as PredefinedInitialization
 
 # Import a world subscriber, that can read/write to the world data at runtime
-from novel_swarms.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
+from swarmsim.world.subscribers.WorldSubscriber import WorldSubscriber as WorldSubscriber
 
 # Import the Behavior Measurements (Metrics) that can measure the agents over time
-from novel_swarms.metrics import RadialVariance
-from novel_swarms.metrics import AgentsAtGoal
-# from novel_swarms.metrics import Circliness
+from swarmsim.metrics import RadialVariance
+from swarmsim.metrics import AgentsAtGoal
+# from swarmsim.metrics import Circliness
 
 # Import the custom Controller Class
-from novel_swarms.agent.control.Controller import Controller
+from swarmsim.agent.control.Controller import Controller
 
 # Import the simulation loop
-from novel_swarms.world.simulate import main as simulator
+from swarmsim.world.simulate import main as simulator
 
 simulator = simulator  # explicit export
 

@@ -4,8 +4,8 @@ import numpy as np
 # typing
 from typing import Any, override
 
-from novel_swarms.sensors.BinaryFOVSensor import BinaryFOVSensor
-from novel_swarms.agent.control.AbstractController import AbstractController
+from swarmsim.sensors.BinaryFOVSensor import BinaryFOVSensor
+from swarmsim.agent.control.AbstractController import AbstractController
 
 import neuro
 import caspian
@@ -87,8 +87,8 @@ class CaspianBinaryController(AbstractController):
         neuro_tpc: int | None = 10,
         extra_ticks: int = 5,
         neuro_track_all: bool = False,
-        scale_forward_speed: float = 0.2,  # m/s forward speed factor
-        scale_turning_rates: float = 2.0,  # rad/s turning rate factor
+        scale_forward_speed: float = 0.276,  # m/s forward speed factor
+        scale_turning_rates: float = 0.602,  # rad/s turning rate factor
         sensor_id: int = 0,
     ) -> None:
         # if config is None:
@@ -120,9 +120,9 @@ class CaspianBinaryController(AbstractController):
 
         self.extra_ticks = extra_ticks
 
-
-        self.processor_params = self.network.get_data("processor")
-        self.setup_processor(self.processor_params)
+        if self.network:
+            self.processor_params = self.network.get_data("processor")
+            self.setup_processor(self.processor_params)
 
         self.sensor_id = sensor_id
 
@@ -133,8 +133,8 @@ class CaspianBinaryController(AbstractController):
         self.decoder: neuro.DecoderArray
         self.processor: caspian.Processor
 
-    @staticmethod  # to get encoder structure/#neurons for external network generation (EONS)
-    def get_default_encoders(neuro_tpc=1):
+    # to get encoder structure/#neurons for external network generation (EONS)
+    def get_default_encoders(self, neuro_tpc=1):
         encoder_neurons, decoder_neurons = 2, 4
         encoder_params = {
             "dmin": [0] * encoder_neurons,  # two bins for each binary input + random
@@ -195,10 +195,13 @@ class CaspianBinaryController(AbstractController):
         spikes = self.encoder.get_spikes(input_vector)
         self.processor.apply_spikes(spikes)
         self.processor.run(self.extra_ticks)
-        self.processor.run(self.neuro_tpc)
-        # action: bool = bool(proc.output_vectors())  # old. don't use.
         if self.neuro_track_all:
-            self.neuron_counts = self.processor.neuron_counts()
+            neuron_counts = np.asarray(self.processor.neuron_counts())
+        self.processor.run(self.neuro_tpc)
+        if self.neuro_track_all:
+            neuron_counts += self.processor.neuron_counts()
+            self.neuron_counts = neuron_counts.tolist()
+        # action: bool = bool(proc.output_vectors())  # old. don't use.
         data = self.decoder.get_data_from_processor(self.processor)
         """  old wheelspeed code.
             # four bins. Two for each wheel, one for positive, one for negative.
@@ -211,9 +214,16 @@ class CaspianBinaryController(AbstractController):
         return v, w
 
     def get_actions(self, agent) -> tuple[float, float]:
-        sensor: BinaryFOVSensor = self.parent.sensors[0]
-        self.parent.set_color_by_id(sensor.detection_id)
-
-        v, omega = self.run_processor(sensor.current_state)
+        self.latest_observation = self.parent.sensors[self.sensor_id].current_state
+        try:
+            v, omega = self.run_processor(self.latest_observation)
+        except Exception:
+            v, omega = 0, 0
         self.requested = v, omega
         return self.requested
+
+    def draw(self, screen, offset):
+        """Visualization"""
+        pan, zoom = np.asarray(offset[0]), offset[1]
+        super().draw(screen, offset)
+        # self.parent.set_color_by_id(sensor.detection_id)

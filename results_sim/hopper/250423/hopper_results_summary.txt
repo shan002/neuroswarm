@@ -1,0 +1,51 @@
+cd ~/neuromorphic/turtwig
+# run tenn2_n_17:
+python experiment_tenn2_metric_plot.py run --cy -1 --root results_hopper/tenn2/n-17/ --log_t -N 6 
+250422-215851-connorsim_snn_eons-v01 --> maintains a circliness of 0.858 more than 20000 timesteps and beyond with upto N=12 (in rare cases it breaks and again makes a circle and then becomes stable for N=12) c pretty much stays the same for all N.
+250423-031032-connorsim_snn_eons-v01 --> 0.844 more than 20000 timesteps for upto N = 15. c slightly decreases for N = 6 and below.
+250423-081220-connorsim_snn_eons-v01 --> 0.9 more than 20000 timesteps for upto N = 7. c decreases for N = 6 and below.
+250423-132456-connorsim_snn_eons-v01 --> 0.904 more than 20000 timesteps for upto N = 9.
+250423-183850-connorsim_snn_eons-v01 --> 0.865 more than 20000 timesteps for upto N = 10.
+
+
+# run tenn2_n_increment_per_50_epochs trained on a total of 500 epochs started from N = 3:
+python experiment_tenn2_metric_plot.py run --cy -1 --root results_hopper/tenn2/n_per_50/ --log_t -N 6
+250422-215900-connorsim_snn_eons-v01 --> 0.98 more than 20000 timesteps for upto N = 6 or less.
+250422-232504-connorsim_snn_eons-v01 --> 0.97 more than 20000 timesteps for upto N = 6 or less.
+250423-005237-connorsim_snn_eons-v01 --> 0.97 more than 20000 timesteps for upto N = 6 or less.
+250423-021335-connorsim_snn_eons-v01 --> 0.977 more than 20000 timesteps for upto N = 6 or less.
+250423-033803-connorsim_snn_eons-v01 --> 0.944 more than 20000 timesteps for upto N = 7 or less.
+
+
+# run hunter-runner-n-6: hunters started very close to each other with no time penalty for catching the runner:
+python hunter_vs_runner.py  run --root ~/neuromorphic/turtwig/results_hopper/farp/6/ --cy -1
+250422-215750-connorsim_snn_eons-v01  --> no learning
+250423-074628-connorsim_snn_eons-v01  --> no learning
+250423-181232-connorsim_snn_eons-v01  --> no learning
+250423-023747-connorsim_snn_eons-v01  --> no learning 
+250423-130131-connorsim_snn_eons-v01  --> no learning
+
+# run hunter-runner-n-6-wah: hunters were distributed uniformly in a certain area with no time penalty for catching the runner
+python hunter_vs_runner.py run --root ~/neuromorphic/turtwig/results_hopper/farp/6-wah --cy -1 --world_yaml ./world_wah.yaml
+250422-215808-connorsim_snn_eons-v01  --> no learning
+250423-025207-connorsim_snn_eons-v01  --> learned aggregation
+250423-075400-connorsim_snn_eons-v01  --> no learning
+250423-003659-connorsim_snn_eons-v01  --> no learning
+250423-050630-connorsim_snn_eons-v01  --> no learning
+
+# run hunter-runner-n-6-wtp: hunters started very close to each other with time penalty for catching the runner
+python hunter_vs_runner.py run --root ~/neuromorphic/turtwig/results_hopper/farp/6-wtp --cy -1
+250422-215822-connorsim_snn_eons-v01  --> learned dispersion and rotate (if necessary) until out of contact and then circling after some time
+250423-044254-connorsim_snn_eons-v01  --> learned dispersion and rotate (if necessary) until out of contact and then circling after some time
+250423-110539-connorsim_snn_eons-v01  --> learned dispersion and rotate (if necessary) until out of contact and then circling after some time
+250423-012353-connorsim_snn_eons-v01  --> learned dispersion until without contact of other agent, if in contact starts circling counter-clock wise
+250423-075934-connorsim_snn_eons-v01  --> learned dispersion and rotate (if necessary) until out of contact and then circling after some time
+
+# hunter-runner-n-6-wtp-wah: hunters were distributed uniformly in a certain area with time penalty for catching the runner
+python hunter_vs_runner.py run --root ~/neuromorphic/turtwig/results_hopper/farp/6-wtp-wah --cy -1 --world_yaml ./world_wah.yaml
+250422-215836-connorsim_snn_eons-v01  --> learned circling
+250423-013851-connorsim_snn_eons-v01  --> learned turning with zero radius
+250423-080917-connorsim_snn_eons-v01  --> learned circling counter-clockwise
+250422-235522-connorsim_snn_eons-v01  --> learned turning with zero radius
+250423-020944-connorsim_snn_eons-v01  --> learned turning with zero radius counter-clockwise
+[N.B] In this they don't need to learn dispersion as they were already dispersed initially

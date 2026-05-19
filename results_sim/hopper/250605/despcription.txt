@@ -1,0 +1,1 @@
+Use CaspianBinaryRemappedController with no random values when v = 0 or w = 0

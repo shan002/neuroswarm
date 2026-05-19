@@ -1,4 +1,4 @@
-from novel_swarms.metrics.AbstractMetric import AbstractMetric
+from swarmsim.metrics.AbstractMetric import AbstractMetric
 
 class CatchRunnerMetricWTP(AbstractMetric):
     def __init__(self, name="CatchRunnerMetric", history_size=1):
@@ -42,14 +42,15 @@ class CatchRunnerMetricWTP(AbstractMetric):
 
     def calculate(self):
         result = self.check_sim_result()
+        result_step = self.world.total_steps
+        total_steps_to_finish = self.world.config.stop_at
         if result == "Success":
-            result_step = self.world.total_steps
-            reward = 1.0 - (result_step / self.world.config.stop_at)
+            reward = 1.0 - (result_step / total_steps_to_finish)
             self.set_value(reward)
         elif result == "Failure":
             self.set_value(0.0)
-        else:
-            self.set_value(None)
+        elif result_step == total_steps_to_finish:
+            self.set_value(0.1) # the runner couldn't reach the goal within the given time so it's kind of a win in some way
 
 
 
