@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+from sys import prefix
 
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
@@ -22,7 +23,7 @@ from common.argparse import ArgumentError
 # --- Sense configuration
 INPUT_SENSE = [0]* 250 + [1] * 250
 # [1] * 250 + [0] * 250 + [1] * 100 + [0] * 200 + [1] * 100 + [0]* 100
-SENSE_MODE = "sequence"  # "sequence" or "random"
+SENSE_MODE = "random"  # "sequence" or "random"
 SENSE_REPEAT = True
 SENSE_RANDOM_P = 0.5
 SENSE_TIME_STEP = 1
@@ -268,7 +269,7 @@ def run(app, args):
             stem = net_file.path.stem
             parts = stem.split("-")
             prefix = "-".join(parts[:2]) if len(parts) >= 2 else stem
-        mode_tag = "rs" if SENSE_MODE == "random" else "fs"
+        mode_tag = f"rs_p_{SENSE_RANDOM_P:g}" if SENSE_MODE == "random" else "fs"
         fname = f"single_agent_{prefix}_{mode_tag}_cy_{cy_label}_dt_{stamp}.xlsx"
         graphing.export(world, output_file=_output_path(fname))
 
@@ -427,4 +428,4 @@ if __name__ == "__main__":
     main()
 
 
-# python experiment_tenn2_fixedsense.py run --network ./results/best.json --cy 1000 --start_paused --plot --log_trajectories --track_history
+# python experiment_tenn2_simulate_single_agent.py run --network ./results/best.json --cy 1000 --start_paused --plot --log_trajectories --track_history
