@@ -30,8 +30,9 @@ def test_single(config):
         world_config=tempconfig,
         subscribers=[],
         # gui=gui,
-        show_gui=False,
+        show_gui=True,
         start_paused=False,
+        framerate_limit=20,
     )  # run simulator
     for m in world.metrics:
         stats[m.name] += m.value
@@ -57,6 +58,33 @@ def test_mp(samples=100, n_range=None):
                 'n': n,
                 **stat
             })
+    # ttcs = np.array(ttcs)
+    # sns.histplot(ttcs)
+    # plt.show()
+    print(results)
+    return results
+
+
+def test_seq(samples=10):
+    seeds = np.random.default_rng(config.seed).integers(0, 2**31, size=samples)
+    results = []
+    configs = []
+    n = 6
+    for i in range(samples):
+        tempconfig = copy.deepcopy(config)
+        tempconfig.seed = seeds[i]
+        tempconfig.spawners[0]['n'] = n
+        configs.append(tempconfig)
+    for i, cfg in enumerate(configs):
+        print(i)
+        ret_arr = test_single(cfg)
+    stats, ttcs = zip(*ret_arr)
+    print('n: ', n, sum(stats, Counter()))
+    for stat in stats:
+        results.append({
+            'n': n,
+            **stat
+        })
     # ttcs = np.array(ttcs)
     # sns.histplot(ttcs)
     # plt.show()
@@ -109,6 +137,7 @@ def run():
         # gui=gui,
         show_gui=True,
         start_paused=True,
+        framerate_limit=20,
     )  # run simulator
     for m in world.metrics:
         print(f"{m.name}: {m.current_value}")
@@ -118,5 +147,6 @@ def run():
 if __name__ == "__main__":
     # test_mp()
     # test_grid()
+    # test_seq()
     run()
     # print(*test_single(config))
