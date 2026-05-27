@@ -33,4 +33,4 @@ metrics:
   history: 1
   target_name: goal
   attribute: collided
-stop_at: world.total_steps > 1000 or world.metrics[0].module.redwin or world.metrics[0].module.detected
+stop_at: world.total_steps > <{ cycles|default(1000) }> or world.metrics[0].module.redwin or world.metrics[0].module.detected

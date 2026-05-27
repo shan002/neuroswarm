@@ -7,7 +7,7 @@ time_step: !np 1 / 20  # 0.05 seconds
 seed: 2023
 spawners:
 - type: UniformAgentSpawner
-  n: 06  # default number of agents BUT may be overridden by user args
+  n: 6  # default number of agents BUT may be overridden by user args
   facing: away
   region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
   agent:
@@ -28,6 +28,13 @@ spawners:
       store_history: false
       target_team: red
     controller:
+    #   type: LevyController
+    #   velocity: 0.2
+    #   angular_velocity: 0.6
+    #   levy_constant: .3
+    #   curving: true
+    #   timeout_steps: 300
+    #   step_scale: 1.0
       type: BinaryController
       a: [0.2, 0.2]
       b: [0.2, 0]
@@ -46,13 +53,14 @@ spawners:
     type: DetectionRegion
     collides: Detect
     name: goal
+    agent_radius: 1.0
     target_teams:
     - red
 - type: DonutAgentSpawner
   n: 1
   center: [5.0, 5.0]
-  inner_radius: 2.0
-  outer_radius: 4.0
+  inner_radius: 3.0
+  outer_radius: 6.0
   agent:
     type: MazeAgent
     name: intruder
@@ -92,7 +100,7 @@ spawners:
         min: -1.0
         max: 1.0
     team: red
-    agent_radius: !np 0.3 / 2
+    agent_radius: !np 0.2 / 2
     body_color:
       - 255
       - 20
@@ -100,4 +108,5 @@ spawners:
     body_filled: true
 metadata:
   hash: _hash
-<<: !include ttc.yaml
+#%> set metricfile = m|default('ttc')
+<<: !include <{ metricfile }>.yaml

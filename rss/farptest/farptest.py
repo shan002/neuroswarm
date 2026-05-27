@@ -16,7 +16,7 @@ from swarmsim.world.simulate import main as simulator
 
 
 cwd = Path(__file__).resolve().parent
-config = RectangularWorldConfig.from_yaml(cwd / "world.yaml")
+config = RectangularWorldConfig.from_yaml_template(cwd / "world.yaml", m='ttd')
 
 # gui = TennlabGUI(x=0, y=0, h=0, w=300)
 # gui.position = "sidebar_right"
@@ -39,10 +39,10 @@ def test_single(config):
     return stats, out
 
 
-def test_mp(samples=100):
-    seeds = np.random.default_rng(getattr(config, "seed", None)).integers(0, 2**31, size=samples)
+def test_mp(samples=100, n_range=None):
+    seeds = np.random.default_rng(config.seed).integers(0, 2**31, size=samples)
     results = []
-    for n in range(1, 10):
+    for n in n_range or range(1, 10):
         configs = []
         for i in range(samples):
             tempconfig = copy.deepcopy(config)

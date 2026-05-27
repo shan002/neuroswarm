@@ -7,7 +7,7 @@ time_step: !np 1 / 20  # 0.05 seconds
 seed: 2023
 spawners:
 - type: UniformAgentSpawner
-  n: 06  # default number of agents BUT may be overridden by user args
+  n: 6  # default number of agents BUT may be overridden by user args
   facing: away
   region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
   agent:
@@ -47,13 +47,14 @@ spawners:
     type: DetectionRegion
     collides: Detect
     name: goal
+    agent_radius: 1.0
     target_teams:
     - red
 - type: DonutAgentSpawner
   n: 1
   center: [5.0, 5.0]
-  inner_radius: 2.0
-  outer_radius: 4.0
+  inner_radius: 3.0
+  outer_radius: 6.0
   agent:
     type: MazeAgent
     name: intruder
@@ -99,41 +100,6 @@ spawners:
       - 20
       - 30
     body_filled: true
-metrics:
-- type: JinjaMetric
-  metrics:
-  - type: StepsUntil
-    # name: Time to capture
-    name: Time to detect
-    default: -1
-    metric:
-      type: AnyAgent
-      name: red detected by blue
-      # value_on_found: True
-      include_teams:
-      - blue
-      expression: agent.sensors[1].current_state
-  - type: StepsUntil
-    name: Time to capture
-    default: -1
-    metric:
-      type: EntityLen
-      name: How many collided with red
-      history: 1
-      target_name: intruder
-      attribute: collided
-  - type: EntityLen
-    name: How many red on goal
-    history: 1
-    target_name: goal
-    attribute: collided
-  template: |
-    {% set ttd = metrics[0].value %}
-    {% set ttc = metrics[1].value %}
-    {% set redwin = metrics[2].value %}
-    {% set captured = ttc if ttc > 0 else False %}
-    {% set detected = ttd if ttd > 0 else False %}
-  expression: -1000 if redwin or not detected else -(ttd|abs)
-stop_at: world.total_steps > 1000 or world.metrics[0].module.redwin or world.metrics[0].module.detected
 metadata:
   hash: _hash
+<<: !include ttc.yaml

@@ -1,6 +1,6 @@
 metrics:
 - type: JinjaMetric
-  name: Time to Detect
+  name: Time to Capture
   metrics:
   template: |
     {% set ttd = world.metrics[1].value %}
@@ -8,7 +8,7 @@ metrics:
     {% set redwin = world.metrics[3].value %}
     {% set captured = ttc if ttc > 0 else False %}
     {% set detected = ttd if ttd > 0 else False %}
-  expression: -1000 if redwin or not detected else -(ttd|abs)
+  expression: -1000 if redwin or not captured else -(ttc|abs)
 - type: StepsUntil
   name: Time to Detect sub
   default: -1
@@ -33,4 +33,4 @@ metrics:
   history: 1
   target_name: goal
   attribute: collided
-stop_at: world.total_steps > 1000 or world.metrics[0].module.redwin or world.metrics[0].module.detected
+stop_at: world.total_steps > <{ cycles|default(1000) }> or world.metrics[0].module.redwin or world.metrics[0].module.captured

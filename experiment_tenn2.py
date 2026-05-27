@@ -39,6 +39,8 @@ class ConnorMillingExperiment(TennExperiment):
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
         self.use_caspian = getattr(args, 'caspian', True)
+        self.jinja_vars = {}
+        self.process_jinja_vars()
 
         if self.agents is None and self.args.action != 'train':
             try:
@@ -71,6 +73,11 @@ class ConnorMillingExperiment(TennExperiment):
 
         self.log(f"initialized {self.__class__.__name__} {self.args.action}")
 
+    def process_jinja_vars(self):
+        from swarmsim.yaml import load
+        self.jinja_vars.update({key: load(value)
+                                for key, value in self.args.jinja_vars})
+
     def seed_from_yaml(self):
         if (
             self.args.trials is None
@@ -90,9 +97,9 @@ class ConnorMillingExperiment(TennExperiment):
             # except FileNotFoundError:
             #     pass
             # config = RectangularWorldConfig.from_dict(d)
-            config = RectangularWorldConfig.from_yaml(self.world_yaml)
+            config = RectangularWorldConfig.from_yaml_template(self.world_yaml, **self.jinja_vars)
         else:
-            config = RectangularWorldConfig.from_yaml(self.world_yaml)
+            config = RectangularWorldConfig.from_yaml_template(self.world_yaml, **self.jinja_vars)
         return config
 
     def simulate(self, processor, network, init_callback=None):
@@ -358,6 +365,9 @@ def get_parsers(parser, subpar):
                          " Values greater than 0 will use the world.yaml[seed] to generate more seeds.")
         sub.add_argument('--caspian', type=bool, default=True,
                            help="pass this to pause the simulation at startup. Press Space to unpause.")
+        sub.add_argument('-j', nargs=2, action='append', default=[], dest='jinja_vars',
+                         help="Set a variable in the jinja template context. Can be used multiple times. "
+                         "Example: -j key value -j key2 99")
 
     # for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
     #     pass  # sp[key].add_argument()
