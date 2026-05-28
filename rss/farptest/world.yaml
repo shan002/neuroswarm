@@ -1,15 +1,15 @@
 ---
 type: "RectangularWorld"
 size:  # in meters
-  - 8
-  - 8
+  - 10
+  - 10
 time_step: !np 1 / 20  # 0.05 seconds
 seed: 2023
 spawners:
 - type: UniformAgentSpawner
-  n: 6  # default number of agents BUT may be overridden by user args
+  n: <{ n|default(6) }>  # default number of agents BUT may be overridden by user args
   facing: away
-  region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
+  region: [[4.4, 4.4], [4.4, 5.6], [5.6, 5.6], [5.6, 4.4]]
   agent:
     type: MazeAgent
     sensors:
@@ -28,6 +28,10 @@ spawners:
       store_history: false
       target_team: red
     controller:
+      type: BinaryController
+      a: [0.2, 0.2]
+      b: [0.2, 0]
+      sensor_id: 0
     #   type: LevyController
     #   velocity: 0.2
     #   angular_velocity: 0.6
@@ -35,10 +39,6 @@ spawners:
     #   curving: true
     #   timeout_steps: 300
     #   step_scale: 1.0
-      type: BinaryController
-      a: [0.2, 0.2]
-      b: [0.2, 0]
-      sensor_id: 0
     team: blue
     agent_radius: !np 0.2 / 2
     body_color:
@@ -48,7 +48,7 @@ spawners:
     body_filled: true
 - type: UniformAgentSpawner
   n: 1
-  region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
+  region: [[4.4, 4.4], [4.4, 5.6], [5.6, 5.6], [5.6, 4.4]]
   agent:
     type: DetectionRegion
     collides: Detect
@@ -57,7 +57,7 @@ spawners:
     target_teams:
     - red
 - type: DonutAgentSpawner
-  n: 1
+  n: <{ n_evaders|default(1) }>
   center: [5.0, 5.0]
   inner_radius: 3.0
   outer_radius: 6.0
@@ -65,6 +65,13 @@ spawners:
     type: MazeAgent
     name: intruder
     #%> set evader = evader|default('pid')
+    team: red
+    agent_radius: !np 0.3 / 2
+    body_color:
+      - 255
+      - 20
+      - 30
+    body_filled: true
     sensors:
     - type: Targeter
       attribute: position
@@ -104,14 +111,9 @@ spawners:
         min: -1.0
         max: 1.0
     <% endif %>
-    team: red
-    agent_radius: !np 0.2 / 2
-    body_color:
-      - 255
-      - 20
-      - 30
-    body_filled: true
 metadata:
   hash: _hash
 #%> set metricfile = m|default('ttc')
+#%> set cycles = cycles|default(1000)
+# %> set cycles = 99999
 <<: !include <{ metricfile }>.yaml
