@@ -64,27 +64,31 @@ spawners:
   agent:
     type: MazeAgent
     name: intruder
+    #%> set evader = evader|default('pid')
     sensors:
     - type: Targeter
       attribute: position
       target_name: goal
       hold: holdfirst
       store_history: false
-    # - type: BinaryFOVSensor
-    #   theta: 0.45  # Vision Angle / 2 (Radians)
-    #   distance: 1.0  # meters. previously 2.55
-    #   show: true
-    #   bias: 0
-    #   store_history: false
-    #   target_team: blue
-    # controller:
-    #   type: BinaryController
-    #   a: [0.2, 0.2]
-    #   b: [0.2, 0]
-    #   sensor_id: 0
-    # controller:
-    #   type: HumanController
-    #   joystick: 0
+      <% if evader == 'binary' %>
+    - type: BinaryFOVSensor
+      theta: 0.45  # Vision Angle / 2 (Radians)
+      distance: 1.0  # meters. previously 2.55
+      show: true
+      bias: 0
+      store_history: false
+      target_team: blue
+    controller:
+      type: BinaryController
+      a: [0.2, 0.2]
+      b: [0.2, 0]
+      sensor_id: 0
+    <% elif evader == 'human' %>
+    controller:
+      type: HumanController
+      joystick: 0
+    <% elif evader == 'pid' %>
     controller:
       type: WaypointPIDController
       sensor_id: 0
@@ -99,6 +103,7 @@ spawners:
         d: 0.0
         min: -1.0
         max: 1.0
+    <% endif %>
     team: red
     agent_radius: !np 0.2 / 2
     body_color:

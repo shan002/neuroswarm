@@ -16,7 +16,11 @@ from swarmsim.world.simulate import main as simulator
 
 
 cwd = Path(__file__).resolve().parent
-config = RectangularWorldConfig.from_yaml_template(cwd / "world.yaml", m='ttd')
+config = RectangularWorldConfig.from_yaml_template(
+    cwd / "world.yaml",
+    m='ttc',
+    evader='pid',
+)
 
 # gui = TennlabGUI(x=0, y=0, h=0, w=300)
 # gui.position = "sidebar_right"
