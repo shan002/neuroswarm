@@ -4,7 +4,6 @@ from collections import Counter
 
 import numpy as np
 from tqdm.contrib.concurrent import process_map
-import seaborn as sns
 from matplotlib import pyplot as plt
 
 from swarmsim.config import register_dictlike_type, register_agent_type
