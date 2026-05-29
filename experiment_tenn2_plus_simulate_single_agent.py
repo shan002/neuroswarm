@@ -44,12 +44,13 @@ class ConnorMillingFixedSenseExperiment(TennExperiment):
         self.use_caspian = getattr(args, "caspian", True)
 
         # register controller type with RSS
+        # This is the only controller change from experiment_tenn2_simulate_single_agent.py:
+        # use the Plus controller when --caspian is selected.
         if self.use_caspian:
-            from rss.CaspianBinaryController import CaspianBinaryController
-            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+            from rss.CaspianBinaryControllerPlus import CaspianBinaryControllerPlus
             self.controller, self.controller_remapped = (
-                CaspianBinaryController,
-                CaspianBinaryRemappedController,
+                CaspianBinaryControllerPlus,
+                CaspianBinaryControllerPlus,
             )
         else:
             from rss.CasPyanBinaryController import CasPyanBinaryController
@@ -63,7 +64,7 @@ class ConnorMillingFixedSenseExperiment(TennExperiment):
 
         self.start_paused = getattr(args, "start_paused", False)
 
-        self.log("initialized experiment_tenn2_fixedsense")
+        self.log("initialized experiment_tenn2_plus_fixedsense")
 
     def simulate(self, processor, network, init_callback=lambda x: x):
         from swarmsim.config import register_dictlike_type
@@ -76,14 +77,19 @@ class ConnorMillingFixedSenseExperiment(TennExperiment):
         network.set_data("processor", self.processor_params)
 
         # register controller type with RSS
+        # This is the only controller change from experiment_tenn2_simulate_single_agent.py:
+        # use the Plus controller when --caspian is selected.
         if self.use_caspian:
-            from rss.CaspianBinaryController import CaspianBinaryController
-            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
-            register_dictlike_type("controller", "CaspianBinaryController", CaspianBinaryController)
+            from rss.CaspianBinaryControllerPlus import CaspianBinaryControllerPlus
+            register_dictlike_type(
+                "controller",
+                "CaspianBinaryController",
+                CaspianBinaryControllerPlus,
+            )
             register_dictlike_type(
                 "controller",
                 "CaspianBinaryRemappedController",
-                CaspianBinaryRemappedController,
+                CaspianBinaryControllerPlus,
             )
         else:
             from rss.CasPyanBinaryController import CasPyanBinaryController
@@ -428,4 +434,4 @@ if __name__ == "__main__":
     main()
 
 
-# python experiment_tenn2_simulate_single_agent.py run --network ./results/new_json_files/best.json --cy 1000 --start_paused --plot --log_trajectories --track_history
+# python experiment_tenn2_plus_fixedsense_single_agent.py run --network ./results/new_json_files/best.json --cy 1000 --start_paused --plot --log_trajectories --track_history
