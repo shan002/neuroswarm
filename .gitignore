@@ -5,5 +5,5 @@
 !/results/scatterplots.py
 /logs/*
 /out/*
-.vscode/
+.vscode/settings.json
 .envrc
