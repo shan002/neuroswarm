@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 # typing
-from typing import Any, override
+from typing import Any, Sequence, override
 
 from swarmsim.sensors.BinaryFOVSensor import BinaryFOVSensor
 from swarmsim.agent.control.AbstractController import AbstractController
@@ -11,7 +11,7 @@ import casPYan
 import casPYan.ende.rate as ende
 
 
-class CasPyanBinaryController(AbstractController):
+class CasPyanMultibitController(AbstractController):
 
     def __init__(
         self,
@@ -23,7 +23,7 @@ class CasPyanBinaryController(AbstractController):
         neuro_track_all: bool = False,
         scale_forward_speed: float = 0.2,  # m/s forward speed factor
         scale_turning_rates: float = 2.0,  # rad/s turning rate factor
-        sensor_id: int = 0,
+        sensor_ids: Sequence[int] = (0,),
     ) -> None:
         # if config is None:
         #     config = MazeAgentCaspianConfig()
@@ -57,7 +57,7 @@ class CasPyanBinaryController(AbstractController):
         self.processor_params = self.network.get_data("processor")
         self.setup_processor(self.processor_params)
 
-        self.sensor_id = sensor_id
+        self.sensor_ids = sensor_ids
 
         # typing
         self.n_inputs: int
@@ -68,7 +68,7 @@ class CasPyanBinaryController(AbstractController):
 
     # to get encoder structure/#neurons for external network generation (EONS)
     def get_default_encoders(self, neuro_tpc):
-        encoder_neurons, decoder_neurons = 2, 4
+        encoder_neurons, decoder_neurons = 2 * len(self.sensor_ids), 4
         encoders = [ende.RateEncoder(neuro_tpc, (0.0, 1.0)) for _ in range(encoder_neurons)]
         decoders = [ende.RateDecoder(neuro_tpc, (0.0, 1.0)) for _ in range(decoder_neurons)]
 
@@ -134,11 +134,10 @@ class CasPyanBinaryController(AbstractController):
         return v, w
 
     def get_actions(self, agent) -> tuple[float, float]:
-        sensor: BinaryFOVSensor = self.parent.sensors[0]
-        self.parent.set_color_by_id(sensor.detection_id)
+        self.latest_observation = [self.parent.sensors[i].current_state for i in self.sensor_ids]
 
         try:
-            v, omega = self.run_processor(sensor.current_state)
+            v, omega = self.run_processor(self.latest_observation)
         except Exception:
             v, omega = 0, 0
         self.requested = v, omega

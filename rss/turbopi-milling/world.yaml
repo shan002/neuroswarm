@@ -11,6 +11,12 @@ spawners:
     facing: away
     region: [[3.4, 3.4], [3.4, 4.6], [4.6, 4.6], [4.6, 3.4]]
     agent: !include turbopi.yaml
+metrics:
+  - type: Circliness
+    avg_history_max: 450
+  - type: DelaunayDiffusion
+  - type: Aggregation
+  - type: DistanceSizeRatio
 # init_type:
 #   type: "RectRandomInit"  # A starting region where agents will spawn at t=0
 #   bb:
@@ -24,4 +30,4 @@ spawners:
 # show_walls: false  # Hide Default Walls,
 metadata:
   hash: _hash
-# stop_at: 1000000 # Upper Simulation Limit (timesteps)
+stop_at: 1000 # Upper Simulation Limit (timesteps)

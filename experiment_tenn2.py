@@ -1,5 +1,7 @@
 from io import BytesIO
 import os
+import numpy as np
+from functools import partial
 # import matplotlib.pyplot as plt
 
 # import caspian
@@ -37,6 +39,8 @@ class ConnorMillingExperiment(TennExperiment):
         self.track_history = args.track_history or args.log_trajectories
         self.log_trajectories = args.log_trajectories
         self.use_caspian = getattr(args, 'caspian', True)
+        self.jinja_vars = {}
+        self.process_jinja_vars()
 
         if self.agents is None and self.args.action != 'train':
             try:
@@ -44,21 +48,44 @@ class ConnorMillingExperiment(TennExperiment):
             except (KeyError, IndexError, FileNotFoundError, AttributeError):
                 pass
 
+        self.seed_from_yaml()
+
         # register controller type with RSS
         if self.use_caspian:
             from rss.CaspianBinaryController import CaspianBinaryController
             from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
+            from rss.CaspianMultibitController import CaspianMultibitController
+            # from rss.CaspianMultibitRemappedController import CaspianMultibitRemappedController
             self.controller, self.controller_remapped = CaspianBinaryController, CaspianBinaryRemappedController
+            self.multibit_controller = CaspianMultibitController
         else:
             from rss.CasPyanBinaryController import CasPyanBinaryController
             from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
+            from rss.CasPyanMultibitController import CasPyanMultibitController
+            # from rss.CasPyanMultibitRemappedController import CasPyanMultibitRemappedController
             self.controller, self.controller_remapped = CasPyanBinaryController, CasPyanBinaryRemappedController
-
-        self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
-
+            self.multibit_controller = CasPyanMultibitController
         self.start_paused = getattr(args, 'start_paused', False)
 
-        self.log("initialized experiment_tenn2")
+        # self.n_inputs, self.n_outputs, _, _ = self.controller.get_default_encoders()
+        if self.args.action == 'train':
+            self.n_inputs, self.n_outputs, _, _ = self.bootstrap_controller_encoders()
+
+        self.log(f"initialized {self.__class__.__name__} {self.args.action}")
+
+    def process_jinja_vars(self):
+        from swarmsim.yaml import load
+        self.jinja_vars.update({key: load(value)
+                                for key, value in self.args.jinja_vars})
+
+    def seed_from_yaml(self):
+        if (
+            self.args.trials is None
+            or (seed := self.fetch_world_config().seed) is None
+        ):
+            self.seeds = []
+            return
+        self.seeds = np.random.default_rng(seed).integers(0, 2**32, size=self.args.trials).tolist()
 
     def fetch_world_config(self):
         from swarmsim.world.RectangularWorld import RectangularWorldConfig
@@ -70,9 +97,9 @@ class ConnorMillingExperiment(TennExperiment):
             # except FileNotFoundError:
             #     pass
             # config = RectangularWorldConfig.from_dict(d)
-            config = RectangularWorldConfig.from_yaml(self.world_yaml)
+            config = RectangularWorldConfig.from_yaml_template(self.world_yaml, **self.jinja_vars)
         else:
-            config = RectangularWorldConfig.from_yaml(self.world_yaml)
+            config = RectangularWorldConfig.from_yaml_template(self.world_yaml, **self.jinja_vars)
         return config
 
     def simulate(self, processor, network, init_callback=None):
@@ -85,20 +112,14 @@ class ConnorMillingExperiment(TennExperiment):
         network.set_data("processor", self.processor_params)
 
         # register controller type with RSS
-        if self.use_caspian:
-            from rss.CaspianBinaryController import CaspianBinaryController
-            from rss.CaspianBinaryRemappedController import CaspianBinaryRemappedController
-            register_dictlike_type('controller', "CaspianBinaryController", CaspianBinaryController)
-            register_dictlike_type('controller', "CaspianBinaryRemappedController", CaspianBinaryRemappedController)
-        else:
-            from rss.CasPyanBinaryController import CasPyanBinaryController
-            from rss.CasPyanBinaryRemappedController import CasPyanBinaryRemappedController
-            register_dictlike_type('controller', "CaspianBinaryController", CasPyanBinaryController)
-            register_dictlike_type('controller', "CaspianBinaryRemappedController", CasPyanBinaryRemappedController)
+        register_dictlike_type('controller', "CaspianBinaryController", self.controller)
+        register_dictlike_type('controller', "CaspianBinaryRemappedController", self.controller_remapped)
+        register_dictlike_type('controller', "CaspianMultibitController", self.multibit_controller)
 
         # setup world
         config = self.fetch_world_config()
-        config.stop_at = self.cycles
+        if self.cycles is not None:
+            config.stop_at = self.cycles
         agent_config = config.spawners[0]['agent']
         agent_config['track_io'] = self.track_history
         controller_config = agent_config['controller']
@@ -106,13 +127,6 @@ class ConnorMillingExperiment(TennExperiment):
         controller_config['network'] = network
         if self.agents is not None:
             config.spawners[0]['n'] = self.agents
-
-        config.metrics = [
-            metrics.Circliness(history=max(self.cycles, 1), avg_history_max=450),
-            metrics.DelaunayDiffusion(history=max(self.cycles, 1)),
-            metrics.Aggregation(history=max(self.cycles, 1)),
-            metrics.DistanceSizeRatio(history=max(self.cycles, 1)),
-        ]
 
         def callback(world, screen):
             a = world.selected
@@ -175,17 +189,27 @@ class ConnorMillingExperiment(TennExperiment):
         self.run_info = metric.value_history if world_output.metrics else None
         if not world_output.metrics:
             return 0.0
-        return metric.average if metric.instantaneous else metric.value
+        return metric.average if getattr(metric, 'default_aggregation', None) == 'average' else metric.value
 
     @override
-    def fitness(self, processor, network, init_callback=None, return_multi=False):
-        world_final_state = self.simulate(processor, network, init_callback)
-
-        if return_multi:
-            metric = self.pick_metric(world_final_state, self.args.behavior)
-            return world_final_state, metric, self.extract_fitness(world_final_state, metric)
-
-        return self.extract_fitness(world_final_state, self.args.behavior)
+    def fitness(self, processor, network, init_callback=None, return_multi=False, agg=sum):
+        if self.seeds:
+            def modify_seed(self, simargs, seed):
+                simargs['world_config'].seed = seed
+                return init_callback(self, simargs) if init_callback else simargs
+            worlds = [self.simulate(processor, network, partial(modify_seed, seed=seed))
+                      for seed in self.seeds]
+            if return_multi:
+                metrics = [self.pick_metric(world, self.args.behavior) for world in worlds]
+                fitnesses = [self.extract_fitness(world, metric) for world, metric in zip(worlds, metrics)]
+                return worlds, metrics, fitnesses
+            return agg([self.extract_fitness(world, self.args.behavior) for world in worlds])
+        else:
+            world_final_state = self.simulate(processor, network, init_callback)
+            if return_multi:
+                metric = self.pick_metric(world_final_state, self.args.behavior)
+                return world_final_state, metric, self.extract_fitness(world_final_state, metric)
+            return self.extract_fitness(world_final_state, self.args.behavior)
 
     def as_config_dict(self):
         d = super().as_config_dict()
@@ -213,6 +237,11 @@ class ConnorMillingExperiment(TennExperiment):
         if delete_rss:
             self.delete_rss()
         return world
+
+    def bootstrap_controller_encoders(self):
+        world = self.get_sample_world(delete_rss=True)
+        controller = world.population[1].controller
+        return controller.n_inputs, controller.n_outputs, controller.encoder, controller.decoder
 
     def delete_rss(self):
         if 'rss' in globals():
@@ -256,7 +285,13 @@ def run(app, args):
 
     # Run app and print fitness
     world, metric, fitness = app.fitness(proc, net, return_multi=True)
-    print(f"Fitness ({metric.name}): {fitness:8.4f}")
+    if app.seeds:
+        for w, m, f in zip(world, metric, fitness):
+            print(f"Seed {w.seed}\t\tFitness ({m.name}): {f:8.4f}")
+        print(f"Sum: {sum(fitness):8.4f} \t Avg: {sum(fitness) / len(fitness):8.4f} \t Std: {np.std(fitness):8.4f}")
+        print(f"Min: {min(fitness):8.4f} \t Max: {max(fitness):8.4f} \t out of {len(fitness)} trials")
+    else:
+        print(f"Fitness ({metric.name}): {fitness:8.4f}")
 
     if args.log_trajectories:
         import matplotlib.pyplot as plt
@@ -325,6 +360,14 @@ def get_parsers(parser, subpar):
         sub.add_argument('--world_yaml', default="rss/turbopi-milling/world.yaml",
                          type=str, help="path to yaml config for sim")
         sub.add_argument('--behavior', default=0, help="behavior to run. Either int or string matching a behavior name.")
+        sub.add_argument('--trials', type=int, default=None,
+                         help="number of trials to run. Set to None to run one trial with world.yaml[seed]."
+                         " Values greater than 0 will use the world.yaml[seed] to generate more seeds.")
+        sub.add_argument('--caspian', type=bool, default=True,
+                           help="pass this to pause the simulation at startup. Press Space to unpause.")
+        sub.add_argument('-j', nargs=2, action='append', default=[], dest='jinja_vars',
+                         help="Set a variable in the jinja template context. Can be used multiple times. "
+                         "Example: -j key value -j key2 99")
 
     # for key in ('test', 'run'):  # arguments that apply to test/validation and stdin
     #     pass  # sp[key].add_argument()
@@ -350,7 +393,7 @@ def get_parsers(parser, subpar):
     return parser, subpar
 
 
-def main(name="connorsim_snn_eons-v01", cls=ConnorMillingExperiment, parser_callback=None):
+def main(name="connorsim_snn_eons-v01", cls=ConnorMillingExperiment, parser_callback=None, run=run, test=test):
     parser, subpar = common.experiment.get_parsers()
     parser, subpar = get_parsers(parser, subpar)  # modify parser
     if callable(parser_callback):
